@@ -1,0 +1,37 @@
+{
+  "name": "rr-comments",
+  "displayName": "rr directive highlighting",
+  "description": "Syntax highlighting for rr //api: comment directives in Go",
+  "version": "0.0.1",
+  "publisher": "hypersequent",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sirkostya009/rr.git",
+    "directory": "vscode-rr"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "rr",
+    "go",
+    "golang",
+    "api",
+    "codegen"
+  ],
+  "contributes": {
+    "grammars": [
+      {
+        "scopeName": "rr.injection",
+        "path": "./syntaxes/rr.tmLanguage.json",
+        "injectTo": [
+          "source.go"
+        ]
+      }
+    ]
+  }
+}

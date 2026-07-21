@@ -1,0 +1,135 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "rr directives",
+  "scopeName": "rr.injection",
+  "injectionSelector": "L:comment.line.double-slash.go, L:comment.block.go",
+  "patterns": [
+    {
+      "include": "#directive"
+    }
+  ],
+  "repository": {
+    "directive": {
+      "begin": "\\b(api)(:)([A-Za-z0-9]+)?",
+      "beginCaptures": {
+        "1": {
+          "name": "comment.directive.rr"
+        },
+        "2": {
+          "name": "comment.directive.rr"
+        },
+        "3": {
+          "name": "comment.directive.name.rr"
+        }
+      },
+      "end": "(?=\\s*\\*/)|$",
+      "patterns": [
+        {
+          "include": "#trailingComment"
+        },
+        {
+          "include": "#pathParam"
+        },
+        {
+          "include": "#configKey"
+        },
+        {
+          "include": "#reference"
+        },
+        {
+          "include": "#httpMethod"
+        },
+        {
+          "include": "#subKeyword"
+        },
+        {
+          "include": "#wildcard"
+        },
+        {
+          "include": "#pathLiteral"
+        },
+        {
+          "include": "#identifier"
+        }
+      ]
+    },
+    "trailingComment": {
+      "match": "(--)(.*)$",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.comment.rr"
+        },
+        "2": {
+          "name": "comment.line.double-dash.rr"
+        }
+      }
+    },
+    "pathParam": {
+      "name": "meta.path-parameter.rr",
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "constant.character.escape.rr"
+        }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": {
+          "name": "constant.character.escape.rr"
+        }
+      },
+      "patterns": [
+        {
+          "match": "\\.\\.\\.",
+          "name": "constant.character.escape.rr"
+        },
+        {
+          "match": "=",
+          "name": "keyword.operator.assignment.rr"
+        },
+        {
+          "include": "#reference"
+        },
+        {
+          "match": "[A-Za-z_][A-Za-z0-9_]*",
+          "name": "constant.character.escape.rr"
+        }
+      ]
+    },
+    "configKey": {
+      "match": "\\b(response|onerror|on400|on404|on405|middleware)(=)",
+      "captures": {
+        "1": {
+          "name": "variable.parameter.config.rr"
+        },
+        "2": {
+          "name": "keyword.operator.assignment.rr"
+        }
+      }
+    },
+    "reference": {
+      "match": "@[A-Za-z_][A-Za-z0-9_.]*",
+      "name": "entity.name.function.reference.rr"
+    },
+    "httpMethod": {
+      "match": "\\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|CONNECT|TRACE)\\b",
+      "name": "support.constant.http-method.rr"
+    },
+    "subKeyword": {
+      "match": "\\b(json|central|route|middleware|errorhandler|response|param|body|query|header)\\b",
+      "name": "support.type.rr"
+    },
+    "wildcard": {
+      "match": "\\*",
+      "name": "keyword.operator.wildcard.rr"
+    },
+    "pathLiteral": {
+      "match": "/[^\\s{}*]*",
+      "name": "string.quoted.double.rr"
+    },
+    "identifier": {
+      "match": "[A-Za-z_][A-Za-z0-9_-]*",
+      "name": "variable.other.rr"
+    }
+  }
+}
