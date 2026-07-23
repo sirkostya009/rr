@@ -1,4 +1,4 @@
-// Command rr generates ServeHTTP routing code from //api: directives.
+// Command rr generates ServeHTTP routing code from //rr: directives.
 package main
 
 import (
@@ -76,6 +76,7 @@ const (
 	argHeader         // header value
 	argWriter         // http.ResponseWriter, bound by type
 	argRequest        // *http.Request, bound by type
+	argError          // error, bound by type (error handlers only)
 )
 
 // query binding shapes, decided by the declared param type
@@ -93,15 +94,24 @@ const (
 	fBool
 )
 
+// body binding shapes
+const (
+	bodyJSON      = iota // struct/ggen/map decoded from the JSON body
+	bodyMultipart        // multipart.Form (multipart/form-data)
+	bodyForm             // url.Values (application/x-www-form-urlencoded)
+)
+
 type queryField struct {
 	name, key string
 	kind      int
 }
 
-// argSpec describes one handler parameter, driven by its type and inline
-// /* api:... */ annotations in the parameter list.
+// argSpec describes one handler parameter, driven by its name, type, and any
+// inline /* rr:... */ annotation in the parameter list.
 type argSpec struct {
 	kind      int
+	byName    bool    // role from a reserved param name (overridable by a route token)
+	whole     bool    // query/header: bind the whole object, dispatched by type
 	name      string  // path param / query key / header name
 	checker   string  // raw @ref for query/header validators and parsers
 	ref       refExpr // resolved checker
@@ -111,8 +121,9 @@ type argSpec struct {
 	typ       string   // rendered type, for body/transformed/struct binds
 	ptr       bool     // body declared as *T
 	fast      int      // ggen shape of the body type
+	bodyKind  int      // argBody: json / multipart / form
 	elem      string   // ggSlice: the element type name
-	bind      int      // argQuery: binding shape
+	bind      int      // argQuery/argHeader: whole-object binding shape
 	mapAny    bool     // bindMap: map[string]any instead of map[string]string
 	fields    []queryField
 }
@@ -121,7 +132,7 @@ type argSpec struct {
 const (
 	retNone = iota
 	retErr
-	retVal    // T, requires api:response
+	retVal    // T, JSON-encoded
 	retValErr // (T, error)
 )
 
@@ -134,18 +145,16 @@ const (
 )
 
 type route struct {
-	method   string
-	pattern  string
-	handler  string
-	errRaw   string
-	errRef   refExpr
-	retKind  int
-	retType  ast.Expr // first result, for retVal/retValErr
-	response string   // "json": encode the returned value
-	enc      int      // ggen shape of the response type
-	owner    *apiType
-	args     []argSpec
-	tokens   []tok
+	method  string
+	pattern string
+	handler string
+	errH    ehandler // owner onerror (central covers it at emission)
+	retKind int
+	retType ast.Expr // first result, for retVal/retValErr
+	enc     int      // ggen shape of the response type
+	owner   *apiType
+	args    []argSpec
+	tokens  []tok
 }
 
 type fieldCand struct {
@@ -166,6 +175,17 @@ type middleware struct {
 	args   []argSpec
 }
 
+// ehandler is a resolved 404/405/400/onerror handler. Like a route handler it
+// binds params (http.ResponseWriter required; *http.Request, error, query and
+// header binds optional), so args carries its signature.
+type ehandler struct {
+	ref    refExpr
+	args   []argSpec
+	hasErr bool // declares an error param
+}
+
+func (h ehandler) isSet() bool { return h.ref.isSet() }
+
 type apiType struct {
 	name    string
 	recv    string
@@ -173,19 +193,17 @@ type apiType struct {
 	central bool // merges routes of api-typed fields into its dispatcher
 	mounted bool // merged into some central dispatcher
 
-	mwRaw    []string
-	erRaw    string
-	nfRaw    string
-	naRaw    string
-	brRaw    string
-	response string // default response encoding for value-returning routes
+	mwRaw []string
+	erRaw string
+	nfRaw string
+	naRaw string
+	brRaw string
 
 	middlewares []middleware
-	errHandler  refExpr
-	notFound    refExpr // 404 handler
-	notAllowed  refExpr // 405 handler
-	badReq      refExpr // 400 handler
-	brErr       bool    // 400 handler takes (w, r, err); err may be nil
+	errHandler  ehandler // onerror
+	notFound    ehandler // 404
+	notAllowed  ehandler // 405
+	badReq      ehandler // 400
 
 	fieldCands []fieldCand
 	mounts     []mount
@@ -372,21 +390,16 @@ func main() {
 							a = getAPI(ts.Name.Name)
 						}
 						switch dir[0] {
-						case "middleware":
-							a.mwRaw = append(a.mwRaw, ref(dir[1], ts.Name.Name))
-						case "errorhandler":
-							a.erRaw = ref(dir[1], ts.Name.Name)
-						case "404":
-							a.nfRaw = ref(dir[1], ts.Name.Name)
-						case "405":
-							a.naRaw = ref(dir[1], ts.Name.Name)
-						case "400":
-							a.brRaw = ref(dir[1], ts.Name.Name)
-						case "central":
+						case "pre":
+							// guard chain on one line: //rr:pre @f @g @h
+							for m := range strings.FieldsSeq(dir[1]) {
+								a.mwRaw = append(a.mwRaw, ref(m, ts.Name.Name))
+							}
+						case "api":
 							a.central = true
 							st, ok := ts.Type.(*ast.StructType)
 							if !ok {
-								fatalf("%s: api:central must be a struct", ts.Name.Name)
+								fatalf("%s: rr:api must be a struct", ts.Name.Name)
 							}
 							for _, fld := range st.Fields.List {
 								t := fld.Type
@@ -405,35 +418,13 @@ func main() {
 									a.fieldCands = append(a.fieldCands, fieldCand{fn.Name, id.Name})
 								}
 							}
-							// options: onerror=@f on404=@f on405=@f middleware=@f
-							for _, opt := range strings.Fields(dir[1]) {
-								k, v, ok := strings.Cut(opt, "=")
-								v = strings.TrimPrefix(v, "@")
-								if !ok || v == "" {
-									fatalf("%s: bad api:central option %q, want key=@func", ts.Name.Name, opt)
-								}
-								switch k {
-								case "onerror":
-									a.erRaw = v
-								case "on404":
-									a.nfRaw = v
-								case "on405":
-									a.naRaw = v
-								case "on400":
-									a.brRaw = v
-								case "response":
-									if v != "json" {
-										fatalf("%s: unsupported response %q, only json", ts.Name.Name, v)
-									}
-									a.response = v
-								case "middleware":
-									a.mwRaw = append(a.mwRaw, v)
-								default:
-									fatalf("%s: unknown api:central option %q", ts.Name.Name, k)
-								}
-							}
+							parseHandlerOpts(a, dir[1], ts.Name.Name)
+						case "controller":
+							// optional marker for a mounted api; carries the same
+							// error-handler options as rr:api
+							parseHandlerOpts(a, dir[1], ts.Name.Name)
 						default:
-							fatalf("%s: unsupported directive api:%s on a type", ts.Name.Name, dir[0])
+							fatalf("%s: unsupported directive rr:%s on a type", ts.Name.Name, dir[0])
 						}
 					}
 				}
@@ -460,7 +451,7 @@ func main() {
 					switch dir[0] {
 					case "route":
 						if rt.pattern != "" {
-							fatalf("%s: multiple api:route directives", d.Name.Name)
+							fatalf("%s: multiple rr:route directives", d.Name.Name)
 						}
 						fields := strings.Fields(dir[1])
 						switch len(fields) {
@@ -469,30 +460,17 @@ func main() {
 						case 2:
 							rt.method, rt.pattern = fields[0], fields[1]
 						default:
-							fatalf("%s: bad api:route %q", d.Name.Name, dir[1])
+							fatalf("%s: bad rr:route %q", d.Name.Name, dir[1])
 						}
-					case "errorhandler":
-						rt.errRaw = ref(dir[1], d.Name.Name)
-					case "response":
-						if dir[1] != "json" {
-							fatalf("%s: unsupported api:response %q, only json", d.Name.Name, dir[1])
-						}
-						rt.response = dir[1]
 					default:
-						fatalf("%s: unsupported directive api:%s on a method", d.Name.Name, dir[0])
+						fatalf("%s: unsupported directive rr:%s on a method", d.Name.Name, dir[0])
 					}
 				}
-				switch rt.retKind {
-				case retVal, retValErr:
-					// a central's response= default may cover it; checked at emission
+				if rt.retKind == retVal || rt.retKind == retValErr {
 					rt.retType = resultTypes(d)[0]
-				default:
-					if rt.response != "" {
-						fatalf("%s: api:response set but the handler returns no value", d.Name.Name)
-					}
 				}
 				if rt.pattern == "" {
-					fatalf("%s: api: directives without api:route", d.Name.Name)
+					fatalf("%s: rr: directives without rr:route", d.Name.Name)
 				}
 				rt.tokens = parsePattern(rt.pattern, d.Name.Name)
 				a.routes = append(a.routes, rt)
@@ -500,7 +478,7 @@ func main() {
 		}
 	}
 	if len(order) == 0 {
-		fatalf("no api: directives found")
+		fatalf("no rr: directives found")
 	}
 
 	// link central mounts now that every api is known
@@ -509,7 +487,7 @@ func main() {
 		for _, fc := range a.fieldCands {
 			if m := apis[fc.typeName]; m != nil && m != a {
 				if m.central {
-					fatalf("%s: nested api:central types are not supported (field %s)", name, fc.field)
+					fatalf("%s: nested rr:api types are not supported (field %s)", name, fc.field)
 				}
 				m.mounted = true
 				a.mounts = append(a.mounts, mount{fc.field, m})
@@ -517,10 +495,10 @@ func main() {
 		}
 		if a.central {
 			if len(a.routes)+len(a.mounts) == 0 {
-				fatalf("%s: api:central has neither routes nor api-typed fields", name)
+				fatalf("%s: rr:api has neither routes nor api-typed fields", name)
 			}
 		} else if len(a.routes) == 0 {
-			fatalf("%s: has api: directives but no routes", name)
+			fatalf("%s: has rr: directives but no routes", name)
 		}
 	}
 
@@ -546,13 +524,13 @@ func main() {
 	extraImports := map[string]bool{}
 	numHelpers := map[string]bool{}
 	resolve := func(a *apiType, name, ctx string) refExpr {
-		if i := strings.IndexByte(name, '.'); i >= 0 {
-			p, ok := importsByName[name[:i]]
+		if before, _, ok := strings.Cut(name, "."); ok {
+			p, ok := importsByName[before]
 			if !ok {
 				// not imported by the input files: assume a stdlib-style path
 				// (strconv.Atoi -> "strconv"); external packages need an import,
 				// a blank one is enough
-				p = name[:i]
+				p = before
 			}
 			extraImports[p] = true
 			return refExpr{false, name}
@@ -583,35 +561,10 @@ func main() {
 				switch spec.kind {
 				case argWriter, argRequest, argQuery, argHeader:
 				default:
-					fatalf("%s: middleware @%s params must be http.ResponseWriter, *http.Request, api:query or api:header", name, raw)
+					fatalf("%s: middleware @%s params must be http.ResponseWriter, *http.Request, rr:query or rr:header", name, raw)
 				}
 			}
 			a.middlewares = append(a.middlewares, mw)
-		}
-		if a.erRaw != "" {
-			a.errHandler = resolve(a, a.erRaw, name)
-		}
-		if a.nfRaw != "" {
-			a.notFound = resolve(a, a.nfRaw, name)
-		}
-		if a.naRaw != "" {
-			a.notAllowed = resolve(a, a.naRaw, name)
-		}
-		if a.brRaw != "" {
-			a.badReq = resolve(a, a.brRaw, name)
-			fd := methods[a.name][a.brRaw]
-			if fd == nil {
-				fd = funcs[a.brRaw]
-			}
-			if fd != nil {
-				switch countFields(fd.Type.Params) {
-				case 2:
-				case 3:
-					a.brErr = true
-				default:
-					fatalf("%s: on400 handler @%s must take (w, r) or (w, r, err)", name, a.brRaw)
-				}
-			}
 		}
 		// resolve a validator ref: a *regexp.Regexp var is matched directly,
 		// a func either checks (bool) or transforms ((T, error)); qualified
@@ -642,15 +595,107 @@ func main() {
 			}
 			return resolved, true
 		}
+		// resolve one query/header arg (whole-object or single value)
+		resolveQH := func(spec *argSpec, ctx string) {
+			switch spec.kind {
+			case argHeader:
+				if spec.bind == bindParser {
+					spec.ref, spec.transform = classifyParser(spec.checker, ctx)
+					return
+				}
+				if spec.whole {
+					analyzeHeaderBind(spec, types, ctx)
+					return
+				}
+				if spec.checker != "" {
+					spec.ref, spec.transform, spec.regex = classify(spec.checker, ctx)
+					if spec.transform {
+						spec.typ = renderType(fset, spec.typeExpr)
+					}
+					return
+				}
+				if id, ok := spec.typeExpr.(*ast.Ident); !ok || id.Name != "string" {
+					fatalf("%s: single header value %q must be string, or add a =@transform", ctx, spec.name)
+				}
+			case argQuery:
+				if spec.bind == bindParser {
+					spec.ref, spec.transform = classifyParser(spec.checker, ctx)
+					return
+				}
+				if spec.whole {
+					if analyzeQueryBind(spec, types, ctx) {
+						extraImports["strconv"] = true
+					}
+					return
+				}
+				if spec.checker != "" {
+					spec.ref, spec.transform, spec.regex = classify(spec.checker, ctx)
+					if spec.transform {
+						spec.typ = renderType(fset, spec.typeExpr)
+					}
+					return
+				}
+				if id, ok := spec.typeExpr.(*ast.Ident); !ok || id.Name != "string" {
+					fatalf("%s: single query value %q must be string, or add a =@transform", ctx, spec.name)
+				}
+			}
+		}
+		// resolve an error/condition handler: it binds params like a route
+		// handler minus body/path — http.ResponseWriter required, error
+		// required when wantErr (onerror), *http.Request/query/header optional
+		resolveEHandler := func(raw, kind string, wantErr, allowErr bool) ehandler {
+			ctx := name + " " + kind
+			fd := methods[a.name][raw]
+			if fd == nil {
+				fd = funcs[raw]
+			}
+			if fd == nil {
+				fatalf("%s: %s handler @%s must be a func or method declared in this package", name, kind, raw)
+			}
+			h := ehandler{ref: resolve(a, raw, ctx), args: handlerArgs(fileOf[fd], fd)}
+			hasW := false
+			for k := range h.args {
+				spec := &h.args[k]
+				switch spec.kind {
+				case argWriter:
+					hasW = true
+				case argRequest:
+				case argError:
+					if !allowErr {
+						fatalf("%s: %s handler @%s must not take an error param", name, kind, raw)
+					}
+					h.hasErr = true
+				case argQuery, argHeader:
+					resolveQH(spec, ctx)
+				default:
+					fatalf("%s: %s handler @%s can only bind http.ResponseWriter, *http.Request, error, query and headers", name, kind, raw)
+				}
+			}
+			if !hasW {
+				fatalf("%s: %s handler @%s must take http.ResponseWriter", name, kind, raw)
+			}
+			if wantErr && !h.hasErr {
+				fatalf("%s: %s handler @%s must take an error param", name, kind, raw)
+			}
+			return h
+		}
+		if a.erRaw != "" {
+			a.errHandler = resolveEHandler(a.erRaw, "onerror", true, true)
+		}
+		if a.nfRaw != "" {
+			a.notFound = resolveEHandler(a.nfRaw, "on404", false, false)
+		}
+		if a.naRaw != "" {
+			a.notAllowed = resolveEHandler(a.naRaw, "on405", false, false)
+		}
+		if a.brRaw != "" {
+			a.badReq = resolveEHandler(a.brRaw, "on400", false, true)
+		}
 		for i := range a.routes {
 			rt := &a.routes[i]
 			ctx := name + "." + rt.handler
-			if rt.errRaw != "" {
-				rt.errRef = resolve(a, rt.errRaw, ctx)
-			} else {
-				rt.errRef = a.errHandler
-			}
-			// a central's onerror may still cover the route; checked at emission
+			rt.errH = a.errHandler // owner onerror; central covers it at emission
+
 			if rt.retType != nil {
 				t := rt.retType
 				if st, ok := t.(*ast.StarExpr); ok {
@@ -666,19 +711,42 @@ func main() {
 					tk.p.ref, tk.p.transform, tk.p.regex = classify(tk.p.checker, ctx)
 				}
 			}
+			// a route token of the same name overrides a by-name role
+			tokenSet := map[string]bool{}
+			for _, tk := range rt.tokens {
+				if tk.kind == tokParam || (tk.kind == tokWild && tk.p != nil) {
+					tokenSet[tk.p.name] = true
+				}
+			}
 			bodySeen := false
 			for j := range rt.args {
 				spec := &rt.args[j]
+				if spec.byName && tokenSet[spec.name] {
+					spec.kind, spec.byName, spec.whole = argParam, false, false
+				}
 				switch spec.kind {
 				case argBody:
 					if bodySeen {
-						fatalf("%s.%s: multiple api:body params", name, rt.handler)
+						fatalf("%s.%s: multiple body params", name, rt.handler)
 					}
 					bodySeen = true
 					t := spec.typeExpr
 					if st, ok := t.(*ast.StarExpr); ok {
 						spec.ptr = true
 						t = st.X
+					}
+					// form bodies pass request fields directly, no named type
+					if sel, ok := t.(*ast.SelectorExpr); ok {
+						if id, ok := sel.X.(*ast.Ident); ok {
+							switch {
+							case id.Name == "multipart" && sel.Sel.Name == "Form":
+								spec.bodyKind = bodyMultipart
+								continue
+							case id.Name == "url" && sel.Sel.Name == "Values":
+								spec.bodyKind = bodyForm
+								continue
+							}
+						}
 					}
 					spec.typ = renderType(fset, t)
 					spec.fast, spec.elem = ggShape(methods, t, "DecodeFromStream")
@@ -694,32 +762,10 @@ func main() {
 							extraImports[p] = true
 						}
 					}
-				case argHeader:
-					if spec.bind == bindParser {
-						spec.ref, spec.transform = classifyParser(spec.checker, ctx)
-						break
-					}
-					if spec.checker != "" {
-						spec.ref, spec.transform, spec.regex = classify(spec.checker, ctx)
-						if spec.transform {
-							spec.typ = renderType(fset, spec.typeExpr)
-						}
-					}
-				case argQuery:
-					if spec.bind == bindParser {
-						spec.ref, spec.transform = classifyParser(spec.checker, ctx)
-						break
-					}
-					if spec.checker != "" {
-						spec.ref, spec.transform, spec.regex = classify(spec.checker, ctx)
-						if spec.transform {
-							spec.typ = renderType(fset, spec.typeExpr)
-						}
-						break
-					}
-					if analyzeQueryBind(spec, types, ctx) {
-						extraImports["strconv"] = true
-					}
+				case argHeader, argQuery:
+					resolveQH(spec, ctx)
+				case argError:
+					fatalf("%s.%s: handlers receive errors via return, not a param", name, rt.handler)
 				case argParam:
 					var pp *param
 					for _, tk := range rt.tokens {
@@ -729,8 +775,8 @@ func main() {
 						}
 					}
 					if pp == nil {
-						fatalf("%s.%s: param %q matches no path param; use /* api:param <name> */, /* api:query */, /* api:header */ or /* api:body */",
-							name, rt.handler, spec.name)
+						fatalf("%s.%s: param %q is not a route token and has no role; name it body/query/headers, add {%s} to the route, or annotate /* rr:query */ or /* rr:header */",
+							name, rt.handler, spec.name, spec.name)
 					}
 					if pp.transform {
 						break
@@ -813,7 +859,7 @@ func main() {
 				imports["encoding/json"] = true
 			}
 			for _, spec := range rt.args {
-				if spec.kind == argBody && spec.fast == ggNone {
+				if spec.kind == argBody && spec.bodyKind == bodyJSON && spec.fast == ggNone {
 					imports["encoding/json"] = true
 				}
 			}
@@ -884,6 +930,30 @@ func main() {
 	}
 }
 
+// parseHandlerOpts reads the shared error-handler options off a rr:api /
+// rr:controller directive: onerror=@f on400=@f on404=@f on405=@f.
+func parseHandlerOpts(a *apiType, opts, ctx string) {
+	for opt := range strings.FieldsSeq(opts) {
+		k, v, ok := strings.Cut(opt, "=")
+		if !ok || !strings.HasPrefix(v, "@") || len(v) == 1 {
+			fatalf("%s: bad option %q, want key=@func", ctx, opt)
+		}
+		v = v[1:]
+		switch k {
+		case "onerror":
+			a.erRaw = v
+		case "on404":
+			a.nfRaw = v
+		case "on405":
+			a.naRaw = v
+		case "on400":
+			a.brRaw = v
+		default:
+			fatalf("%s: unknown option %q (want onerror/on400/on404/on405)", ctx, k)
+		}
+	}
+}
+
 func parseDirectives(doc *ast.CommentGroup) [][2]string {
 	if doc == nil {
 		return nil
@@ -895,7 +965,7 @@ func parseDirectives(doc *ast.CommentGroup) [][2]string {
 			continue
 		}
 		line = strings.TrimSpace(line)
-		rest, ok := strings.CutPrefix(line, "api:")
+		rest, ok := strings.CutPrefix(line, "rr:")
 		if !ok {
 			continue
 		}
@@ -935,7 +1005,7 @@ func parsePattern(pattern, handler string) []tok {
 					handler, inner[:strings.IndexByte(inner, ':')])
 			}
 			name, checker, _ := strings.Cut(inner, "=")
-			if wild := strings.TrimSuffix(name, "..."); wild != name {
+			if wild, ok := strings.CutSuffix(name, "..."); ok {
 				if !last {
 					fatalf("%s: {%s} is only allowed at the end of a pattern", handler, name)
 				}
@@ -1111,6 +1181,7 @@ type gen struct {
 	curOwner *apiType            // owner of the route currently being emitted
 	recvOf   map[*apiType]string // receiver expression per mounted api
 	hoisted  string              // method already verified by a subtree-level check
+	errVar   string              // expr for an error handler's error param ("err"/"nil")
 
 	// ggen fast-path helpers used anywhere in the output
 	useReadOne    bool
@@ -1227,7 +1298,7 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 
 func (g *gen) notFound() {
 	if g.scope.notFound.isSet() {
-		g.w("%s(w, r)", g.scope.notFound.expr(g.recvOf[g.scope]))
+		g.emitEHandler(g.scope.notFound, g.recvOf[g.scope], "")
 	} else {
 		g.w("w.WriteHeader(http.StatusNotFound)")
 	}
@@ -1252,7 +1323,7 @@ func (g *gen) notAllowed(routes []route, allow string) {
 	}
 	g.w(`w.Header().Set("Allow", %q)`, allow)
 	if target.notAllowed.isSet() {
-		g.w("%s(w, r)", target.notAllowed.expr(g.recvOf[target]))
+		g.emitEHandler(target.notAllowed, g.recvOf[target], "")
 	} else {
 		g.w("w.WriteHeader(http.StatusMethodNotAllowed)")
 	}
@@ -1669,16 +1740,15 @@ func (g *gen) hoistMethod(n *tnode) bool {
 func (g *gen) emitGuard(mw middleware, recv string, rt *route) {
 	call := fmt.Sprintf("%s(%s)", mw.ref.expr(recv), g.buildArgs(mw.args, nil, recv))
 	if mw.retErr {
-		var eh string
-		if rt != nil {
-			eh = g.errExpr(*rt)
-		} else if g.scope.errHandler.isSet() {
-			eh = g.scope.errHandler.expr(g.recvOf[g.scope])
-		} else {
+		g.open("if err := %s; err != nil {", call)
+		switch {
+		case rt != nil:
+			g.emitOnErr(*rt)
+		case g.scope.errHandler.isSet():
+			g.emitEHandler(g.scope.errHandler, g.recvOf[g.scope], "err")
+		default:
 			fatalf("%s: middleware returns error but there is no onerror in scope", g.scope.name)
 		}
-		g.open("if err := %s; err != nil {", call)
-		g.w("%s(w, r, err)", eh)
 		g.w("return")
 		g.close()
 	} else {
@@ -1706,6 +1776,8 @@ func (g *gen) buildArgs(specs []argSpec, args map[string]string, recv string) st
 			parts = append(parts, "w")
 		case argRequest:
 			parts = append(parts, "r")
+		case argError:
+			parts = append(parts, g.errVar)
 		case argParam:
 			parts = append(parts, args[spec.name])
 		case argBody:
@@ -1720,9 +1792,14 @@ func (g *gen) buildArgs(specs []argSpec, args map[string]string, recv string) st
 				parts = append(parts, g.emitQueryBind(spec, query()))
 			}
 		case argHeader:
-			if spec.bind == bindParser {
+			switch spec.bind {
+			case bindParser:
 				parts = append(parts, g.emitParser(spec, "r.Header", recv))
-			} else {
+			case bindValues: // http.Header passthrough
+				parts = append(parts, "r.Header")
+			case bindStruct:
+				parts = append(parts, g.emitStructBind(spec, "r.Header.Get"))
+			default: // single value
 				parts = append(parts, g.emitExtract(spec, fmt.Sprintf("r.Header.Get(%q)", spec.name), recv))
 			}
 		}
@@ -1732,17 +1809,12 @@ func (g *gen) buildArgs(specs []argSpec, args map[string]string, recv string) st
 
 func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 	call := fmt.Sprintf("%s.%s(%s)", recv, rt.handler, g.buildArgs(rt.args, args, recv))
-	if rt.retKind == retVal || rt.retKind == retValErr {
-		if rt.response == "" && g.scope.response == "" {
-			fatalf("%s.%s returns a value; add //api:response json or response=json on the central", rt.owner.name, rt.handler)
-		}
-	}
 	switch rt.retKind {
 	case retNone:
 		g.w("%s", call)
 	case retErr:
 		g.open("if err := %s; err != nil {", call)
-		g.w("%s(w, r, err)", g.errExpr(rt))
+		g.emitOnErr(rt)
 		g.close()
 	case retVal:
 		if rt.enc != ggNone {
@@ -1755,7 +1827,7 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 		v := g.newVar()
 		g.w("%s, err := %s", v, call)
 		g.open("if err != nil {")
-		g.w("%s(w, r, err)", g.errExpr(rt))
+		g.emitOnErr(rt)
 		g.w("return")
 		g.close()
 		if rt.enc != ggNone {
@@ -1768,10 +1840,9 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 }
 
 // emitFastEncode writes the value through the pregenerated pooled-buffer
-// helper; only encode errors surface, they arrive before anything hit the
-// wire. An encode failure is an infrastructure error, not a handler error:
-// route-level errorhandler overrides (which map domain errors to statuses)
-// are deliberately skipped in favor of the api/central onerror.
+// helper; only encode errors surface, and they arrive before anything hit the
+// wire, so they route through the same owner→central onerror chain (bare 500
+// if none is in scope).
 func (g *gen) emitFastEncode(rt route, v string) {
 	fn := "writeJSON"
 	switch rt.enc {
@@ -1785,29 +1856,42 @@ func (g *gen) emitFastEncode(rt route, v string) {
 		g.useWriteOne = true
 	}
 	g.open("if err := %s(w, %s); err != nil {", fn, v)
-	switch {
-	case rt.errRaw == "" && rt.errRef.isSet(): // the owning api's onerror
-		g.w("%s(w, r, err)", rt.errRef.expr(g.recvOf[rt.owner]))
-	case g.scope.errHandler.isSet():
-		g.w("%s(w, r, err)", g.scope.errHandler.expr(g.recvOf[g.scope]))
-	default:
+	if h, recv, ok := g.routeErrH(rt); ok {
+		g.emitEHandler(h, recv, "err")
+	} else {
 		g.w("w.WriteHeader(http.StatusInternalServerError)")
 	}
 	g.w("return")
 	g.close()
 }
 
-// errExpr picks the error handler: route/owner level first, then the
-// dispatcher's own (a central's onerror covers mounted apis).
-func (g *gen) errExpr(rt route) string {
-	if rt.errRef.isSet() {
-		return rt.errRef.expr(g.recvOf[rt.owner])
+// routeErrH picks a route's onerror: owner first, then the dispatcher scope
+// (a central's onerror covers mounted apis). ok=false → no handler in scope.
+func (g *gen) routeErrH(rt route) (ehandler, string, bool) {
+	if rt.errH.isSet() {
+		return rt.errH, g.recvOf[rt.owner], true
 	}
 	if g.scope.errHandler.isSet() {
-		return g.scope.errHandler.expr(g.recvOf[g.scope])
+		return g.scope.errHandler, g.recvOf[g.scope], true
 	}
-	fatalf("%s.%s returns error but no error handler in scope of %s", rt.owner.name, rt.handler, g.scope.name)
-	return ""
+	return ehandler{}, "", false
+}
+
+// emitEHandler emits a call to a bound error/condition handler; errVar fills
+// its error param slot ("err" in scope, "nil" for plain-bad, "" when absent).
+func (g *gen) emitEHandler(h ehandler, recv, errVar string) {
+	g.errVar = errVar
+	g.w("%s(%s)", h.ref.expr(recv), g.buildArgs(h.args, nil, recv))
+	g.errVar = ""
+}
+
+// emitOnErr emits a route's onerror call with err in scope, or fatals.
+func (g *gen) emitOnErr(rt route) {
+	h, recv, ok := g.routeErrH(rt)
+	if !ok {
+		fatalf("%s.%s returns error but no onerror in scope of %s", rt.owner.name, rt.handler, g.scope.name)
+	}
+	g.emitEHandler(h, recv, "err")
 }
 
 // emitParser calls a whole-input parser; a bare-T parser inlines into the
@@ -1846,31 +1930,38 @@ func (g *gen) emitQueryBind(spec argSpec, q string) string {
 		g.close()
 		return v
 	default: // bindStruct
-		v := spec.name
-		if !safeVarName(v) {
-			v = g.newVar()
-		}
-		g.w("var %s %s", v, spec.typ)
-		for _, fd := range spec.fields {
-			switch fd.kind {
-			case fString:
-				g.w("%s.%s = %s.Get(%q)", v, fd.name, q, fd.key)
-			default:
-				fn := "strconv.Atoi"
-				if fd.kind == fBool {
-					fn = "strconv.ParseBool"
-				}
-				rv := g.newVar()
-				g.open(`if %s := %s.Get(%q); %s != "" {`, rv, q, fd.key, rv)
-				g.w("var err error")
-				g.open("if %s.%s, err = %s(%s); err != nil {", v, fd.name, fn, rv)
-				g.badRequest(true)
-				g.close()
-				g.close()
-			}
-		}
-		return v
+		return g.emitStructBind(spec, q+".Get")
 	}
+}
+
+// emitStructBind fills a struct from string-keyed source, getter being the
+// call prefix (e.g. "p1.Get" for query, "r.Header.Get" for headers), so the
+// field reads become getter("key").
+func (g *gen) emitStructBind(spec argSpec, getter string) string {
+	v := spec.name
+	if !safeVarName(v) {
+		v = g.newVar()
+	}
+	g.w("var %s %s", v, spec.typ)
+	for _, fd := range spec.fields {
+		switch fd.kind {
+		case fString:
+			g.w("%s.%s = %s(%q)", v, fd.name, getter, fd.key)
+		default:
+			fn := "strconv.Atoi"
+			if fd.kind == fBool {
+				fn = "strconv.ParseBool"
+			}
+			rv := g.newVar()
+			g.open(`if %s := %s(%q); %s != "" {`, rv, getter, fd.key, rv)
+			g.w("var err error")
+			g.open("if %s.%s, err = %s(%s); err != nil {", v, fd.name, fn, rv)
+			g.badRequest(true)
+			g.close()
+			g.close()
+		}
+	}
+	return v
 }
 
 // badRequest responds 400 through the owning api's handler, the dispatcher's,
@@ -1882,16 +1973,16 @@ func (g *gen) badRequest(hasErr bool) {
 	if g.curOwner != nil && g.curOwner.badReq.isSet() {
 		target = g.curOwner
 	}
-	switch {
-	case !target.badReq.isSet():
+	if !target.badReq.isSet() {
 		g.w("w.WriteHeader(http.StatusBadRequest)")
-	case !target.brErr:
-		g.w("%s(w, r)", target.badReq.expr(g.recvOf[target]))
-	case hasErr:
-		g.w("%s(w, r, err)", target.badReq.expr(g.recvOf[target]))
-	default:
-		g.w("%s(w, r, nil)", target.badReq.expr(g.recvOf[target]))
+		g.w("return")
+		return
 	}
+	errVar := "nil" // no specific error at this site (e.g. a checker reject)
+	if hasErr {
+		errVar = "err"
+	}
+	g.emitEHandler(target.badReq, g.recvOf[target], errVar)
 	g.w("return")
 }
 
@@ -1900,6 +1991,21 @@ func (g *gen) badRequest(hasErr bool) {
 // methods stream-decode through a pooled buffer; the stream path copies
 // strings out, so the buffer recycles immediately.
 func (g *gen) emitBodyDecode(spec argSpec) string {
+	switch spec.bodyKind {
+	case bodyMultipart:
+		g.open("if err := r.ParseMultipartForm(32 << 20); err != nil {")
+		g.badRequest(true)
+		g.close()
+		if spec.ptr {
+			return "r.MultipartForm"
+		}
+		return "*r.MultipartForm"
+	case bodyForm:
+		g.open("if err := r.ParseForm(); err != nil {")
+		g.badRequest(true)
+		g.close()
+		return "r.PostForm"
+	}
 	v := spec.name
 	if !safeVarName(v) {
 		v = g.newVar()
@@ -2183,24 +2289,12 @@ func parserReturnsErr(fd *ast.FuncDecl, ctx string) bool {
 	return false
 }
 
-func countFields(fl *ast.FieldList) int {
-	if fl == nil {
-		return 0
-	}
-	n := 0
-	for _, f := range fl.List {
-		c := len(f.Names)
-		if c == 0 {
-			c = 1
-		}
-		n += c
-	}
-	return n
-}
-
-// wrKind reports whether t is http.ResponseWriter or *http.Request, which
-// bind by type and need no annotation.
+// wrKind reports whether t is http.ResponseWriter, *http.Request, or error —
+// all bound by type, no annotation needed.
 func wrKind(t ast.Expr) (int, bool) {
+	if id, ok := t.(*ast.Ident); ok && id.Name == "error" {
+		return argError, true
+	}
 	if st, ok := t.(*ast.StarExpr); ok {
 		if sel, ok := st.X.(*ast.SelectorExpr); ok {
 			if id, ok := sel.X.(*ast.Ident); ok && id.Name == "http" && sel.Sel.Name == "Request" {
@@ -2217,10 +2311,13 @@ func wrKind(t ast.Expr) (int, bool) {
 	return 0, false
 }
 
-// handlerArgs maps handler params to argSpecs. http.ResponseWriter and
-// *http.Request bind by type and are optional; the rest is driven by inline
-// /* api:... */ annotations, with an unannotated param binding to the
-// transformed path param of the same name.
+// handlerArgs maps handler params to argSpecs. Roles are inferred:
+//   - http.ResponseWriter / *http.Request bind by type, any position
+//   - a param named body / query / headers is that whole-object role (a route
+//     token of the same name overrides it back to a path param, resolved later)
+//   - an inline /* rr:query key=@check */ or /* rr:header Name=@check */ binds
+//     one keyed value
+//   - anything else is a path param (must appear in the route, else an error)
 func handlerArgs(f *ast.File, d *ast.FuncDecl) []argSpec {
 	params := d.Type.Params
 	if params == nil {
@@ -2228,7 +2325,7 @@ func handlerArgs(f *ast.File, d *ast.FuncDecl) []argSpec {
 	}
 	var anns []*ast.CommentGroup
 	for _, cg := range f.Comments {
-		if cg.Pos() > params.Opening && cg.End() < params.Closing && strings.HasPrefix(annText(cg), "api:") {
+		if cg.Pos() > params.Opening && cg.End() < params.Closing && strings.HasPrefix(annText(cg), "rr:") {
 			anns = append(anns, cg)
 		}
 	}
@@ -2253,50 +2350,29 @@ func handlerArgs(f *ast.File, d *ast.FuncDecl) []argSpec {
 		}
 		for _, nm := range fl.Names {
 			spec := argSpec{kind: argParam, name: nm.Name, typeExpr: fl.Type}
-			for _, cg := range anns {
-				if cg.Pos() <= prev || cg.End() >= nm.Pos() {
-					continue
+			// a single-name param accepts its annotation before the name or
+			// between the name and the type; multi-name fields keep it before
+			// each name to stay unambiguous
+			upper := nm.Pos()
+			if len(fl.Names) == 1 {
+				upper = fl.End()
+			}
+			var cg *ast.CommentGroup
+			for _, c := range anns {
+				if c.Pos() > prev && c.End() < upper {
+					cg = c
 				}
-				fields := strings.Fields(annText(cg))
-				switch fields[0] {
-				case "api:param":
-					if len(fields) > 1 {
-						spec.name = fields[1]
-					}
-				case "api:body":
-					if len(fields) > 1 && fields[1] != "json" {
-						fatalf("%s: unsupported api:body format %q, only json", d.Name.Name, fields[1])
-					}
-					spec.kind = argBody
-				case "api:query", "api:header":
-					if fields[0] == "api:query" {
-						spec.kind = argQuery
-					} else {
-						spec.kind = argHeader
-					}
-					if len(fields) > 1 {
-						if strings.HasPrefix(fields[1], "@") {
-							// whole-input parser: @func(url.Values|http.Header) (T[, error])
-							if len(fields[1]) == 1 {
-								fatalf("%s: parser in %q must be @name", d.Name.Name, fields[1])
-							}
-							spec.checker = fields[1][1:]
-							spec.bind = bindParser
-							break
-						}
-						nm, chk, has := strings.Cut(fields[1], "=")
-						if nm != "" {
-							spec.name = nm
-						}
-						if has {
-							if !strings.HasPrefix(chk, "@") || len(chk) == 1 {
-								fatalf("%s: checker in %q must be @name", d.Name.Name, fields[1])
-							}
-							spec.checker = chk[1:]
-						}
-					}
-				default:
-					fatalf("%s: unknown param annotation %q", d.Name.Name, fields[0])
+			}
+			if cg != nil {
+				parseParamAnnotation(&spec, annText(cg), d.Name.Name)
+			} else {
+				switch nm.Name { // reserved names are the annotation-free defaults
+				case "body":
+					spec.kind, spec.byName = argBody, true
+				case "query":
+					spec.kind, spec.byName, spec.whole = argQuery, true, true
+				case "headers":
+					spec.kind, spec.byName, spec.whole = argHeader, true, true
 				}
 			}
 			specs = append(specs, spec)
@@ -2306,8 +2382,63 @@ func handlerArgs(f *ast.File, d *ast.FuncDecl) []argSpec {
 	return specs
 }
 
+// parseParamAnnotation sets a param's role from its explicit inline comment,
+// overriding the name-based default. Forms:
+//
+//	/* rr:body */                  the request body (type decides the format)
+//	/* rr:param [name] */          a path param (optionally renamed)
+//	/* rr:query [key][=@check] */  one query value; bare = whole query by type
+//	/* rr:query @parser */         whole query through a custom parser
+//	/* rr:header ... */            same, for headers
+func parseParamAnnotation(spec *argSpec, text, handler string) {
+	fields := strings.Fields(text)
+	switch fields[0] {
+	case "rr:body":
+		spec.kind = argBody
+		if len(fields) > 1 && fields[1] != "json" {
+			fatalf("%s: rr:body takes no format, the param type decides it (got %q)", handler, fields[1])
+		}
+		return
+	case "rr:param":
+		spec.kind = argParam
+		if len(fields) > 1 {
+			spec.name = fields[1]
+		}
+		return
+	case "rr:query":
+		spec.kind = argQuery
+	case "rr:header":
+		spec.kind = argHeader
+	default:
+		fatalf("%s: unknown param annotation %q", handler, fields[0])
+	}
+	if len(fields) <= 1 { // bare rr:query / rr:header: bind whole by type
+		spec.whole = true
+		return
+	}
+	if strings.HasPrefix(fields[1], "@") {
+		// whole-input parser: @func(url.Values|http.Header) (T[, error])
+		if len(fields[1]) == 1 {
+			fatalf("%s: parser in %q must be @name", handler, fields[1])
+		}
+		spec.checker = fields[1][1:]
+		spec.bind = bindParser
+		return
+	}
+	key, chk, has := strings.Cut(fields[1], "=")
+	if key != "" {
+		spec.name = key
+	}
+	if has {
+		if !strings.HasPrefix(chk, "@") || len(chk) == 1 {
+			fatalf("%s: checker in %q must be @name", handler, fields[1])
+		}
+		spec.checker = chk[1:]
+	}
+}
+
 // annText extracts annotation text, tolerating doc-comment forms like
-// /** api:body json */ whose Text() keeps the leading asterisk.
+// /** rr:query whose Text() keeps the leading asterisk.
 func annText(cg *ast.CommentGroup) string {
 	t := strings.TrimSpace(cg.Text())
 	t = strings.TrimLeft(t, "*")
@@ -2320,7 +2451,7 @@ func renderType(fset *token.FileSet, e ast.Expr) string {
 	return b.String()
 }
 
-// analyzeQueryBind picks the binding shape for an unchecked api:query param
+// analyzeQueryBind picks the binding shape for an by-name query param
 // from its declared type. Reports whether generated code will need strconv.
 func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string) bool {
 	isIdent := func(e ast.Expr, name string) bool {
@@ -2334,11 +2465,11 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 		}
 		ts := types[t.Name]
 		if ts == nil {
-			fatalf("%s: api:query type %s is not declared in this package", ctx, t.Name)
+			fatalf("%s: query type %s is not declared in this package", ctx, t.Name)
 		}
 		st, ok := ts.Type.(*ast.StructType)
 		if !ok {
-			fatalf("%s: api:query type %s must be a struct, a map, or string", ctx, t.Name)
+			fatalf("%s: query type %s must be a struct, a map, or string", ctx, t.Name)
 		}
 		spec.bind = bindStruct
 		spec.typ = t.Name
@@ -2377,7 +2508,7 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 		return needStrconv
 	case *ast.MapType:
 		if !isIdent(t.Key, "string") {
-			fatalf("%s: api:query map key must be string", ctx)
+			fatalf("%s: query map key must be string", ctx)
 		}
 		switch v := t.Value.(type) {
 		case *ast.Ident:
@@ -2388,21 +2519,21 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 				spec.bind = bindMap
 				spec.mapAny = true
 			default:
-				fatalf("%s: api:query map value must be string, any or []string", ctx)
+				fatalf("%s: query map value must be string, any or []string", ctx)
 			}
 		case *ast.ArrayType:
 			if v.Len != nil || !isIdent(v.Elt, "string") {
-				fatalf("%s: api:query map value must be string, any or []string", ctx)
+				fatalf("%s: query map value must be string, any or []string", ctx)
 			}
 			spec.bind = bindValues
 		case *ast.InterfaceType:
 			if len(v.Methods.List) != 0 {
-				fatalf("%s: api:query map value must be string, any or []string", ctx)
+				fatalf("%s: query map value must be string, any or []string", ctx)
 			}
 			spec.bind = bindMap
 			spec.mapAny = true
 		default:
-			fatalf("%s: api:query map value must be string, any or []string", ctx)
+			fatalf("%s: query map value must be string, any or []string", ctx)
 		}
 		return false
 	case *ast.SelectorExpr:
@@ -2410,11 +2541,62 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 			spec.bind = bindValues
 			return false
 		}
-		fatalf("%s: unsupported api:query type", ctx)
+		fatalf("%s: unsupported query type", ctx)
 	default:
-		fatalf("%s: unsupported api:query type", ctx)
+		fatalf("%s: unsupported query type", ctx)
 	}
 	return false
+}
+
+// analyzeHeaderBind picks the whole-header binding: a struct (fields keyed by
+// `header:` tag or name) or http.Header passed through directly.
+func analyzeHeaderBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string) {
+	isIdent := func(e ast.Expr, name string) bool {
+		id, ok := e.(*ast.Ident)
+		return ok && id.Name == name
+	}
+	switch t := spec.typeExpr.(type) {
+	case *ast.Ident:
+		ts := types[t.Name]
+		if ts == nil {
+			fatalf("%s: headers type %s is not declared in this package", ctx, t.Name)
+		}
+		st, ok := ts.Type.(*ast.StructType)
+		if !ok {
+			fatalf("%s: headers type %s must be a struct or http.Header", ctx, t.Name)
+		}
+		spec.bind = bindStruct
+		spec.typ = t.Name
+		for _, fld := range st.Fields.List {
+			for _, fn := range fld.Names {
+				if !fn.IsExported() {
+					continue
+				}
+				key := fn.Name
+				if fld.Tag != nil {
+					tag, _ := strconv.Unquote(fld.Tag.Value)
+					if v := reflect.StructTag(tag).Get("header"); v != "" {
+						if v == "-" {
+							continue
+						}
+						key = v
+					}
+				}
+				if !isIdent(fld.Type, "string") {
+					fatalf("%s: header struct field %s.%s must be string", ctx, t.Name, fn.Name)
+				}
+				spec.fields = append(spec.fields, queryField{name: fn.Name, key: key, kind: fString})
+			}
+		}
+	case *ast.SelectorExpr:
+		if id, ok := t.X.(*ast.Ident); ok && id.Name == "http" && t.Sel.Name == "Header" {
+			spec.bind = bindValues // pass r.Header through
+			return
+		}
+		fatalf("%s: unsupported headers type", ctx)
+	default:
+		fatalf("%s: unsupported headers type", ctx)
+	}
 }
 
 // displayPattern renders the route in ServeMux Pattern form: method-prefixed,

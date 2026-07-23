@@ -1,6 +1,6 @@
 # rr directive highlighting
 
-Syntax highlighting for rr `//api:` comment directives in Go source.
+Syntax highlighting for rr `//rr:` comment directives in Go source.
 
 It's an **injection** grammar — it colors tokens *inside* Go comments, so
 normal Go highlighting is untouched. Nothing else in your `.go` files changes.
@@ -10,36 +10,35 @@ normal Go highlighting is untouched. Nothing else in your `.go` files changes.
 Line directives:
 
 ```go
-//api:central response=json onerror=@handleError on404=notFound on400=@badRequest
-//api:route GET /api/posts/{slug=@isSlug} -- func checker takes what Atoi rejected
-//api:route GET /api/files/{path...}
-//api:middleware @requireToken
-//api:errorhandler @postNotFound
-//api:response json
+//rr:api onerror=@handleError on405=@on405 on404=notFound on400=@badRequest
+//rr:controller onerror=@postNotFound
+//rr:pre @requireToken
+//rr:route GET /api/posts/{slug=@isSlug} -- func checker takes what Atoi rejected
+//rr:route GET /api/files/{path...}
 ```
 
 Inline directives:
 
 ```go
-func (u *UsersApi) Create( /** api:body json */ u User) {}
-func (s *SearchApi) Search( /* api:query @parseSearch */ q SearchQuery, /* api:header X-Request-Id */ rid string) {}
+func (u *UsersApi) Create( /* rr:body */ u User) {}
+func (s *SearchApi) Search( /* rr:query @parseSearch */ q SearchQuery, /* rr:header X-Request-Id */ rid string) {}
 ```
 
 Token scopes:
 
 | token | scope |
 | --- | --- |
-| `api:` prefix | `comment.directive.rr` |
-| directive name (`central`, `route`, `body`, …) | `comment.directive.name.rr` |
+| `rr:` prefix | `comment.directive.rr` |
+| directive name (`api`, `controller`, `pre`, `route`, `body`, …) | `comment.directive.name.rr` |
 | HTTP method | `support.constant.http-method.rr` |
-| `key=` (response, onerror, on400…) | `variable.parameter.config.rr` |
+| `key=` (onerror, on400, on404, on405) | `variable.parameter.config.rr` |
 | `@ref` | `entity.name.function.reference.rr` |
 | `{name}` / `...` inside a path param | `constant.character.escape.rr` (same as `\d` in a Go string) |
 | `/path/segments` | `string.quoted.double.rr` (same as a Go string) |
 | `*` catch-all | `keyword.operator.wildcard.rr` |
 | `-- comment` suffix | `comment.line.double-dash.rr` |
 
-The `api:` prefix and directive name deliberately sit in the `comment.*` scope
+The `rr:` prefix and directive name deliberately sit in the `comment.*` scope
 so they read as muted by default — the meaningful tokens (path, method, refs)
 are what get color.
 

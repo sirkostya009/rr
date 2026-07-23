@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,6 +18,40 @@ func do(t *testing.T, h http.Handler, method, path, body string, hdr ...string) 
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec
+}
+
+func TestForms(t *testing.T) {
+	a := &Api{}
+
+	// headers struct via `header:` tags
+	got := fromJSON[map[string]string](t, do(t, a, "GET", "/api/meta", "", "X-Request-Id", "abc", "X-Trace", "t1"))
+	if got["rid"] != "abc" || got["trace"] != "t1" {
+		t.Errorf("meta: %v", got)
+	}
+
+	// url.Values body (urlencoded)
+	req := httptest.NewRequest("POST", "/api/forms/login", strings.NewReader("user=bob&pw=x"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	a.ServeHTTP(rec, req)
+	if login := fromJSON[map[string]string](t, rec); login["user"] != "bob" {
+		t.Errorf("login: %v", login)
+	}
+
+	// multipart.Form body
+	var buf strings.Builder
+	mw := multipart.NewWriter(&buf)
+	_ = mw.WriteField("title", "hi")
+	fw, _ := mw.CreateFormFile("doc", "a.txt")
+	fw.Write([]byte("hello"))
+	mw.Close()
+	req = httptest.NewRequest("POST", "/api/forms/upload", strings.NewReader(buf.String()))
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	rec = httptest.NewRecorder()
+	a.ServeHTTP(rec, req)
+	if up := fromJSON[map[string]int](t, rec); up["fields"] != 1 || up["files"] != 1 {
+		t.Errorf("upload: %v", up)
+	}
 }
 
 func fromJSON[T any](t *testing.T, rec *httptest.ResponseRecorder) T {
@@ -38,7 +73,7 @@ func TestUsers(t *testing.T) {
 		t.Fatalf("GET /api/users: %v", got)
 	}
 
-	if got := fromJSON[[]User](t, do(t, a, "POST", "/api/users", `{"Name":"Gal"}`)); len(got) != 2 {
+	if got := fromJSON[[]User](t, do(t, a, "POST", "/api/users", `{"name":"Gal"}`)); len(got) != 2 {
 		t.Fatalf("POST /api/users: %v", got)
 	}
 
@@ -79,8 +114,10 @@ func TestPosts(t *testing.T) {
 	if got := fromJSON[[]Post](t, do(t, a, "GET", "/api/posts?tag=go&page=1", "")); len(got) != 1 || got[0].Slug != "generics-in-anger" {
 		t.Fatalf("GET /api/posts?tag=go: %v", got)
 	}
-	if rec := do(t, a, "GET", "/api/posts?page=x", ""); rec.Code != 400 || rec.Header().Get("X-Bad-Request") != "1" {
-		t.Errorf("bad page: %d", rec.Code)
+	// the 400 handler binds X-Request-Id (beyond w) and echoes it back
+	rec := do(t, a, "GET", "/api/posts?page=x", "", "X-Request-Id", "rq-9")
+	if rec.Code != 400 || rec.Header().Get("X-Bad-Request") != "1" || rec.Header().Get("X-Request-Id") != "rq-9" {
+		t.Errorf("bad page: %d, X-Request-Id %q", rec.Code, rec.Header().Get("X-Request-Id"))
 	}
 
 	// pointer body, (T, error) return

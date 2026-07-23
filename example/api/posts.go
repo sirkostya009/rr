@@ -6,6 +6,10 @@ import (
 	"slices"
 )
 
+// controller-level onerror: every PostsApi route that returns an error maps
+// it to 404, overriding the central's 500
+//
+//rr:controller onerror=@postNotFound
 type PostsApi struct{}
 
 //ggen:generate
@@ -36,32 +40,35 @@ type PostsQuery struct {
 	Tag  string
 }
 
-//api:route GET /api/posts -- struct query binding: ?page=2&tag=go
-func (pa *PostsApi) ListPosts( /* api:query */ q PostsQuery) []Post {
-	if q.Tag == "" {
+// a param named query binds the whole query string (struct via `query:` tags)
+//
+//rr:route GET /api/posts -- ?page=2&tag=go
+func (pa *PostsApi) ListPosts(query PostsQuery) []Post {
+	if query.Tag == "" {
 		return posts
 	}
 	out := make([]Post, 0, len(posts))
 	for _, p := range posts {
-		if slices.Contains(p.Tags, q.Tag) {
+		if slices.Contains(p.Tags, query.Tag) {
 			out = append(out, p)
 		}
 	}
 	return out
 }
 
-//api:route POST /api/posts -- pointer body, (T, error) return
-func (pa *PostsApi) CreatePost( /* api:body */ p *Post) (Post, error) {
-	p.ID = posts[len(posts)-1].ID + 1
-	posts = append(posts, *p)
-	return *p, nil
+// a param named body, here a pointer; (T, error) return
+//
+//rr:route POST /api/posts
+func (pa *PostsApi) CreatePost(body *Post) (Post, error) {
+	body.ID = posts[len(posts)-1].ID + 1
+	posts = append(posts, *body)
+	return *body, nil
 }
 
 // Two handlers share GET /api/posts/{...}: their param types don't overlap,
 // so they dispatch in declaration order — ints here, slugs below.
 //
-//api:route GET /api/posts/{id}
-//api:errorhandler @postNotFound -- route-level override of the central onerror
+//rr:route GET /api/posts/{id}
 func (pa *PostsApi) GetPost(id int) (Post, error) {
 	for _, p := range posts {
 		if p.ID == id {
@@ -71,8 +78,7 @@ func (pa *PostsApi) GetPost(id int) (Post, error) {
 	return Post{}, errors.New("post not found")
 }
 
-//api:route GET /api/posts/{slug=@isSlug} -- func checker takes what Atoi rejected
-//api:errorhandler @postNotFound
+//rr:route GET /api/posts/{slug=@isSlug} -- func checker takes what Atoi rejected
 func (pa *PostsApi) GetPostBySlug(slug string) (Post, error) {
 	for _, p := range posts {
 		if p.Slug == slug {
@@ -82,11 +88,11 @@ func (pa *PostsApi) GetPostBySlug(slug string) (Post, error) {
 	return Post{}, errors.New("post not found")
 }
 
-//api:route GET /api/posts/{pid}/comments/{cid} -- two auto-bound int params
+//rr:route GET /api/posts/{pid}/comments/{cid} -- two auto-bound int params
 func (pa *PostsApi) GetComment(pid, cid int) map[string]int {
 	return map[string]int{"post": pid, "comment": cid}
 }
 
-func postNotFound(w http.ResponseWriter, r *http.Request, err error) {
+func postNotFound(w http.ResponseWriter, _ *http.Request, err error) {
 	http.Error(w, err.Error(), http.StatusNotFound)
 }

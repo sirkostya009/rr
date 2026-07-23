@@ -6,10 +6,10 @@ import "net/http"
 // handlers do and return bool (false = handled, stop) or error (goes to
 // the error handler in scope).
 //
-//api:middleware @requireToken
+//rr:pre @requireToken
 type AdminApi struct{}
 
-func requireToken(w http.ResponseWriter /* api:header Authorization */, auth string) bool {
+func requireToken(w http.ResponseWriter /* rr:header Authorization */, auth string) bool {
 	if auth != "Bearer letmein" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return false
@@ -17,12 +17,12 @@ func requireToken(w http.ResponseWriter /* api:header Authorization */, auth str
 	return true
 }
 
-//api:route GET /api/admin/stats
+//rr:route GET /api/admin/stats
 func (ad *AdminApi) Stats() map[string]int {
 	return map[string]int{"users": len(users), "posts": len(posts)}
 }
 
-//api:route /api/admin/maintenance -- method catch-all
+//rr:route /api/admin/maintenance -- method catch-all
 func (ad *AdminApi) Maintenance(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusAccepted)
 }

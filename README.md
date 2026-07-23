@@ -1,7 +1,7 @@
 # rr
 
 Codegen-first HTTP routing for Go. Annotate structs and methods with
-`//api:` directives, run the generator, get one hand-written-looking
+`//rr:` directives, run the generator, get one hand-written-looking
 `ServeHTTP` per API — a common-prefix cut, a `switch` over static routes, and
 a segment trie for dynamic ones. No runtime router, no reflection, nothing
 imported at request time beyond stdlib (and [ggen](../ggen) if you use it).
@@ -10,13 +10,13 @@ Think of it as the annotation ergonomics of a framework like NestJS or Spring
 compiled down to a plain `switch` statement.
 
 ```go
-//api:central response=json onerror=@handleError on404=@notFound
+//rr:api onerror=@handleError on404=@notFound
 type Api struct {
 	UsersApi
 	PostsApi
 }
 
-//api:route GET /api/users/{id}
+//rr:route GET /api/users/{id}
 func (a *UsersApi) GetUser(id int) (User, error) {
 	...
 }
@@ -49,11 +49,15 @@ directive/semantics reference.
 - **`@ref` params**: `{slug=@isSlug}` (checker), `{id=@strconv.Atoi}`
   (transformer, binds as a typed handler arg), or `{id=@someRegexp}` (a
   `*regexp.Regexp` var, matched directly).
-- **Full parameter binding**, not just path params: `api:query` (scalar,
-  struct via `query:` tags, map, `url.Values`, or a whole-query custom
-  parser), `api:header`, `api:body` (JSON, `T` or `*T`), `http.ResponseWriter`
-  and `*http.Request` bind by type and are optional.
-- **Composition.** `//api:central` merges any number of api-typed fields into
+- **Parameter binding by name + type**, no annotation for common cases: a
+  param named `body` is the request body (JSON `T`/`*T`, `multipart.Form`, or
+  `url.Values`), `query` the whole query (struct via `query:` tags, map,
+  `url.Values`), `headers` a header struct (`header:` tags). A route `{token}`
+  of the same name wins. Inline `/* rr:body */`, `/* rr:param */`,
+  `/* rr:query [key][=@check] */`, `/* rr:header ... */` override the naming
+  when you need it; `http.ResponseWriter`/`*http.Request` bind by type and are
+  optional.
+- **Composition.** `//rr:api` merges any number of api-typed fields into
   one dispatcher — one prefix cut, one switch, one trie across every mounted
   API — instead of stacking `http.ServeMux` handlers (which cost real
   allocations per mount).

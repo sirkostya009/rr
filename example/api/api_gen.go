@@ -77,7 +77,7 @@ func writeJSONAny(w http.ResponseWriter, v any) error {
 func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path, ok := strings.CutPrefix(r.URL.Path, "/api/")
 	if !ok {
-		notFound(w, r)
+		notFound(w)
 		return
 	}
 	switch path {
@@ -91,7 +91,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "admin/stats":
 		if r.Method != "GET" {
 			w.Header().Set("Allow", "GET")
-			on405(w, r)
+			on405(w)
 			return
 		}
 		r.Pattern = "GET /api/admin/stats"
@@ -99,20 +99,67 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := writeJSONAny(w, s.AdminApi.Stats()); err != nil {
-			handleError(w, r, err)
+			handleError(w, err)
 			return
 		}
 		return
 	case "debug/query":
 		if r.Method != "GET" {
 			w.Header().Set("Allow", "GET")
-			on405(w, r)
+			on405(w)
 			return
 		}
 		r.Pattern = "GET /api/debug/query"
 		p1 := r.URL.Query()
 		if err := writeJSONAny(w, s.SearchApi.DebugQuery(p1)); err != nil {
-			handleError(w, r, err)
+			handleError(w, err)
+			return
+		}
+		return
+	case "forms/login":
+		if r.Method != "POST" {
+			w.Header().Set("Allow", "POST")
+			on405(w)
+			return
+		}
+		r.Pattern = "POST /api/forms/login"
+		if err := r.ParseForm(); err != nil {
+			badRequest(w, r.Header.Get("X-Request-Id"), err)
+			return
+		}
+		if err := writeJSONAny(w, s.FormsApi.Login(r.PostForm)); err != nil {
+			handleError(w, err)
+			return
+		}
+		return
+	case "forms/upload":
+		if r.Method != "POST" {
+			w.Header().Set("Allow", "POST")
+			on405(w)
+			return
+		}
+		r.Pattern = "POST /api/forms/upload"
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			badRequest(w, r.Header.Get("X-Request-Id"), err)
+			return
+		}
+		if err := writeJSONAny(w, s.FormsApi.Upload(r.MultipartForm)); err != nil {
+			handleError(w, err)
+			return
+		}
+		return
+	case "meta":
+		if r.Method != "GET" {
+			w.Header().Set("Allow", "GET")
+			on405(w)
+			return
+		}
+		r.Pattern = "GET /api/meta"
+		var headers ReqMeta
+		headers.RequestID = r.Header.Get("X-Request-Id")
+		headers.Trace = r.Header.Get("X-Trace")
+		if err := writeJSONAny(w, s.FormsApi.Meta(headers)); err != nil {
+			handleError(w, err)
 			return
 		}
 		return
@@ -121,55 +168,55 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			r.Pattern = "GET /api/posts"
 			p2 := r.URL.Query()
-			var q PostsQuery
+			var query PostsQuery
 			if p3 := p2.Get("page"); p3 != "" {
 				var err error
-				if q.Page, err = strconv.Atoi(p3); err != nil {
-					badRequest(w, r, err)
+				if query.Page, err = strconv.Atoi(p3); err != nil {
+					badRequest(w, r.Header.Get("X-Request-Id"), err)
 					return
 				}
 			}
-			q.Tag = p2.Get("tag")
-			if err := writeJSONSlice(w, s.PostsApi.ListPosts(q)); err != nil {
-				handleError(w, r, err)
+			query.Tag = p2.Get("tag")
+			if err := writeJSONSlice(w, s.PostsApi.ListPosts(query)); err != nil {
+				postNotFound(w, r, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/posts"
-			p, err := readJSON[Post](r)
+			body, err := readJSON[Post](r)
 			if err != nil {
-				badRequest(w, r, err)
+				badRequest(w, r.Header.Get("X-Request-Id"), err)
 				return
 			}
-			p4, err := s.PostsApi.CreatePost(&p)
+			p4, err := s.PostsApi.CreatePost(&body)
 			if err != nil {
-				handleError(w, r, err)
+				postNotFound(w, r, err)
 				return
 			}
 			if err := writeJSON(w, p4); err != nil {
-				handleError(w, r, err)
+				postNotFound(w, r, err)
 				return
 			}
 		default:
 			w.Header().Set("Allow", "GET, POST")
-			on405(w, r)
+			on405(w)
 		}
 		return
 	case "search":
 		if r.Method != "GET" {
 			w.Header().Set("Allow", "GET")
-			on405(w, r)
+			on405(w)
 			return
 		}
 		r.Pattern = "GET /api/search"
 		p5 := r.URL.Query()
 		sq, err := parseSearch(p5)
 		if err != nil {
-			badRequest(w, r, err)
+			badRequest(w, r.Header.Get("X-Request-Id"), err)
 			return
 		}
 		if err := writeJSONAny(w, s.SearchApi.Search(sq, r.Header.Get("X-Request-Id"))); err != nil {
-			handleError(w, r, err)
+			handleError(w, err)
 			return
 		}
 		return
@@ -178,23 +225,23 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			r.Pattern = "GET /api/users"
 			if err := writeJSONSlice(w, s.UsersApi.GetUsers()); err != nil {
-				handleError(w, r, err)
+				handleError(w, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/users"
 			u, err := readJSON[User](r)
 			if err != nil {
-				badRequest(w, r, err)
+				badRequest(w, r.Header.Get("X-Request-Id"), err)
 				return
 			}
 			if err := writeJSONSlice(w, s.UsersApi.PostUser(u)); err != nil {
-				handleError(w, r, err)
+				handleError(w, err)
 				return
 			}
 		default:
 			w.Header().Set("Allow", "GET, POST")
-			on405(w, r)
+			on405(w)
 		}
 		return
 	}
@@ -209,21 +256,21 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						r.Pattern = "GET /api/users/{i}"
 						p8, err := s.UsersApi.GetUser(p7)
 						if err != nil {
-							handleError(w, r, err)
+							handleError(w, err)
 							return
 						}
 						if err := writeJSON(w, p8); err != nil {
-							handleError(w, r, err)
+							handleError(w, err)
 							return
 						}
 					case "DELETE":
 						r.Pattern = "DELETE /api/users/{i}"
 						if err := s.UsersApi.DeleteUser(p7); err != nil {
-							handleError(w, r, err)
+							handleError(w, err)
 						}
 					default:
 						w.Header().Set("Allow", "GET, DELETE")
-						on405(w, r)
+						on405(w)
 					}
 					return
 				}
@@ -231,7 +278,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "posts":
 			if r.Method != "GET" {
 				w.Header().Set("Allow", "GET")
-				on405(w, r)
+				on405(w)
 				return
 			}
 			p9 := path[i+1:]
@@ -244,7 +291,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					if err := writeJSON(w, p11); err != nil {
-						handleError(w, r, err)
+						postNotFound(w, r, err)
 						return
 					}
 					return
@@ -258,7 +305,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					if err := writeJSON(w, p12); err != nil {
-						handleError(w, r, err)
+						postNotFound(w, r, err)
 						return
 					}
 					return
@@ -272,7 +319,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							if p17, err := strconv.Atoi(p16); err == nil {
 								r.Pattern = "GET /api/posts/{pid}/comments/{cid}"
 								if err := writeJSONAny(w, s.PostsApi.GetComment(p14, p17)); err != nil {
-									handleError(w, r, err)
+									postNotFound(w, r, err)
 									return
 								}
 								return
@@ -284,7 +331,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "echo":
 			if r.Method != "GET" {
 				w.Header().Set("Allow", "GET")
-				on405(w, r)
+				on405(w)
 				return
 			}
 			p18 := path[i+1:]
@@ -292,7 +339,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if p19, err := strconv.ParseFloat(p18, 64); err == nil {
 					r.Pattern = "GET /api/echo/{f}"
 					if err := writeJSONAny(w, s.SearchApi.EchoFloat(p19)); err != nil {
-						handleError(w, r, err)
+						handleError(w, err)
 						return
 					}
 					return
@@ -300,7 +347,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if p20, err := strconv.ParseBool(p18); err == nil {
 					r.Pattern = "GET /api/echo/{b}"
 					if err := writeJSONAny(w, s.SearchApi.EchoBool(p20)); err != nil {
-						handleError(w, r, err)
+						handleError(w, err)
 						return
 					}
 					return
@@ -309,7 +356,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					r.Pattern = "GET /api/echo/{str}"
 					r.SetPathValue("str", p18)
 					if err := writeJSONAny(w, s.SearchApi.EchoString(p18)); err != nil {
-						handleError(w, r, err)
+						handleError(w, err)
 						return
 					}
 					return
@@ -318,18 +365,18 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "files":
 			if r.Method != "GET" {
 				w.Header().Set("Allow", "GET")
-				on405(w, r)
+				on405(w)
 				return
 			}
 			p21 := path[i+1:]
 			r.Pattern = "GET /api/files/{path...}"
 			r.SetPathValue("path", p21)
 			if err := writeJSONAny(w, s.FilesApi.StatFile(r)); err != nil {
-				handleError(w, r, err)
+				handleError(w, err)
 				return
 			}
 			return
 		}
 	}
-	notFound(w, r)
+	notFound(w)
 }

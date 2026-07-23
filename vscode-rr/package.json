@@ -1,7 +1,7 @@
 {
   "name": "rr-comments",
   "displayName": "rr directive highlighting",
-  "description": "Syntax highlighting for rr //api: comment directives in Go",
+  "description": "Syntax highlighting for rr //rr: comment directives in Go",
   "version": "0.0.1",
   "publisher": "hypersequent",
   "license": "MIT",

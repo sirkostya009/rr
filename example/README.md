@@ -8,14 +8,16 @@ only as a dev tool (`go run rr/cmd`), never at runtime.
 
 ```
 api/
-  api.go        //api:central Api type + the four error-page handlers
+  api.go        //rr:api Api type + the four error-page handlers
   server.go     Server: wraps Api with sentry tracing + slog request logging
-  users.go      basic CRUD, (T, error) returns, auto int path param
-  posts.go      struct query binding, pointer body, two params sharing one
-                path position (int vs. checker-string), ggen-validated field
-  admin.go      //api:middleware guard (bearer token), method catch-all route
-  search.go     custom whole-query parser, header binding, typed-dispatch
-                trio (bool/float/string sharing one path position)
+  users.go      basic CRUD, (T, error) returns, `body` param, auto int path param
+  posts.go      `query` struct binding, `body` pointer, controller-level
+                onerror, two params sharing one path position (int vs.
+                checker-string), ggen-validated field
+  admin.go      //rr:pre guard (bearer token), method catch-all route
+  search.go     custom whole-query parser, single header value, url.Values
+                query, typed-dispatch trio (bool/float/string, one position)
+  forms.go      `headers` struct, url.Values body, multipart.Form body
   files.go      trailing wildcard path param
   api_gen.go    generated router (go:generate'd, do not edit)
   api_ggen.go   generated JSON codecs via ggen (do not edit)

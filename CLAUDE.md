@@ -29,36 +29,56 @@ file in the package. The stale output file is skipped while parsing.
 
 ## Directive surface
 
-Patterns: `/x/{name}`, `/x/{name=@ref}`, trailing `/{name...}` or `/*`.
-`{name:regex}` was removed — point `@ref` at a `*regexp.Regexp` var instead
-(used as-is via MatchString, NOT auto-anchored).
+ALL directives are `rr:` prefixed. Patterns:
+`/x/{name}`, `/x/{name=@ref}`, trailing `/{name...}` or `/*`. `{name:regex}`
+was removed — point `@ref` at a `*regexp.Regexp` var instead (used as-is via
+MatchString, NOT auto-anchored).
 
-On the central struct:
-`//api:central response=json onerror=@f on400=@f on404=@f on405=@f middleware=@f`
-— api-typed fields (incl. embedded) get their routes merged into one dispatcher.
-Mounted APIs never get a standalone ServeHTTP; unmounted ones always do.
+Type directives:
+- `//rr:api [onerror=@f on400=@f on404=@f on405=@f]` — the central; api-typed
+  fields (incl. embedded) get their routes merged into one dispatcher.
+- `//rr:controller [onerror=@f on400=@f on404=@f on405=@f]` — OPTIONAL marker
+  on a mounted sub-api, only to attach its error handlers. A struct with route
+  methods is a controller with or without it.
+- `//rr:pre @f @g @h` — guard chain on one line (on api or controller). Was
+  `//rr:middleware`.
 
-On any api type: `//api:middleware @f`, `//api:errorhandler @f`, `//api:400/404/405 @f`.
+Mounted APIs never get a standalone ServeHTTP; unmounted route-owners always do.
+Responses are ALWAYS JSON (no `response` directive — ditched).
 
-On handler methods: `//api:route [METHOD] /path`, `//api:errorhandler @f`,
-`//api:response json`. ` -- comment` suffixes allowed everywhere.
+Method directives: `//rr:route [METHOD] /path` only. Route-level
+`//rr:errorhandler` was dropped — put onerror on the owning controller/api.
+` -- comment` suffixes allowed everywhere.
 
-Handler params bind by type and inline annotations; w/r are optional:
-- `http.ResponseWriter`, `*http.Request` — by type, any position
-- bare `name T` — path param by name; T ∈ string/int/float64/float32/bool
-  derives the matcher (Atoi, ParseFloat, ParseBool); structs/interfaces/any
-  are a generate-time error
-- `/* api:param name */`, `/* api:body [json] */` (T or *T, ggen or stdlib),
-  `/* api:query [key][=@check] */` (scalar, struct via `query:` tags,
-  map[string]string/any, url.Values, or whole-query `@parser`),
-  `/* api:header [Name][=@check] */`
+Handler params bind by NAME + TYPE for the common cases; an inline
+/* rr:... */ annotation is the explicit override (e.g. a body param not named
+`body`). Resolution order per param:
+1. `http.ResponseWriter` / `*http.Request` — by type, any position, optional
+2. explicit annotation, if present (see below) — overrides everything after
+3. name ∈ route `{tokens}` — path param; T ∈ string/int/float64/float32/bool
+   derives the matcher (Atoi, ParseFloat, strict ParseBool); struct/iface/any
+   is a generate-time error. A route token overrides a reserved NAME (not an
+   explicit annotation)
+4. reserved name `body` — JSON body (T or *T, ggen or stdlib), OR
+   `multipart.Form`/`*multipart.Form` (ParseMultipartForm→r.MultipartForm),
+   OR `url.Values` (ParseForm→r.PostForm)
+5. reserved name `query` — whole query: struct (`query:` tags), map[string]
+   string/any, or `url.Values` (r.URL.Query() passthrough)
+6. reserved name `headers` — whole header struct (`header:` tags) or http.Header
+7. anything else (bare scalar not in route, struct not body/query/headers) — error
+
+Annotations (override a name; `whole` = dispatch on type like the reserved name):
+- `/* rr:body */` — the body (type decides json/multipart/urlencoded)
+- `/* rr:param [name] */` — a path param, optionally renamed to match a token
+- `/* rr:query */` (bare) — whole query by type; `/* rr:query [key][=@check] */`
+  a single value; `/* rr:query @parser */` whole via a custom parser
+- `/* rr:header ... */` — same three forms, for headers
 
 `@ref` resolution: package func, method of the api (receiver-relative), regexp
 var, or qualified `pkg.Fn` (signature unknown → assumed transformer).
 Checkers: `func(string) bool` filters (fail → next candidate / 404);
 transformers `func(string) (T, error)` bind T as handler arg. Handler returns:
-nothing, `error`, `T`, `(T, error)` — values encode per `api:response`/central
-default.
+nothing, `error`, `T`, `(T, error)` — `T`/`(T,error)` always JSON-encoded.
 
 Middleware are guards, not `func(http.Handler) http.Handler`: any binding
 params, must return bool (false = handled, stop) or error (→ onerror). They
@@ -77,10 +97,16 @@ belong in an outer wrapper like `example/api/server.go`.
   SetPathValue are stamped only after the route is fully selected, before
   guards. Every string param lands in PathValue even when also an arg;
   transformed params don't (no raw string).
-- Error chains: handler errors → route `//api:errorhandler` → owner api →
-  central onerror. Encode failures deliberately SKIP route-level overrides
-  (those map domain errors, e.g. →404) and go owner→central→bare 500.
-  400 handlers may be `(w,r)` or `(w,r,err)`; err is nil for plain-bad.
+- Error chains: handler AND encode errors → owner api onerror → central
+  onerror → bare 500 (route-level errorhandler was removed; owner/central
+  onerror is the only override, e.g. a controller mapping its errors →404).
+- Error/condition handlers (on404/on405/on400/onerror) bind params like route
+  handlers via the same buildArgs, NOT a fixed signature: `http.ResponseWriter`
+  required; `*http.Request`, `error`, query and header binds optional; body and
+  path params forbidden (no route context). onerror REQUIRES an error param;
+  on400 may take one (nil for plain-bad); on404/on405 must NOT. Must be
+  in-package (introspected for their args). `argError` binds the `err` var in
+  scope, `nil` when plain-bad.
 - Default error responses are bodyless `WriteHeader` calls.
 - ggen integration: types with generated `DecodeFromStream`/`AppendJSON` use
   pooled fast paths (`readJSON[T]`, `writeJSON`, `writeJSONSlice`); once ggen
@@ -109,3 +135,4 @@ Sibling project, same author. Structs need `//ggen:generate`; validation via
 `pipe:"@fn"` tags (NOT `ggen:` — silently ignored). Its cli is a nested
 module (`../ggen/cli` in go.work). Decode-time validation failures surface as
 readJSON errors → the 400 handler with the error attached.
+\

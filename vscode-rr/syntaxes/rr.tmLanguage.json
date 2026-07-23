@@ -10,7 +10,7 @@
   ],
   "repository": {
     "directive": {
-      "begin": "\\b(api)(:)([A-Za-z0-9]+)?",
+      "begin": "\\b(rr)(:)([A-Za-z0-9]+)?",
       "beginCaptures": {
         "1": {
           "name": "comment.directive.rr"
@@ -38,9 +38,6 @@
         },
         {
           "include": "#httpMethod"
-        },
-        {
-          "include": "#subKeyword"
         },
         {
           "include": "#wildcard"
@@ -97,7 +94,7 @@
       ]
     },
     "configKey": {
-      "match": "\\b(response|onerror|on400|on404|on405|middleware)(=)",
+      "match": "\\b(onerror|on400|on404|on405)(=)",
       "captures": {
         "1": {
           "name": "variable.parameter.config.rr"
@@ -114,10 +111,6 @@
     "httpMethod": {
       "match": "\\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|CONNECT|TRACE)\\b",
       "name": "support.constant.http-method.rr"
-    },
-    "subKeyword": {
-      "match": "\\b(json|central|route|middleware|errorhandler|response|param|body|query|header)\\b",
-      "name": "support.type.rr"
     },
     "wildcard": {
       "match": "\\*",

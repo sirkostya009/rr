@@ -19,34 +19,34 @@ func parseSearch(q url.Values) (SearchQuery, error) {
 	return SearchQuery{Term: q.Get("q"), Tags: q["tag"]}, nil
 }
 
-//api:route GET /api/search -- the whole query goes through a custom parser
+//rr:route GET /api/search -- whole query via a custom parser, one header value
 func (sa *SearchApi) Search(
-	/* api:query @parseSearch */ sq SearchQuery,
-	/* api:header X-Request-Id */ rid string,
+	/* rr:query @parseSearch */ sq SearchQuery,
+	/* rr:header X-Request-Id */ rid string,
 ) map[string]any {
 	return map[string]any{"query": sq, "rid": rid}
 }
 
-//api:route GET /api/debug/query -- the raw query, bound as a plain map
-func (sa *SearchApi) DebugQuery( /* api:query */ q url.Values) map[string][]string {
-	return q
+//rr:route GET /api/debug/query -- url.Values named query is passed through
+func (sa *SearchApi) DebugQuery(query url.Values) map[string][]string {
+	return query
 }
 
 // Three routes on GET /api/echo/{...}, dispatched purely by param type.
 // The generator ranks numerics before bools (so ParseBool's lax "1"/"0"
 // never claim a digit) and the catch-any string always goes last.
 
-//api:route GET /api/echo/{f}
+//rr:route GET /api/echo/{f}
 func (sa *SearchApi) EchoFloat(f float64) map[string]any {
 	return map[string]any{"float": f}
 }
 
-//api:route GET /api/echo/{b}
+//rr:route GET /api/echo/{b}
 func (sa *SearchApi) EchoBool(b bool) map[string]any {
 	return map[string]any{"bool": b}
 }
 
-//api:route GET /api/echo/{str}
+//rr:route GET /api/echo/{str}
 func (sa *SearchApi) EchoString(str string) map[string]any {
 	return map[string]any{"string": str}
 }

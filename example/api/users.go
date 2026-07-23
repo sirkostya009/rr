@@ -15,24 +15,24 @@ var users = []User{
 	{Name: "Guy"},
 }
 
-//api:route GET /api/users
+//rr:route GET /api/users
 func (a *UsersApi) GetUsers() []User {
 	return users
 }
 
-//api:route POST /api/users
-func (a *UsersApi) PostUser(
-	/** api:body json */ u User,
-) []User {
+// a param named body is the JSON request body — no annotation needed;
+// /* rr:body */ forces the role on a differently-named param
+//
+//rr:route POST /api/users
+func (a *UsersApi) PostUser( /* rr:body */ u User) []User {
 	users = append(users, u)
-
 	return users
 }
 
 // codegen picks up "i" as the {i} path param via its int type;
 // a non-numeric segment never reaches the handler
 //
-//api:route GET /api/users/{i}
+//rr:route GET /api/users/{i}
 func (a *UsersApi) GetUser(i int) (User, error) {
 	if i < 0 || i >= len(users) {
 		return User{}, errors.New("no such user")
@@ -42,7 +42,7 @@ func (a *UsersApi) GetUser(i int) (User, error) {
 
 // error-only return: the central onerror covers mounted apis
 //
-//api:route DELETE /api/users/{i}
+//rr:route DELETE /api/users/{i}
 func (a *UsersApi) DeleteUser(i int) error {
 	if i < 0 || i >= len(users) {
 		return errors.New("no such user")
