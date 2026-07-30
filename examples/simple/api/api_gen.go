@@ -16,8 +16,6 @@ var readBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return
 
 var writeBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return &b }}
 
-// readJSON stream-decodes a request body through a pooled buffer. The
-// stream path copies strings out, so the buffer recycles immediately.
 func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
 	bp := readBufPool.Get().(*[]byte)
 	defer readBufPool.Put(bp)
@@ -29,38 +27,6 @@ func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
 	return v, err
 }
 
-// writeJSON appends the value's JSON into a pooled buffer and pipes it to
-// the ResponseWriter in one Write. Only encode errors are reported; they
-// arrive before anything hits the wire.
-func writeJSON[T encode.Marshaler](w http.ResponseWriter, v T) error {
-	bp := writeBufPool.Get().(*[]byte)
-	defer writeBufPool.Put(bp)
-	b, err := v.AppendJSON((*bp)[:0])
-	*bp = b
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(b)
-	return nil
-}
-
-// writeJSONSlice is writeJSON for slices of ggen-generated types.
-func writeJSONSlice[T encode.Marshaler](w http.ResponseWriter, vs []T) error {
-	bp := writeBufPool.Get().(*[]byte)
-	defer writeBufPool.Put(bp)
-	b, err := encode.AppendSlice((*bp)[:0], vs)
-	*bp = b
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(b)
-	return nil
-}
-
-// writeJSONAny is writeJSON for values without generated methods (maps,
-// mixed types); encode.AppendAny takes them through the same pooled buffer.
 func writeJSONAny(w http.ResponseWriter, v any) error {
 	bp := writeBufPool.Get().(*[]byte)
 	defer writeBufPool.Put(bp)
@@ -177,7 +143,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			query.Tag = p2.Get("tag")
-			if err := writeJSONSlice(w, s.PostsApi.ListPosts(query)); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			if err := encode.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -193,7 +160,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				postNotFound(w, r, err)
 				return
 			}
-			if err := writeJSON(w, p4); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			if err := encode.WriteTo(w, p4); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -224,7 +192,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			r.Pattern = "GET /api/users"
-			if err := writeJSONSlice(w, s.UsersApi.GetUsers()); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			if err := encode.WriteSliceTo(w, s.UsersApi.GetUsers()); err != nil {
 				handleError(w, err)
 				return
 			}
@@ -235,7 +204,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				badRequest(w, r.Header.Get("X-Request-Id"), err)
 				return
 			}
-			if err := writeJSONSlice(w, s.UsersApi.PostUser(u)); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			if err := encode.WriteSliceTo(w, s.UsersApi.PostUser(u)); err != nil {
 				handleError(w, err)
 				return
 			}
@@ -259,7 +229,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							handleError(w, err)
 							return
 						}
-						if err := writeJSON(w, p8); err != nil {
+						w.Header().Set("Content-Type", "application/json")
+						if err := encode.WriteTo(w, p8); err != nil {
 							handleError(w, err)
 							return
 						}
@@ -290,7 +261,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						postNotFound(w, r, err)
 						return
 					}
-					if err := writeJSON(w, p11); err != nil {
+					w.Header().Set("Content-Type", "application/json")
+					if err := encode.WriteTo(w, p11); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
@@ -304,7 +276,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						postNotFound(w, r, err)
 						return
 					}
-					if err := writeJSON(w, p12); err != nil {
+					w.Header().Set("Content-Type", "application/json")
+					if err := encode.WriteTo(w, p12); err != nil {
 						postNotFound(w, r, err)
 						return
 					}

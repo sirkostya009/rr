@@ -1,7 +1,7 @@
 package api
 
 import (
-	"example/config"
+	"simple/config"
 	"log/slog"
 	"net/http"
 	"time"

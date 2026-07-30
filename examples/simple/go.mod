@@ -1,4 +1,4 @@
-module example
+module simple
 
 go 1.26
 

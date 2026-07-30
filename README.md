@@ -26,15 +26,27 @@ func (a *UsersApi) GetUser(id int) (User, error) {
 go run ./cmd api.go   # -> api_gen.go, package-scoped
 ```
 
-## Install
+## Usage
+
+Install globally:
 
 ```sh
 go install github.com/sirkostya009/rr/cmd
 ```
 
-See [example/](example/) for a fully worked, multi-API service exercising
-essentially every feature, and [CLAUDE.md](CLAUDE.md) for the complete
-directive/semantics reference.
+Or have it installed automatically (once) per go generate invocation:
+
+```go
+//go:generate go run github.com/sirkostya009/rr/cmd@v $GOFILE
+```
+
+`$GOFILE` must be the file with your aggregate API struct.
+
+See [examples/simple/](examples/simple/) for a fully worked, single-package
+service exercising essentially every feature, and
+[examples/versioned/](examples/versioned/) for cross-package `//rr:api`
+composition (a `/v1` + `/v2` split over a shared service layer). See
+[CLAUDE.md](CLAUDE.md) for the complete directive/semantics reference.
 
 ## Highlights
 

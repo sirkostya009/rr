@@ -1,8 +1,8 @@
 package main
 
 import (
-	"example/api"
-	"example/config"
+	"simple/api"
+	"simple/config"
 	"log"
 	"net/http"
 	"time"

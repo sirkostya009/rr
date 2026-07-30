@@ -9,6 +9,7 @@ import (
 	"go/printer"
 	"go/token"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -166,6 +167,20 @@ type mount struct {
 	api   *apiType
 }
 
+// xFieldCand is an api-typed field whose type lives in another package
+// (`v1.Api`); the generator can't merge its routes, only delegate by prefix.
+type xFieldCand struct {
+	field, pkgIdent, typeName string
+}
+
+// xmount is a resolved cross-package delegation: requests under prefix are
+// handed to the field's own generated ServeHTTP. prefix is discovered from
+// the sub-package's //rr:prefix marker.
+type xmount struct {
+	field  string
+	prefix string
+}
+
 // middleware is a guard func: it takes anything a handler can (except path
 // params and body) and returns bool (false = handled, stop) or error
 // (non-nil goes to the error handler in scope).
@@ -205,9 +220,12 @@ type apiType struct {
 	notAllowed  ehandler // 405
 	badReq      ehandler // 400
 
-	fieldCands []fieldCand
-	mounts     []mount
-	routes     []route
+	fieldCands  []fieldCand
+	xFieldCands []xFieldCand
+	mounts      []mount
+	xmounts     []xmount
+	routes      []route
+	prefix      string // literal prefix this dispatcher owns, stamped as //rr:prefix
 }
 
 func main() {
@@ -222,8 +240,14 @@ func main() {
 				fatalf("-o requires a value")
 			}
 			out = args[i]
+		case "-helpers":
+			i++
+			if i == len(args) {
+				fatalf("-helpers requires an import path")
+			}
+			helpersPkg = args[i]
 		case "-h", "--help":
-			fmt.Println("usage: rr [-o output.go] input.go...")
+			fmt.Println("usage: rr [-o output.go] [-helpers import/path] input.go...")
 			return
 		default:
 			inputs = append(inputs, args[i])
@@ -406,6 +430,21 @@ func main() {
 								if s, ok := t.(*ast.StarExpr); ok {
 									t = s.X
 								}
+								// pkg.Type field: a cross-package api, delegated by prefix
+								if sel, ok := t.(*ast.SelectorExpr); ok {
+									pid, ok := sel.X.(*ast.Ident)
+									if !ok {
+										continue
+									}
+									if len(fld.Names) == 0 { // embedded pkg.Type -> field name is Type
+										a.xFieldCands = append(a.xFieldCands, xFieldCand{sel.Sel.Name, pid.Name, sel.Sel.Name})
+										continue
+									}
+									for _, fn := range fld.Names {
+										a.xFieldCands = append(a.xFieldCands, xFieldCand{fn.Name, pid.Name, sel.Sel.Name})
+									}
+									continue
+								}
 								id, ok := t.(*ast.Ident)
 								if !ok {
 									continue
@@ -493,8 +532,21 @@ func main() {
 				a.mounts = append(a.mounts, mount{fc.field, m})
 			}
 		}
+		// cross-package api fields delegate by prefix, read out of the
+		// sub-package's sources — no dependency on it being generated yet
+		for _, xc := range a.xFieldCands {
+			pkgPath, ok := importsByName[xc.pkgIdent]
+			if !ok {
+				fatalf("%s: field %s: package %s is not imported", name, xc.field, xc.pkgIdent)
+			}
+			prefix := discoverPrefix(pkgPath, xc.typeName)
+			if prefix == "" {
+				fatalf("%s: field %s: %s.%s owns no rr: routes", name, xc.field, xc.pkgIdent, xc.typeName)
+			}
+			a.xmounts = append(a.xmounts, xmount{xc.field, prefix})
+		}
 		if a.central {
-			if len(a.routes)+len(a.mounts) == 0 {
+			if len(a.routes)+len(a.mounts)+len(a.xmounts) == 0 {
 				fatalf("%s: rr:api has neither routes nor api-typed fields", name)
 			}
 		} else if len(a.routes) == 0 {
@@ -831,6 +883,7 @@ func main() {
 		if a.mounted {
 			continue
 		}
+		a.prefix = commonPrefix(a.routes)
 		g.emitDispatcher(a, a.routes, map[*apiType]string{a: a.recv})
 	}
 	for _, name := range order {
@@ -838,12 +891,28 @@ func main() {
 		if !a.central {
 			continue
 		}
+		if a.recv == "" {
+			a.recv = "a"
+		}
 		merged := append([]route{}, a.routes...)
 		recvOf := map[*apiType]string{a: a.recv}
 		for _, m := range a.mounts {
 			recvOf[m.api] = a.recv + "." + m.field
 			merged = append(merged, m.api.routes...)
 		}
+		// stamp a prefix covering everything this dispatcher serves; parents
+		// discover it to route here. delegate longest-prefix-first.
+		var cands []string
+		if len(merged) > 0 {
+			cands = append(cands, commonPrefix(merged))
+		}
+		for _, xm := range a.xmounts {
+			cands = append(cands, xm.prefix)
+		}
+		a.prefix = lcpTrim(cands)
+		sort.Slice(a.xmounts, func(i, j int) bool {
+			return len(a.xmounts[i].prefix) > len(a.xmounts[j].prefix)
+		})
 		g.emitDispatcher(a, merged, recvOf)
 	}
 
@@ -865,7 +934,30 @@ func main() {
 			}
 		}
 	}
-	if g.usesPool() {
+	// resolve the buffer pools before imports are fixed: a shared pool pulls in
+	// the helpers package, a local one pulls in sync
+	outDir := filepath.Dir(outAbs)
+	if g.needsReadPool() {
+		if expr, imp, ok := resolvePool("ReaderPool", outDir); ok {
+			g.readPool = expr
+			if imp != "" {
+				imports[imp] = true
+			}
+		} else {
+			g.readPool, g.localRead = "readBufPool", true
+		}
+	}
+	if g.needsWritePool() {
+		if expr, imp, ok := resolvePool("WriterPool", outDir); ok {
+			g.writePool = expr
+			if imp != "" {
+				imports[imp] = true
+			}
+		} else {
+			g.writePool, g.localWrite = "writeBufPool", true
+		}
+	}
+	if g.localRead || g.localWrite {
 		imports["sync"] = true
 	}
 	if g.useReadOne {
@@ -892,26 +984,20 @@ func main() {
 		buf.WriteString("\n")
 	}
 	buf.WriteString(")\n\n")
-	if g.useReadOne || g.useReadSlice {
+	if g.localRead {
 		buf.WriteString("var readBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return &b }}\n\n")
 	}
-	if g.useWriteOne || g.useWriteSlice {
+	if g.localWrite {
 		buf.WriteString("var writeBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return &b }}\n\n")
 	}
 	if g.useReadOne {
-		buf.WriteString(helperReadJSON)
+		fmt.Fprintf(&buf, helperReadJSON, g.readPool, g.readPool)
 	}
 	if g.useReadSlice {
-		buf.WriteString(helperReadJSONSlice)
-	}
-	if g.useWriteOne {
-		buf.WriteString(helperWriteJSON)
-	}
-	if g.useWriteSlice {
-		buf.WriteString(helperWriteJSONSlice)
+		fmt.Fprintf(&buf, helperReadJSONSlice, g.readPool, g.readPool)
 	}
 	if g.useWriteAny {
-		buf.WriteString(helperWriteJSONAny)
+		fmt.Fprintf(&buf, helperWriteJSONAny, g.writePool, g.writePool)
 	}
 	for _, h := range []string{"parseFloat32"} {
 		if numHelpers[h] {
@@ -1189,11 +1275,20 @@ type gen struct {
 	useWriteOne   bool
 	useWriteSlice bool
 	useWriteAny   bool
+
+	// buffer pool expressions: a -helpers package's exported pool, or the
+	// package-local one emitted below when there isn't one
+	readPool   string
+	writePool  string
+	localRead  bool
+	localWrite bool
 }
 
-func (g *gen) usesPool() bool {
-	return g.useReadOne || g.useReadSlice || g.useWriteOne || g.useWriteSlice || g.useWriteAny
-}
+// needsReadPool reports whether anything in the output draws a read buffer.
+// Writes only need one on the any path — ggen's WriteTo/WriteSliceTo carry
+// their own pool for the rest.
+func (g *gen) needsReadPool() bool  { return g.useReadOne || g.useReadSlice }
+func (g *gen) needsWritePool() bool { return g.useWriteAny }
 
 func (g *gen) w(format string, args ...any) {
 	g.b.WriteString(strings.Repeat("\t", g.depth))
@@ -1240,13 +1335,31 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 		star = "*"
 	}
 	recv := scope.recv
-	prefix := commonPrefix(routes)
+	if recv == "" {
+		recv = "a"
+	}
 
 	g.open("func (%s %s%s) ServeHTTP(w http.ResponseWriter, r *http.Request) {", recv, star, scope.name)
 	g.curOwner = nil
 	for _, mw := range scope.middlewares {
 		g.emitGuard(mw, recv, nil)
 	}
+	// cross-package api fields: delegate to their own ServeHTTP by prefix
+	// (already sorted longest-first, so a more specific mount wins)
+	for _, xm := range scope.xmounts {
+		g.open("if strings.HasPrefix(r.URL.Path, %q) {", xm.prefix)
+		g.w("%s.%s.ServeHTTP(w, r)", recv, xm.field)
+		g.w("return")
+		g.close()
+	}
+	if len(routes) == 0 {
+		g.notFound()
+		g.close()
+		g.w("")
+		return
+	}
+	prefix := commonPrefix(routes)
+
 	g.w("path, ok := strings.CutPrefix(r.URL.Path, %q)", prefix)
 	g.open("if !ok {")
 	g.notFound()
@@ -1839,23 +1952,30 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 	}
 }
 
-// emitFastEncode writes the value through the pregenerated pooled-buffer
-// helper; only encode errors surface, and they arrive before anything hit the
-// wire, so they route through the same owner→central onerror chain (bare 500
-// if none is in scope).
+// emitFastEncode writes the value through a pooled buffer; only encode errors
+// surface, and they arrive before anything hit the wire, so they route through
+// the same owner→central onerror chain (bare 500 if none is in scope).
+//
+// Marshalers go straight to ggen's encode.WriteTo/WriteSliceTo, which own the
+// buffer pool — one per process instead of one per generated package. They
+// write bare, so Content-Type is stamped here, before the call.
 func (g *gen) emitFastEncode(rt route, v string) {
-	fn := "writeJSON"
+	var call string
 	switch rt.enc {
 	case ggSlice:
 		g.useWriteSlice = true
-		fn = "writeJSONSlice"
+		call = fmt.Sprintf("encode.WriteSliceTo(w, %s)", v)
 	case ggAny:
 		g.useWriteAny = true
-		fn = "writeJSONAny"
+		call = fmt.Sprintf("writeJSONAny(w, %s)", v)
 	default:
 		g.useWriteOne = true
+		call = fmt.Sprintf("encode.WriteTo(w, %s)", v)
 	}
-	g.open("if err := %s(w, %s); err != nil {", fn, v)
+	if rt.enc != ggAny {
+		g.w(`w.Header().Set("Content-Type", "application/json")`)
+	}
+	g.open("if err := %s; err != nil {", call)
 	if h, recv, ok := g.routeErrH(rt); ok {
 		g.emitEHandler(h, recv, "err")
 	} else {
@@ -2149,11 +2269,11 @@ func isTransformer(fd *ast.FuncDecl, ctx string) bool {
 }
 
 // pooled-buffer JSON helpers, emitted once per output when a fast path is used
-const helperReadJSON = `// readJSON stream-decodes a request body through a pooled buffer. The
-// stream path copies strings out, so the buffer recycles immediately.
-func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
-	bp := readBufPool.Get().(*[]byte)
-	defer readBufPool.Put(bp)
+// readJSON stream-decodes a request body through a pooled buffer. The stream
+// path copies strings out, so the buffer recycles immediately.
+const helperReadJSON = `func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
+	bp := %s.Get().(*[]byte)
+	defer %s.Put(bp)
 	var s scan.Stream
 	s.Reset(r.Body, *bp)
 	var zero T
@@ -2164,10 +2284,10 @@ func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
 
 `
 
-const helperReadJSONSlice = `// readJSONSlice stream-decodes a JSON array body through a pooled buffer.
-func readJSONSlice[T decode.Decoder[T]](r *http.Request) ([]T, error) {
-	bp := readBufPool.Get().(*[]byte)
-	defer readBufPool.Put(bp)
+// readJSONSlice stream-decodes a JSON array body through a pooled buffer.
+const helperReadJSONSlice = `func readJSONSlice[T decode.Decoder[T]](r *http.Request) ([]T, error) {
+	bp := %s.Get().(*[]byte)
+	defer %s.Put(bp)
 	vs, nb, err := decode.UnmarshalSliceStream[T](r.Body, (*bp)[:0])
 	*bp = nb
 	return vs, err
@@ -2175,45 +2295,12 @@ func readJSONSlice[T decode.Decoder[T]](r *http.Request) ([]T, error) {
 
 `
 
-const helperWriteJSON = `// writeJSON appends the value's JSON into a pooled buffer and pipes it to
-// the ResponseWriter in one Write. Only encode errors are reported; they
-// arrive before anything hits the wire.
-func writeJSON[T encode.Marshaler](w http.ResponseWriter, v T) error {
-	bp := writeBufPool.Get().(*[]byte)
-	defer writeBufPool.Put(bp)
-	b, err := v.AppendJSON((*bp)[:0])
-	*bp = b
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(b)
-	return nil
-}
-
-`
-
-const helperWriteJSONSlice = `// writeJSONSlice is writeJSON for slices of ggen-generated types.
-func writeJSONSlice[T encode.Marshaler](w http.ResponseWriter, vs []T) error {
-	bp := writeBufPool.Get().(*[]byte)
-	defer writeBufPool.Put(bp)
-	b, err := encode.AppendSlice((*bp)[:0], vs)
-	*bp = b
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(b)
-	return nil
-}
-
-`
-
-const helperWriteJSONAny = `// writeJSONAny is writeJSON for values without generated methods (maps,
-// mixed types); encode.AppendAny takes them through the same pooled buffer.
-func writeJSONAny(w http.ResponseWriter, v any) error {
-	bp := writeBufPool.Get().(*[]byte)
-	defer writeBufPool.Put(bp)
+// writeJSONAny writes values without generated methods (maps, mixed types).
+// encode has no pooled AppendAny writer, so this is the one write path that
+// still needs a buffer of its own.
+const helperWriteJSONAny = `func writeJSONAny(w http.ResponseWriter, v any) error {
+	bp := %s.Get().(*[]byte)
+	defer %s.Put(bp)
 	b, err := encode.AppendAny((*bp)[:0], v)
 	*bp = b
 	if err != nil {
@@ -2640,16 +2727,284 @@ func isDynamic(rt route) bool {
 
 // commonPrefix returns the longest literal prefix shared by all patterns,
 // cut back to the last '/' so the switch keys stay whole segments.
+// pkgScan is the slice of another package the generator needs to read: route
+// patterns per receiver type, api-typed fields per struct, the imports to
+// resolve cross-package field types against, and package-level var types (for
+// finding a shared helpers package's pools).
+type pkgScan struct {
+	name    string
+	dir     string
+	routes  map[string][]string
+	fields  map[string][]fieldCand
+	xfields map[string][]xFieldCand
+	imports map[string]string
+	vars    map[string]string
+}
+
+var (
+	pkgDirs    = map[string]string{}
+	pkgScans   = map[string]*pkgScan{}
+	prefixMemo = map[string]string{}
+
+	// -helpers: import path of a package holding pools shared by every
+	// generated dispatcher in the tree, so N packages don't mean N pools
+	helpersPkg string
+)
+
+// resolvePool looks for an exported *sync.Pool-ish var named `name` in the
+// -helpers package and returns the expression generated code should use, plus
+// the import it needs. ok=false means fall back to a package-local pool: the
+// flag is absent, the package doesn't have that var, and either is fine.
+func resolvePool(name, outDir string) (expr, imp string, ok bool) {
+	if helpersPkg == "" {
+		return "", "", false
+	}
+	s := scanPkg(helpersPkg)
+	t, found := s.vars[name]
+	if !found {
+		return "", "", false
+	}
+	if t != "sync.Pool" && t != "*sync.Pool" && !strings.HasPrefix(t, "sync.Pool{") {
+		fatalf("-helpers %s: %s is %s, want sync.Pool or *sync.Pool", helpersPkg, name, t)
+	}
+	if s.dir == outDir { // helpers live in the package being generated
+		return name, "", true
+	}
+	return s.name + "." + name, helpersPkg, true
+}
+
+func pkgDir(pkgPath string) string {
+	if d, ok := pkgDirs[pkgPath]; ok {
+		return d
+	}
+	// -e: the package need not typecheck, and it usually doesn't yet — its own
+	// generated file may be missing or stale while we're discovering it
+	out, err := exec.Command("go", "list", "-e", "-f", "{{.Dir}}", pkgPath).Output()
+	if err != nil {
+		fatalf("go list %s: %v", pkgPath, err)
+	}
+	d := strings.TrimSpace(string(out))
+	if d == "" {
+		fatalf("go list %s: package not found", pkgPath)
+	}
+	pkgDirs[pkgPath] = d
+	return d
+}
+
+// scanPkg reads directives straight out of a package's sources. It never looks
+// at generated output, so discovery does not depend on generation order.
+func scanPkg(pkgPath string) *pkgScan {
+	if s, ok := pkgScans[pkgPath]; ok {
+		return s
+	}
+	dir := pkgDir(pkgPath)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		fatalf("%v", err)
+	}
+	s := &pkgScan{
+		dir:     dir,
+		routes:  map[string][]string{},
+		fields:  map[string][]fieldCand{},
+		xfields: map[string][]xFieldCand{},
+		imports: map[string]string{},
+		vars:    map[string]string{},
+	}
+	pkgScans[pkgPath] = s
+	fset := token.NewFileSet()
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(fset, filepath.Join(dir, name), nil, parser.ParseComments)
+		if err != nil || isGenerated(f) {
+			continue
+		}
+		s.name = f.Name.Name
+		for _, im := range f.Imports {
+			p, _ := strconv.Unquote(im.Path.Value)
+			id := path.Base(p)
+			if im.Name != nil {
+				id = im.Name.Name
+			}
+			s.imports[id] = p
+		}
+		for _, decl := range f.Decls {
+			switch d := decl.(type) {
+			case *ast.GenDecl:
+				for _, spec := range d.Specs {
+					if vs, ok := spec.(*ast.ValueSpec); ok && d.Tok == token.VAR {
+						for i, n := range vs.Names {
+							switch {
+							case vs.Type != nil:
+								s.vars[n.Name] = renderType(fset, vs.Type)
+							case i < len(vs.Values):
+								s.vars[n.Name] = renderType(fset, vs.Values[i])
+							}
+						}
+						continue
+					}
+					ts, ok := spec.(*ast.TypeSpec)
+					if !ok {
+						continue
+					}
+					st, ok := ts.Type.(*ast.StructType)
+					if !ok {
+						continue
+					}
+					for _, fld := range st.Fields.List {
+						fc, xc, ok := apiField(fld)
+						if !ok {
+							continue
+						}
+						if xc.field != "" {
+							s.xfields[ts.Name.Name] = append(s.xfields[ts.Name.Name], xc)
+						} else {
+							s.fields[ts.Name.Name] = append(s.fields[ts.Name.Name], fc)
+						}
+					}
+				}
+			case *ast.FuncDecl:
+				if d.Recv == nil {
+					continue
+				}
+				tname, _ := recvTypeName(d.Recv)
+				if tname == "" {
+					continue
+				}
+				for _, dir := range parseDirectives(d.Doc) {
+					if dir[0] != "route" {
+						continue
+					}
+					if fs := strings.Fields(dir[1]); len(fs) == 1 {
+						s.routes[tname] = append(s.routes[tname], fs[0])
+					} else if len(fs) == 2 {
+						s.routes[tname] = append(s.routes[tname], fs[1])
+					}
+				}
+			}
+		}
+	}
+	return s
+}
+
+// discoverPrefix computes the path prefix pkgPath's typeName dispatcher owns,
+// by the same rule its own generation uses: the common prefix of every route it
+// merges, widened by the prefixes of anything it mounts cross-package. Reading
+// sources (not the sub-package's generated marker) keeps `go generate ./...`
+// order-independent. Empty means the type owns no routes.
+func discoverPrefix(pkgPath, typeName string) string {
+	key := pkgPath + "." + typeName
+	if p, ok := prefixMemo[key]; ok {
+		return p
+	}
+	prefixMemo[key] = "" // depth guard; import cycles can't happen, self-mounts can
+	s := scanPkg(pkgPath)
+	// own routes plus the routes of every in-package api it merges: one level,
+	// matching what the dispatcher itself flattens
+	merged := append([]string{}, s.routes[typeName]...)
+	for _, fc := range s.fields[typeName] {
+		if fc.typeName != typeName {
+			merged = append(merged, s.routes[fc.typeName]...)
+		}
+	}
+	var cands []string
+	if len(merged) > 0 {
+		cands = append(cands, commonPrefixOf(merged))
+	}
+	for _, xc := range s.xfields[typeName] {
+		sub, ok := s.imports[xc.pkgIdent]
+		if !ok {
+			fatalf("%s.%s: field %s: package %s is not imported", pkgPath, typeName, xc.field, xc.pkgIdent)
+		}
+		if p := discoverPrefix(sub, xc.typeName); p != "" {
+			cands = append(cands, p)
+		}
+	}
+	p := lcpTrim(cands)
+	prefixMemo[key] = p
+	return p
+}
+
+// apiField splits a struct field into an in-package or cross-package api
+// candidate. ok=false for anything that can't name an api type.
+func apiField(fld *ast.Field) (fieldCand, xFieldCand, bool) {
+	t := fld.Type
+	if s, ok := t.(*ast.StarExpr); ok {
+		t = s.X
+	}
+	switch v := t.(type) {
+	case *ast.Ident:
+		if len(fld.Names) == 0 {
+			return fieldCand{v.Name, v.Name}, xFieldCand{}, true
+		}
+		return fieldCand{fld.Names[0].Name, v.Name}, xFieldCand{}, true
+	case *ast.SelectorExpr:
+		pid, ok := v.X.(*ast.Ident)
+		if !ok {
+			return fieldCand{}, xFieldCand{}, false
+		}
+		if len(fld.Names) == 0 {
+			return fieldCand{}, xFieldCand{v.Sel.Name, pid.Name, v.Sel.Name}, true
+		}
+		return fieldCand{}, xFieldCand{fld.Names[0].Name, pid.Name, v.Sel.Name}, true
+	}
+	return fieldCand{}, xFieldCand{}, false
+}
+
+func isGenerated(f *ast.File) bool {
+	for _, cg := range f.Comments {
+		for _, c := range cg.List {
+			if strings.HasPrefix(c.Text, "// Code generated by rr.") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// lcpTrim is the literal longest common prefix of strs, cut back to the last
+// slash so it lands on a path boundary.
+func lcpTrim(strs []string) string {
+	if len(strs) == 0 {
+		return ""
+	}
+	p := strs[0]
+	for _, s := range strs[1:] {
+		n := 0
+		for n < len(p) && n < len(s) && p[n] == s[n] {
+			n++
+		}
+		p = p[:n]
+	}
+	if i := strings.LastIndexByte(p, '/'); i >= 0 {
+		p = p[:i+1]
+	}
+	return p
+}
+
 func commonPrefix(routes []route) string {
+	pats := make([]string, len(routes))
+	for i, rt := range routes {
+		pats[i] = rt.pattern
+	}
+	return commonPrefixOf(pats)
+}
+
+// commonPrefixOf is commonPrefix over raw patterns: cut each at its first
+// wildcard, then take the shared literal head. Prefix discovery runs the same
+// rule over another package's routes, so a parent always agrees with the child.
+func commonPrefixOf(patterns []string) string {
 	lit := func(p string) string {
 		if i := strings.IndexAny(p, "{*"); i >= 0 {
 			p = p[:i]
 		}
 		return p
 	}
-	pfx := lit(routes[0].pattern)
-	for _, rt := range routes[1:] {
-		l := lit(rt.pattern)
+	pfx := lit(patterns[0])
+	for _, p := range patterns[1:] {
+		l := lit(p)
 		n := 0
 		for n < len(pfx) && n < len(l) && pfx[n] == l[n] {
 			n++
