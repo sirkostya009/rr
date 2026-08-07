@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -25,8 +26,8 @@ func init() {
 
 // Realistic deeply-nested API surface modeled after GitHub/GitLab/AWS-style
 // services. Must stay in lockstep with bench/routes.go, which is the
-// same surface pre-expanded (ver baked to v1/v2/v3, orderId/lineNo bound as
-// typed int instead of regex) into //api:route directives for rr codegen.
+// same surface pre-expanded (ver baked to v1/v2/v3, orderId/lineNo validated
+// by a @digits regexp checker) into //rr:route directives for rr codegen.
 var deepTemplates = []string{
 	"/api/v{ver}/organizations/{orgId}/projects/{projectId}",
 	"/api/v{ver}/organizations/{orgId}/projects/{projectId}/repositories/{repoId}",
@@ -264,33 +265,54 @@ var (
 	tsrOnly = fix
 	caseFix = fix
 	// httprouter and gin have no regex param support; rr and httx do (rr via
-	// a typed int match instead of an inline regex, same digit-only guarantee).
+	// a {name=@digits} checker ref to a real *regexp.Regexp, same digit-only
+	// guarantee as httx's inline {orderId:\d+}).
 	regexOnly = []routerCase{plain[0], plain[1]} // rr, httx
 )
+
+// warmup drives 200 hits through h to warm caches + lazy init.
+func warmup(h http.Handler, hits []hit) {
+	req := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	for i := range 200 {
+		ht := hits[i%len(hits)]
+		req.Method = ht.method
+		req.URL.Path = ht.path
+		h.ServeHTTP(w, req)
+	}
+}
+
+func reportMem(b *testing.B, start, end *runtime.MemStats) {
+	totalBytes := end.TotalAlloc - start.TotalAlloc
+	gcs := end.NumGC - start.NumGC
+	b.ReportMetric(float64(end.HeapAlloc)/1024, "heap_KB")
+	b.ReportMetric(float64(totalBytes)/1024, "total_KB")
+	b.ReportMetric(float64(totalBytes)/float64(b.N), "totB/op")
+	b.ReportMetric(float64(gcs)/float64(b.N)*1e6, "gc/Mop")
+	b.ReportMetric(float64(gcs), "gc")
+}
 
 // benchmarkHits cycles through a precomputed deterministic-but-pseudorandom
 // list of (method, path) hits, exercising multiple URLs per benchmark
 // instead of one path repeated. Hits are pre-shuffled with a fixed seed so
 // runs are reproducible.
+//
+// Each router runs twice: "serial" (single goroutine, single-core dispatch
+// cost) and "parallel" (GOMAXPROCS goroutines via b.RunParallel — contention
+// on shared router state, pools, GC). Scale cores with -cpu 1,4,8.
 func benchmarkHits(b *testing.B, rs []routerCase, hits []hit) {
 	b.Helper()
 	if len(hits) == 0 {
 		b.Fatal("no hits")
 	}
 	for _, rc := range rs {
-		b.Run(rc.name, func(b *testing.B) {
+		b.Run(rc.name+"/serial", func(b *testing.B) {
+			warmup(rc.h, hits)
+
 			// per-iteration request — reused so we measure pure dispatch, not
 			// httptest.NewRequest allocations.
 			req := httptest.NewRequest("GET", "/", nil)
 			w := httptest.NewRecorder()
-
-			// warm caches + lazy init.
-			for i := range 200 {
-				h := hits[i%len(hits)]
-				req.Method = h.method
-				req.URL.Path = h.path
-				rc.h.ServeHTTP(w, req)
-			}
 
 			var start, end runtime.MemStats
 			runtime.ReadMemStats(&start)
@@ -308,13 +330,34 @@ func benchmarkHits(b *testing.B, rs []routerCase, hits []hit) {
 
 			b.StopTimer()
 			runtime.ReadMemStats(&end)
-			totalBytes := end.TotalAlloc - start.TotalAlloc
-			gcs := end.NumGC - start.NumGC
-			b.ReportMetric(float64(end.HeapAlloc)/1024, "heap_KB")
-			b.ReportMetric(float64(totalBytes)/1024, "total_KB")
-			b.ReportMetric(float64(totalBytes)/float64(b.N), "totB/op")
-			b.ReportMetric(float64(gcs)/float64(b.N)*1e6, "gc/Mop")
-			b.ReportMetric(float64(gcs), "gc")
+			reportMem(b, &start, &end)
+		})
+		b.Run(rc.name+"/parallel", func(b *testing.B) {
+			warmup(rc.h, hits)
+
+			var start, end runtime.MemStats
+			runtime.ReadMemStats(&start)
+			b.ReportAllocs()
+			b.ResetTimer()
+
+			var goroutines atomic.Int64
+			b.RunParallel(func(pb *testing.PB) {
+				req := httptest.NewRequest("GET", "/", nil)
+				w := httptest.NewRecorder()
+				// prime-stride offset so goroutines walk different hit sequences.
+				i := int(goroutines.Add(1)) * 7919
+				for pb.Next() {
+					h := hits[i%len(hits)]
+					req.Method = h.method
+					req.URL.Path = h.path
+					rc.h.ServeHTTP(w, req)
+					i++
+				}
+			})
+
+			b.StopTimer()
+			runtime.ReadMemStats(&end)
+			reportMem(b, &start, &end)
 		})
 	}
 }

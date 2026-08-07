@@ -73,16 +73,16 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			r.Pattern = "GET /api/v2/posts"
-			p1 := r.URL.Query()
+			v1 := r.URL.Query()
 			var query PostsQuery
-			if p2 := p1.Get("page"); p2 != "" {
+			if v2 := v1.Get("page"); v2 != "" {
 				var err error
-				if query.Page, err = strconv.Atoi(p2); err != nil {
+				if query.Page, err = strconv.Atoi(v2); err != nil {
 					badRequest(w, err)
 					return
 				}
 			}
-			query.Tag = p1.Get("tag")
+			query.Tag = v1.Get("tag")
 			w.Header().Set("Content-Type", "application/json")
 			if err := encode.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
 				postNotFound(w, r, err)
@@ -95,13 +95,13 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				badRequest(w, err)
 				return
 			}
-			p3, err := s.PostsApi.CreatePost(&body)
+			v1, err := s.PostsApi.CreatePost(&body)
 			if err != nil {
 				postNotFound(w, r, err)
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := encode.WriteTo(w, p3); err != nil {
+			if err := encode.WriteTo(w, v1); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -140,27 +140,27 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if i := strings.IndexByte(path, '/'); i > 0 {
 		switch path[:i] {
 		case "users":
-			p4 := path[i+1:]
-			if strings.IndexByte(p4, '/') < 0 {
-				if p4 != "" {
+			p1 := path[i+1:]
+			if strings.IndexByte(p1, '/') < 0 {
+				if p1 != "" {
 					switch r.Method {
 					case "GET":
 						r.Pattern = "GET /api/v2/users/{id}"
-						r.SetPathValue("id", p4)
-						p5, err := s.UsersApi.GetUser(p4)
+						r.SetPathValue("id", p1)
+						v1, err := s.UsersApi.GetUser(p1)
 						if err != nil {
 							handleError(w, err)
 							return
 						}
 						w.Header().Set("Content-Type", "application/json")
-						if err := encode.WriteTo(w, p5); err != nil {
+						if err := encode.WriteTo(w, v1); err != nil {
 							handleError(w, err)
 							return
 						}
 					case "DELETE":
 						r.Pattern = "DELETE /api/v2/users/{id}"
-						r.SetPathValue("id", p4)
-						if err := s.UsersApi.DeleteUser(p4); err != nil {
+						r.SetPathValue("id", p1)
+						if err := s.UsersApi.DeleteUser(p1); err != nil {
 							handleError(w, err)
 						}
 					default:
@@ -176,49 +176,49 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				on405(w)
 				return
 			}
-			p6 := path[i+1:]
-			if i := strings.IndexByte(p6, '/'); i < 0 {
-				if isUUID(p6) {
+			p1 := path[i+1:]
+			if i := strings.IndexByte(p1, '/'); i < 0 {
+				if isUUID(p1) {
 					r.Pattern = "GET /api/v2/posts/{id}"
-					r.SetPathValue("id", p6)
-					p7, err := s.PostsApi.GetPost(p6)
+					r.SetPathValue("id", p1)
+					v1, err := s.PostsApi.GetPost(p1)
 					if err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					w.Header().Set("Content-Type", "application/json")
-					if err := encode.WriteTo(w, p7); err != nil {
+					if err := encode.WriteTo(w, v1); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					return
 				}
-				if isSlug(p6) {
+				if isSlug(p1) {
 					r.Pattern = "GET /api/v2/posts/{slug}"
-					r.SetPathValue("slug", p6)
-					p8, err := s.PostsApi.GetPostBySlug(p6)
+					r.SetPathValue("slug", p1)
+					v1, err := s.PostsApi.GetPostBySlug(p1)
 					if err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					w.Header().Set("Content-Type", "application/json")
-					if err := encode.WriteTo(w, p8); err != nil {
+					if err := encode.WriteTo(w, v1); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					return
 				}
 			} else if i > 0 {
-				p9 := p6[:i]
-				if isUUID(p9) {
-					p10 := p6[i+1:]
-					if p11, ok := strings.CutPrefix(p10, "comments/"); ok {
-						if strings.IndexByte(p11, '/') < 0 {
-							if isUUID(p11) {
+				s1 := p1[:i]
+				if isUUID(s1) {
+					p2 := p1[i+1:]
+					if p3, ok := strings.CutPrefix(p2, "comments/"); ok {
+						if strings.IndexByte(p3, '/') < 0 {
+							if isUUID(p3) {
 								r.Pattern = "GET /api/v2/posts/{pid}/comments/{cid}"
-								r.SetPathValue("pid", p9)
-								r.SetPathValue("cid", p11)
-								if err := writeJSONAny(w, s.PostsApi.GetComment(p9, p11)); err != nil {
+								r.SetPathValue("pid", s1)
+								r.SetPathValue("cid", p3)
+								if err := writeJSONAny(w, s.PostsApi.GetComment(s1, p3)); err != nil {
 									postNotFound(w, r, err)
 									return
 								}

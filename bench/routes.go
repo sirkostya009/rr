@@ -8,7 +8,13 @@
 // how the peer routers register their own bench handlers.
 package bench
 
+import "regexp"
+
 //go:generate go run github.com/sirkostya009/rr/cmd $GOFILE
+
+// digits validates the order route params via a real regexp match, same
+// guarantee httx's inline {orderId:\d+} gives.
+var digits = regexp.MustCompile(`^\d+$`)
 
 type Api struct{}
 
@@ -807,50 +813,50 @@ func (a *Api) D15V3Delete() {}
 //rr:route PATCH /api/v3/integrations/{provSlug}/connections/{connId}/syncs/{syncId}
 func (a *Api) D15V3Patch() {}
 
-//rr:route GET /api/v1/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V1Get(orderId, lineNo int) {}
+//rr:route GET /api/v1/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V1Get(orderId, lineNo string) {}
 
-//rr:route POST /api/v1/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V1Post(orderId, lineNo int) {}
+//rr:route POST /api/v1/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V1Post(orderId, lineNo string) {}
 
-//rr:route PUT /api/v1/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V1Put(orderId, lineNo int) {}
+//rr:route PUT /api/v1/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V1Put(orderId, lineNo string) {}
 
-//rr:route DELETE /api/v1/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V1Delete(orderId, lineNo int) {}
+//rr:route DELETE /api/v1/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V1Delete(orderId, lineNo string) {}
 
-//rr:route PATCH /api/v1/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V1Patch(orderId, lineNo int) {}
+//rr:route PATCH /api/v1/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V1Patch(orderId, lineNo string) {}
 
-//rr:route GET /api/v2/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V2Get(orderId, lineNo int) {}
+//rr:route GET /api/v2/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V2Get(orderId, lineNo string) {}
 
-//rr:route POST /api/v2/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V2Post(orderId, lineNo int) {}
+//rr:route POST /api/v2/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V2Post(orderId, lineNo string) {}
 
-//rr:route PUT /api/v2/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V2Put(orderId, lineNo int) {}
+//rr:route PUT /api/v2/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V2Put(orderId, lineNo string) {}
 
-//rr:route DELETE /api/v2/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V2Delete(orderId, lineNo int) {}
+//rr:route DELETE /api/v2/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V2Delete(orderId, lineNo string) {}
 
-//rr:route PATCH /api/v2/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V2Patch(orderId, lineNo int) {}
+//rr:route PATCH /api/v2/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V2Patch(orderId, lineNo string) {}
 
-//rr:route GET /api/v3/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V3Get(orderId, lineNo int) {}
+//rr:route GET /api/v3/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V3Get(orderId, lineNo string) {}
 
-//rr:route POST /api/v3/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V3Post(orderId, lineNo int) {}
+//rr:route POST /api/v3/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V3Post(orderId, lineNo string) {}
 
-//rr:route PUT /api/v3/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V3Put(orderId, lineNo int) {}
+//rr:route PUT /api/v3/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V3Put(orderId, lineNo string) {}
 
-//rr:route DELETE /api/v3/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V3Delete(orderId, lineNo int) {}
+//rr:route DELETE /api/v3/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V3Delete(orderId, lineNo string) {}
 
-//rr:route PATCH /api/v3/orders/{orderId}/lines/{lineNo}
-func (a *Api) D16V3Patch(orderId, lineNo int) {}
+//rr:route PATCH /api/v3/orders/{orderId=@digits}/lines/{lineNo=@digits}
+func (a *Api) D16V3Patch(orderId, lineNo string) {}
 
 //rr:route GET /api/v1/sessions/{sessionId}
 func (a *Api) D17V1Get() {}

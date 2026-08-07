@@ -13,7 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -910,8 +910,8 @@ func main() {
 			cands = append(cands, xm.prefix)
 		}
 		a.prefix = lcpTrim(cands)
-		sort.Slice(a.xmounts, func(i, j int) bool {
-			return len(a.xmounts[i].prefix) > len(a.xmounts[j].prefix)
+		slices.SortFunc(a.xmounts, func(a, b xmount) int {
+			return len(b.prefix) - len(a.prefix)
 		})
 		g.emitDispatcher(a, merged, recvOf)
 	}
@@ -976,7 +976,7 @@ func main() {
 	for p := range imports {
 		sorted = append(sorted, p)
 	}
-	sort.Strings(sorted)
+	slices.Sort(sorted)
 	buf.WriteString("import (\n")
 	for _, p := range sorted {
 		buf.WriteString("\t")
@@ -1306,10 +1306,22 @@ func (g *gen) close() {
 	g.w("}")
 }
 
+// newVar names a handler-scoped temporary. The counter resets at every
+// route/handler emission entry (emitCall, notFound, notAllowed) so numbering
+// is local: adding a route never renames another route's variables.
 func (g *gen) newVar() string {
 	g.n++
-	return fmt.Sprintf("p%d", g.n)
+	return fmt.Sprintf("v%d", g.n)
 }
+
+// Trie variables are named by segment position, not a counter, so generated
+// output is stable under route insertions: pvar is the rest-of-path starting
+// at segment i, svar the segment scanned at position i, tvar a checked or
+// transformed value at position i. Sibling branches reuse the same name in
+// disjoint scopes; nested re-declarations shadow harmlessly.
+func pvar(i int) string { return fmt.Sprintf("p%d", i) }
+func svar(i int) string { return fmt.Sprintf("s%d", i) }
+func tvar(i int) string { return fmt.Sprintf("t%d", i) }
 
 func (g *gen) cond(p *param, recv, v string) string {
 	switch {
@@ -1382,7 +1394,7 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 	}
 
 	if len(keys) > 0 {
-		sort.Strings(keys)
+		slices.Sort(keys)
 		g.w("switch path {")
 		for _, k := range keys {
 			g.w("case %q:", k)
@@ -1400,7 +1412,7 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 		for _, rt := range dynamic {
 			insert(root, rt, skipSegs)
 		}
-		exhaustive = g.emitNode(root, "path", nil)
+		exhaustive = g.emitNode(root, "path", nil, 0)
 	}
 	if !exhaustive {
 		g.notFound()
@@ -1410,6 +1422,7 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 }
 
 func (g *gen) notFound() {
+	g.n = 0
 	if g.scope.notFound.isSet() {
 		g.emitEHandler(g.scope.notFound, g.recvOf[g.scope], "")
 	} else {
@@ -1420,6 +1433,7 @@ func (g *gen) notFound() {
 // notAllowed sets the Allow header (also for a custom handler) and responds
 // 405, preferring the owning api's handler when the leaf belongs to one api.
 func (g *gen) notAllowed(routes []route, allow string) {
+	g.n = 0
 	target := g.scope
 	if len(routes) > 0 {
 		owner := routes[0].owner
@@ -1445,12 +1459,12 @@ func (g *gen) notAllowed(routes []route, allow string) {
 // openParamCheck opens the if-block validating v against p and returns the
 // binding the leaf should record. used=false discards a transformed value no
 // downstream handler takes, avoiding an unused variable.
-func (g *gen) openParamCheck(pe *paramEdge, v string, used bool) binding {
+func (g *gen) openParamCheck(pe *paramEdge, v string, used bool, depth int) binding {
 	p := pe.p
 	if p.transform {
 		val := "_"
 		if used {
-			val = g.newVar()
+			val = tvar(depth)
 		}
 		g.open("if %s, err := %s(%s%s); err == nil {", val, p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
 		return binding{p.name, val, true}
@@ -1494,7 +1508,7 @@ func subtreeUsesPath(n *tnode, name string) bool {
 // A node does at most one IndexByte to split the rest of the path into
 // "final segment" vs "more segments follow"; sibling literals in each half
 // dispatch through a switch on that segment.
-func (g *gen) emitNode(n *tnode, cur string, binds []binding) bool {
+func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 	// when every route below shares one method, verify it once at the top of
 	// the branch instead of per leaf (method mismatch then wins over a
 	// deeper structural mismatch: 405, not 404)
@@ -1506,25 +1520,25 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding) bool {
 	if len(n.lits) == 1 && len(n.params) == 0 && n.wild == nil {
 		seg, child := compress(n.lits[0])
 		term := len(child.routes) > 0
+		next := depth + strings.Count(seg, "/") + 1
 		switch {
 		case term && !child.hasDesc():
 			g.open("if %s == %q {", cur, seg)
 			g.emitLeaf(child.routes, binds)
 			g.close()
 		case !term:
-			v := g.newVar()
+			v := pvar(next)
 			g.open("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg+"/")
-			g.emitNode(child, v, binds)
+			g.emitNode(child, v, binds, next)
 			g.close()
 		default:
-			v := g.newVar()
+			v := pvar(next)
 			g.open("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg)
 			g.open(`if %s == "" {`, v)
 			g.emitLeaf(child.routes, binds)
 			g.close()
-			v2 := g.newVar()
-			g.open(`if %s, ok := strings.CutPrefix(%s, "/"); ok {`, v2, v)
-			g.emitNode(child, v2, binds)
+			g.open(`if %s, ok := strings.CutPrefix(%s, "/"); ok {`, v, v)
+			g.emitNode(child, v, binds, next)
 			g.close()
 			g.close()
 		}
@@ -1545,8 +1559,8 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding) bool {
 			return 1
 		}
 	}
-	sort.SliceStable(n.params, func(i, j int) bool {
-		return rank(n.params[i].p) < rank(n.params[j].p)
+	slices.SortStableFunc(n.params, func(a, b *paramEdge) int {
+		return rank(a.p) - rank(b.p)
 	})
 
 	// several params may share a position when their matchers differ: they
@@ -1619,7 +1633,7 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding) bool {
 			g.w("}")
 		}
 		for _, pe := range termParams {
-			b := g.openParamCheck(pe, cur, subtreeUsesPath(pe.child, pe.p.name))
+			b := g.openParamCheck(pe, cur, subtreeUsesPath(pe.child, pe.p.name), depth)
 			g.emitLeaf(pe.child.routes, withBinding(binds, b))
 			g.close()
 		}
@@ -1628,9 +1642,9 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding) bool {
 		descend := func(e litEdge) {
 			// gate the method before even slicing the rest of the path
 			hoisted := g.hoistMethod(e.child)
-			v := g.newVar()
+			v := pvar(depth + 1)
 			g.w("%s := %s[i+1:]", v, cur)
-			g.emitNode(e.child, v, binds)
+			g.emitNode(e.child, v, binds, depth+1)
 			if hoisted {
 				g.hoisted = ""
 			}
@@ -1652,17 +1666,17 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding) bool {
 			g.w("}")
 		}
 		if len(descParams) > 0 {
-			seg := g.newVar()
+			seg := svar(depth)
 			g.w("%s := %s[:i]", seg, cur)
 			for _, pe := range descParams {
 				b := binding{pe.p.name, seg, false}
 				wrapped := constrained(pe.p) // i > 0 already guarantees a non-empty segment
 				if wrapped {
-					b = g.openParamCheck(pe, seg, subtreeUsesPath(pe.child, pe.p.name))
+					b = g.openParamCheck(pe, seg, subtreeUsesPath(pe.child, pe.p.name), depth)
 				}
-				rest := g.newVar()
+				rest := pvar(depth + 1)
 				g.w("%s := %s[i+1:]", rest, cur)
-				g.emitNode(pe.child, rest, withBinding(binds, b))
+				g.emitNode(pe.child, rest, withBinding(binds, b), depth+1)
 				if wrapped {
 					g.close()
 				}
@@ -1789,6 +1803,7 @@ func (g *gen) emitDispatch(routes []route, args map[string]string, binds []bindi
 // emitCall invokes the handler. In an app dispatcher, a route whose owning
 // api declares middleware gets it wrapped around just this call.
 func (g *gen) emitCall(rt route, args map[string]string, binds []binding) {
+	g.n = 0
 	g.w("r.Pattern = %q", displayPattern(rt))
 	// every string param lands in PathValue: it is the request's public match
 	// metadata, argument binding or not; transformed values have no raw string
@@ -2199,8 +2214,11 @@ func safeVarName(v string) bool {
 	case "", "_", "w", "r", "path", "err", "ok", "i":
 		return false
 	}
-	if v[0] == 'p' && len(v) > 1 && strings.TrimLeft(v[1:], "0123456789") == "" {
-		return false
+	switch v[0] {
+	case 'p', 's', 't', 'v':
+		if len(v) > 1 && strings.TrimLeft(v[1:], "0123456789") == "" {
+			return false
+		}
 	}
 	return true
 }

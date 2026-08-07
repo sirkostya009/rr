@@ -4,7 +4,6 @@ package bench
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -136,39 +135,39 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					case "organizations":
 						p3 := p2[i+1:]
 						if i := strings.IndexByte(p3, '/'); i > 0 {
-							p4 := p3[:i]
-							p5 := p3[i+1:]
-							if i := strings.IndexByte(p5, '/'); i > 0 {
-								switch p5[:i] {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								switch p4[:i] {
 								case "projects":
-									p6 := p5[i+1:]
-									if i := strings.IndexByte(p6, '/'); i < 0 {
-										if p6 != "" {
+									p5 := p4[i+1:]
+									if i := strings.IndexByte(p5, '/'); i < 0 {
+										if p5 != "" {
 											switch r.Method {
 											case "GET":
 												r.Pattern = "GET /api/v1/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p4)
-												r.SetPathValue("projectId", p6)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V1Get()
 											case "POST":
 												r.Pattern = "POST /api/v1/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p4)
-												r.SetPathValue("projectId", p6)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V1Post()
 											case "PUT":
 												r.Pattern = "PUT /api/v1/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p4)
-												r.SetPathValue("projectId", p6)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V1Put()
 											case "DELETE":
 												r.Pattern = "DELETE /api/v1/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p4)
-												r.SetPathValue("projectId", p6)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V1Delete()
 											case "PATCH":
 												r.Pattern = "PATCH /api/v1/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p4)
-												r.SetPathValue("projectId", p6)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V1Patch()
 											default:
 												w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -177,41 +176,41 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											return
 										}
 									} else if i > 0 {
-										p7 := p6[:i]
-										p8 := p6[i+1:]
-										if p9, ok := strings.CutPrefix(p8, "repositories/"); ok {
-											if i := strings.IndexByte(p9, '/'); i < 0 {
-												if p9 != "" {
+										s5 := p5[:i]
+										p6 := p5[i+1:]
+										if p7, ok := strings.CutPrefix(p6, "repositories/"); ok {
+											if i := strings.IndexByte(p7, '/'); i < 0 {
+												if p7 != "" {
 													switch r.Method {
 													case "GET":
 														r.Pattern = "GET /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("projectId", p7)
-														r.SetPathValue("repoId", p9)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V1Get()
 													case "POST":
 														r.Pattern = "POST /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("projectId", p7)
-														r.SetPathValue("repoId", p9)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V1Post()
 													case "PUT":
 														r.Pattern = "PUT /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("projectId", p7)
-														r.SetPathValue("repoId", p9)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V1Put()
 													case "DELETE":
 														r.Pattern = "DELETE /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("projectId", p7)
-														r.SetPathValue("repoId", p9)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V1Delete()
 													case "PATCH":
 														r.Pattern = "PATCH /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("projectId", p7)
-														r.SetPathValue("repoId", p9)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V1Patch()
 													default:
 														w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -220,58 +219,58 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													return
 												}
 											} else if i > 0 {
-												p10 := p9[:i]
-												p11 := p9[i+1:]
-												if i := strings.IndexByte(p11, '/'); i > 0 {
-													switch p11[:i] {
+												s7 := p7[:i]
+												p8 := p7[i+1:]
+												if i := strings.IndexByte(p8, '/'); i > 0 {
+													switch p8[:i] {
 													case "branches":
-														p12 := p11[i+1:]
-														if i := strings.IndexByte(p12, '/'); i > 0 {
-															p13 := p12[:i]
-															p14 := p12[i+1:]
-															if p15, ok := strings.CutPrefix(p14, "commits/"); ok {
-																if i := strings.IndexByte(p15, '/'); i < 0 {
-																	if p15 != "" {
+														p9 := p8[i+1:]
+														if i := strings.IndexByte(p9, '/'); i > 0 {
+															s9 := p9[:i]
+															p10 := p9[i+1:]
+															if p11, ok := strings.CutPrefix(p10, "commits/"); ok {
+																if i := strings.IndexByte(p11, '/'); i < 0 {
+																	if p11 != "" {
 																		switch r.Method {
 																		case "GET":
 																			r.Pattern = "GET /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("branchName", p13)
-																			r.SetPathValue("commitSha", p15)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V1Get()
 																		case "POST":
 																			r.Pattern = "POST /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("branchName", p13)
-																			r.SetPathValue("commitSha", p15)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V1Post()
 																		case "PUT":
 																			r.Pattern = "PUT /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("branchName", p13)
-																			r.SetPathValue("commitSha", p15)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V1Put()
 																		case "DELETE":
 																			r.Pattern = "DELETE /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("branchName", p13)
-																			r.SetPathValue("commitSha", p15)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V1Delete()
 																		case "PATCH":
 																			r.Pattern = "PATCH /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("branchName", p13)
-																			r.SetPathValue("commitSha", p15)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V1Patch()
 																		default:
 																			w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -280,50 +279,50 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																		return
 																	}
 																} else if i > 0 {
-																	p16 := p15[:i]
-																	p17 := p15[i+1:]
-																	if i := strings.IndexByte(p17, '/'); i < 0 {
-																		if p17 == "diff" {
+																	s11 := p11[:i]
+																	p12 := p11[i+1:]
+																	if i := strings.IndexByte(p12, '/'); i < 0 {
+																		if p12 == "diff" {
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V1Get()
 																			case "POST":
 																				r.Pattern = "POST /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V1Post()
 																			case "PUT":
 																				r.Pattern = "PUT /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V1Put()
 																			case "DELETE":
 																				r.Pattern = "DELETE /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V1Delete()
 																			case "PATCH":
 																				r.Pattern = "PATCH /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V1Patch()
 																			default:
 																				w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -332,53 +331,53 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																			return
 																		}
 																	} else if i > 0 {
-																		if p17[:i] == "files" {
-																			p18 := p17[i+1:]
+																		if p12[:i] == "files" {
+																			p13 := p12[i+1:]
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
-																				r.SetPathValue("filepath", p18)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V1Get()
 																			case "POST":
 																				r.Pattern = "POST /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
-																				r.SetPathValue("filepath", p18)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V1Post()
 																			case "PUT":
 																				r.Pattern = "PUT /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
-																				r.SetPathValue("filepath", p18)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V1Put()
 																			case "DELETE":
 																				r.Pattern = "DELETE /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
-																				r.SetPathValue("filepath", p18)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V1Delete()
 																			case "PATCH":
 																				r.Pattern = "PATCH /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p4)
-																				r.SetPathValue("projectId", p7)
-																				r.SetPathValue("repoId", p10)
-																				r.SetPathValue("branchName", p13)
-																				r.SetPathValue("commitSha", p16)
-																				r.SetPathValue("filepath", p18)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V1Patch()
 																			default:
 																				w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -391,53 +390,53 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 															}
 														}
 													case "issues":
-														p19 := p11[i+1:]
-														if i := strings.IndexByte(p19, '/'); i > 0 {
-															p20 := p19[:i]
-															p21 := p19[i+1:]
-															if p22, ok := strings.CutPrefix(p21, "comments/"); ok {
-																if strings.IndexByte(p22, '/') < 0 {
-																	if p22 != "" {
+														p9 := p8[i+1:]
+														if i := strings.IndexByte(p9, '/'); i > 0 {
+															s9 := p9[:i]
+															p10 := p9[i+1:]
+															if p11, ok := strings.CutPrefix(p10, "comments/"); ok {
+																if strings.IndexByte(p11, '/') < 0 {
+																	if p11 != "" {
 																		switch r.Method {
 																		case "GET":
 																			r.Pattern = "GET /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("issueId", p20)
-																			r.SetPathValue("commentId", p22)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V1Get()
 																		case "POST":
 																			r.Pattern = "POST /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("issueId", p20)
-																			r.SetPathValue("commentId", p22)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V1Post()
 																		case "PUT":
 																			r.Pattern = "PUT /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("issueId", p20)
-																			r.SetPathValue("commentId", p22)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V1Put()
 																		case "DELETE":
 																			r.Pattern = "DELETE /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("issueId", p20)
-																			r.SetPathValue("commentId", p22)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V1Delete()
 																		case "PATCH":
 																			r.Pattern = "PATCH /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p4)
-																			r.SetPathValue("projectId", p7)
-																			r.SetPathValue("repoId", p10)
-																			r.SetPathValue("issueId", p20)
-																			r.SetPathValue("commentId", p22)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V1Patch()
 																		default:
 																			w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -454,43 +453,43 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										}
 									}
 								case "teams":
-									p23 := p5[i+1:]
-									if i := strings.IndexByte(p23, '/'); i > 0 {
-										p24 := p23[:i]
-										p25 := p23[i+1:]
-										if p26, ok := strings.CutPrefix(p25, "members/"); ok {
-											if strings.IndexByte(p26, '/') < 0 {
-												if p26 != "" {
+									p5 := p4[i+1:]
+									if i := strings.IndexByte(p5, '/'); i > 0 {
+										s5 := p5[:i]
+										p6 := p5[i+1:]
+										if p7, ok := strings.CutPrefix(p6, "members/"); ok {
+											if strings.IndexByte(p7, '/') < 0 {
+												if p7 != "" {
 													switch r.Method {
 													case "GET":
 														r.Pattern = "GET /api/v1/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("teamSlug", p24)
-														r.SetPathValue("userId", p26)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V1Get()
 													case "POST":
 														r.Pattern = "POST /api/v1/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("teamSlug", p24)
-														r.SetPathValue("userId", p26)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V1Post()
 													case "PUT":
 														r.Pattern = "PUT /api/v1/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("teamSlug", p24)
-														r.SetPathValue("userId", p26)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V1Put()
 													case "DELETE":
 														r.Pattern = "DELETE /api/v1/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("teamSlug", p24)
-														r.SetPathValue("userId", p26)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V1Delete()
 													case "PATCH":
 														r.Pattern = "PATCH /api/v1/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p4)
-														r.SetPathValue("teamSlug", p24)
-														r.SetPathValue("userId", p26)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V1Patch()
 													default:
 														w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -505,60 +504,60 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "billing":
-						p27 := p2[i+1:]
-						if p28, ok := strings.CutPrefix(p27, "accounts/"); ok {
-							if i := strings.IndexByte(p28, '/'); i > 0 {
-								p29 := p28[:i]
-								p30 := p28[i+1:]
-								if i := strings.IndexByte(p30, '/'); i > 0 {
-									switch p30[:i] {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "accounts/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									switch p5[:i] {
 									case "subscriptions":
-										p31 := p30[i+1:]
-										if i := strings.IndexByte(p31, '/'); i > 0 {
-											p32 := p31[:i]
-											p33 := p31[i+1:]
-											if p34, ok := strings.CutPrefix(p33, "invoices/"); ok {
-												if i := strings.IndexByte(p34, '/'); i > 0 {
-													p35 := p34[:i]
-													p36 := p34[i+1:]
-													if p37, ok := strings.CutPrefix(p36, "line_items/"); ok {
-														if strings.IndexByte(p37, '/') < 0 {
-															if p37 != "" {
+										p6 := p5[i+1:]
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "invoices/"); ok {
+												if i := strings.IndexByte(p8, '/'); i > 0 {
+													s8 := p8[:i]
+													p9 := p8[i+1:]
+													if p10, ok := strings.CutPrefix(p9, "line_items/"); ok {
+														if strings.IndexByte(p10, '/') < 0 {
+															if p10 != "" {
 																switch r.Method {
 																case "GET":
 																	r.Pattern = "GET /api/v1/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p29)
-																	r.SetPathValue("subId", p32)
-																	r.SetPathValue("invoiceId", p35)
-																	r.SetPathValue("lineItemId", p37)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V1Get()
 																case "POST":
 																	r.Pattern = "POST /api/v1/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p29)
-																	r.SetPathValue("subId", p32)
-																	r.SetPathValue("invoiceId", p35)
-																	r.SetPathValue("lineItemId", p37)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V1Post()
 																case "PUT":
 																	r.Pattern = "PUT /api/v1/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p29)
-																	r.SetPathValue("subId", p32)
-																	r.SetPathValue("invoiceId", p35)
-																	r.SetPathValue("lineItemId", p37)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V1Put()
 																case "DELETE":
 																	r.Pattern = "DELETE /api/v1/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p29)
-																	r.SetPathValue("subId", p32)
-																	r.SetPathValue("invoiceId", p35)
-																	r.SetPathValue("lineItemId", p37)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V1Delete()
 																case "PATCH":
 																	r.Pattern = "PATCH /api/v1/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p29)
-																	r.SetPathValue("subId", p32)
-																	r.SetPathValue("invoiceId", p35)
-																	r.SetPathValue("lineItemId", p37)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V1Patch()
 																default:
 																	w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -572,43 +571,43 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 										}
 									case "payment_methods":
-										p38 := p30[i+1:]
-										if i := strings.IndexByte(p38, '/'); i > 0 {
-											p39 := p38[:i]
-											p40 := p38[i+1:]
-											if p41, ok := strings.CutPrefix(p40, "transactions/"); ok {
-												if strings.IndexByte(p41, '/') < 0 {
-													if p41 != "" {
+										p6 := p5[i+1:]
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "transactions/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v1/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p29)
-															r.SetPathValue("pmId", p39)
-															r.SetPathValue("txnId", p41)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V1Get()
 														case "POST":
 															r.Pattern = "POST /api/v1/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p29)
-															r.SetPathValue("pmId", p39)
-															r.SetPathValue("txnId", p41)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V1Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v1/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p29)
-															r.SetPathValue("pmId", p39)
-															r.SetPathValue("txnId", p41)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V1Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v1/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p29)
-															r.SetPathValue("pmId", p39)
-															r.SetPathValue("txnId", p41)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V1Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v1/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p29)
-															r.SetPathValue("pmId", p39)
-															r.SetPathValue("txnId", p41)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V1Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -624,57 +623,57 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "marketplace":
-						p42 := p2[i+1:]
-						if p43, ok := strings.CutPrefix(p42, "categories/"); ok {
-							if i := strings.IndexByte(p43, '/'); i > 0 {
-								p44 := p43[:i]
-								p45 := p43[i+1:]
-								if p46, ok := strings.CutPrefix(p45, "subcategories/"); ok {
-									if i := strings.IndexByte(p46, '/'); i > 0 {
-										p47 := p46[:i]
-										p48 := p46[i+1:]
-										if p49, ok := strings.CutPrefix(p48, "items/"); ok {
-											if i := strings.IndexByte(p49, '/'); i > 0 {
-												p50 := p49[:i]
-												p51 := p49[i+1:]
-												if p52, ok := strings.CutPrefix(p51, "variants/"); ok {
-													if strings.IndexByte(p52, '/') < 0 {
-														if p52 != "" {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "categories/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if p6, ok := strings.CutPrefix(p5, "subcategories/"); ok {
+									if i := strings.IndexByte(p6, '/'); i > 0 {
+										s6 := p6[:i]
+										p7 := p6[i+1:]
+										if p8, ok := strings.CutPrefix(p7, "items/"); ok {
+											if i := strings.IndexByte(p8, '/'); i > 0 {
+												s8 := p8[:i]
+												p9 := p8[i+1:]
+												if p10, ok := strings.CutPrefix(p9, "variants/"); ok {
+													if strings.IndexByte(p10, '/') < 0 {
+														if p10 != "" {
 															switch r.Method {
 															case "GET":
 																r.Pattern = "GET /api/v1/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p44)
-																r.SetPathValue("subSlug", p47)
-																r.SetPathValue("itemId", p50)
-																r.SetPathValue("variantId", p52)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V1Get()
 															case "POST":
 																r.Pattern = "POST /api/v1/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p44)
-																r.SetPathValue("subSlug", p47)
-																r.SetPathValue("itemId", p50)
-																r.SetPathValue("variantId", p52)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V1Post()
 															case "PUT":
 																r.Pattern = "PUT /api/v1/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p44)
-																r.SetPathValue("subSlug", p47)
-																r.SetPathValue("itemId", p50)
-																r.SetPathValue("variantId", p52)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V1Put()
 															case "DELETE":
 																r.Pattern = "DELETE /api/v1/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p44)
-																r.SetPathValue("subSlug", p47)
-																r.SetPathValue("itemId", p50)
-																r.SetPathValue("variantId", p52)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V1Delete()
 															case "PATCH":
 																r.Pattern = "PATCH /api/v1/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p44)
-																r.SetPathValue("subSlug", p47)
-																r.SetPathValue("itemId", p50)
-																r.SetPathValue("variantId", p52)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V1Patch()
 															default:
 																w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -691,51 +690,51 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "observability":
-						p53 := p2[i+1:]
-						if i := strings.IndexByte(p53, '/'); i > 0 {
-							switch p53[:i] {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							switch p3[:i] {
 							case "dashboards":
-								p54 := p53[i+1:]
-								if i := strings.IndexByte(p54, '/'); i > 0 {
-									p55 := p54[:i]
-									p56 := p54[i+1:]
-									if p57, ok := strings.CutPrefix(p56, "panels/"); ok {
-										if i := strings.IndexByte(p57, '/'); i > 0 {
-											p58 := p57[:i]
-											p59 := p57[i+1:]
-											if p60, ok := strings.CutPrefix(p59, "queries/"); ok {
-												if strings.IndexByte(p60, '/') < 0 {
-													if p60 != "" {
+								p4 := p3[i+1:]
+								if i := strings.IndexByte(p4, '/'); i > 0 {
+									s4 := p4[:i]
+									p5 := p4[i+1:]
+									if p6, ok := strings.CutPrefix(p5, "panels/"); ok {
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "queries/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v1/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p55)
-															r.SetPathValue("panelId", p58)
-															r.SetPathValue("queryId", p60)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V1Get()
 														case "POST":
 															r.Pattern = "POST /api/v1/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p55)
-															r.SetPathValue("panelId", p58)
-															r.SetPathValue("queryId", p60)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V1Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v1/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p55)
-															r.SetPathValue("panelId", p58)
-															r.SetPathValue("queryId", p60)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V1Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v1/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p55)
-															r.SetPathValue("panelId", p58)
-															r.SetPathValue("queryId", p60)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V1Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v1/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p55)
-															r.SetPathValue("panelId", p58)
-															r.SetPathValue("queryId", p60)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V1Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -749,47 +748,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									}
 								}
 							case "incidents":
-								p61 := p53[i+1:]
-								if i := strings.IndexByte(p61, '/'); i > 0 {
-									p62 := p61[:i]
-									p63 := p61[i+1:]
-									if p64, ok := strings.CutPrefix(p63, "timeline/"); ok {
-										if i := strings.IndexByte(p64, '/'); i > 0 {
-											p65 := p64[:i]
-											p66 := p64[i+1:]
-											if p67, ok := strings.CutPrefix(p66, "responders/"); ok {
-												if strings.IndexByte(p67, '/') < 0 {
-													if p67 != "" {
+								p4 := p3[i+1:]
+								if i := strings.IndexByte(p4, '/'); i > 0 {
+									s4 := p4[:i]
+									p5 := p4[i+1:]
+									if p6, ok := strings.CutPrefix(p5, "timeline/"); ok {
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "responders/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v1/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p62)
-															r.SetPathValue("eventId", p65)
-															r.SetPathValue("responderId", p67)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V1Get()
 														case "POST":
 															r.Pattern = "POST /api/v1/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p62)
-															r.SetPathValue("eventId", p65)
-															r.SetPathValue("responderId", p67)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V1Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v1/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p62)
-															r.SetPathValue("eventId", p65)
-															r.SetPathValue("responderId", p67)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V1Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v1/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p62)
-															r.SetPathValue("eventId", p65)
-															r.SetPathValue("responderId", p67)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V1Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v1/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p62)
-															r.SetPathValue("eventId", p65)
-															r.SetPathValue("responderId", p67)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V1Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -805,47 +804,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "datasets":
-						p68 := p2[i+1:]
-						if i := strings.IndexByte(p68, '/'); i > 0 {
-							p69 := p68[:i]
-							p70 := p68[i+1:]
-							if p71, ok := strings.CutPrefix(p70, "tables/"); ok {
-								if i := strings.IndexByte(p71, '/'); i > 0 {
-									p72 := p71[:i]
-									p73 := p71[i+1:]
-									if p74, ok := strings.CutPrefix(p73, "columns/"); ok {
-										if strings.IndexByte(p74, '/') < 0 {
-											if p74 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "tables/"); ok {
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									s5 := p5[:i]
+									p6 := p5[i+1:]
+									if p7, ok := strings.CutPrefix(p6, "columns/"); ok {
+										if strings.IndexByte(p7, '/') < 0 {
+											if p7 != "" {
 												switch r.Method {
 												case "GET":
 													r.Pattern = "GET /api/v1/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p69)
-													r.SetPathValue("tableId", p72)
-													r.SetPathValue("columnId", p74)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V1Get()
 												case "POST":
 													r.Pattern = "POST /api/v1/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p69)
-													r.SetPathValue("tableId", p72)
-													r.SetPathValue("columnId", p74)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V1Post()
 												case "PUT":
 													r.Pattern = "PUT /api/v1/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p69)
-													r.SetPathValue("tableId", p72)
-													r.SetPathValue("columnId", p74)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V1Put()
 												case "DELETE":
 													r.Pattern = "DELETE /api/v1/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p69)
-													r.SetPathValue("tableId", p72)
-													r.SetPathValue("columnId", p74)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V1Delete()
 												case "PATCH":
 													r.Pattern = "PATCH /api/v1/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p69)
-													r.SetPathValue("tableId", p72)
-													r.SetPathValue("columnId", p74)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V1Patch()
 												default:
 													w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -859,57 +858,57 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "ml":
-						p75 := p2[i+1:]
-						if p76, ok := strings.CutPrefix(p75, "models/"); ok {
-							if i := strings.IndexByte(p76, '/'); i > 0 {
-								p77 := p76[:i]
-								p78 := p76[i+1:]
-								if p79, ok := strings.CutPrefix(p78, "versions/"); ok {
-									if i := strings.IndexByte(p79, '/'); i > 0 {
-										p80 := p79[:i]
-										p81 := p79[i+1:]
-										if p82, ok := strings.CutPrefix(p81, "deployments/"); ok {
-											if i := strings.IndexByte(p82, '/'); i > 0 {
-												p83 := p82[:i]
-												p84 := p82[i+1:]
-												if p85, ok := strings.CutPrefix(p84, "predictions/"); ok {
-													if strings.IndexByte(p85, '/') < 0 {
-														if p85 != "" {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "models/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if p6, ok := strings.CutPrefix(p5, "versions/"); ok {
+									if i := strings.IndexByte(p6, '/'); i > 0 {
+										s6 := p6[:i]
+										p7 := p6[i+1:]
+										if p8, ok := strings.CutPrefix(p7, "deployments/"); ok {
+											if i := strings.IndexByte(p8, '/'); i > 0 {
+												s8 := p8[:i]
+												p9 := p8[i+1:]
+												if p10, ok := strings.CutPrefix(p9, "predictions/"); ok {
+													if strings.IndexByte(p10, '/') < 0 {
+														if p10 != "" {
 															switch r.Method {
 															case "GET":
 																r.Pattern = "GET /api/v1/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p77)
-																r.SetPathValue("versionId", p80)
-																r.SetPathValue("deployId", p83)
-																r.SetPathValue("predId", p85)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V1Get()
 															case "POST":
 																r.Pattern = "POST /api/v1/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p77)
-																r.SetPathValue("versionId", p80)
-																r.SetPathValue("deployId", p83)
-																r.SetPathValue("predId", p85)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V1Post()
 															case "PUT":
 																r.Pattern = "PUT /api/v1/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p77)
-																r.SetPathValue("versionId", p80)
-																r.SetPathValue("deployId", p83)
-																r.SetPathValue("predId", p85)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V1Put()
 															case "DELETE":
 																r.Pattern = "DELETE /api/v1/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p77)
-																r.SetPathValue("versionId", p80)
-																r.SetPathValue("deployId", p83)
-																r.SetPathValue("predId", p85)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V1Delete()
 															case "PATCH":
 																r.Pattern = "PATCH /api/v1/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p77)
-																r.SetPathValue("versionId", p80)
-																r.SetPathValue("deployId", p83)
-																r.SetPathValue("predId", p85)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V1Patch()
 															default:
 																w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -926,38 +925,38 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "webhooks":
-						p86 := p2[i+1:]
-						if i := strings.IndexByte(p86, '/'); i > 0 {
-							p87 := p86[:i]
-							p88 := p86[i+1:]
-							if p89, ok := strings.CutPrefix(p88, "deliveries/"); ok {
-								if strings.IndexByte(p89, '/') < 0 {
-									if p89 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "deliveries/"); ok {
+								if strings.IndexByte(p5, '/') < 0 {
+									if p5 != "" {
 										switch r.Method {
 										case "GET":
 											r.Pattern = "GET /api/v1/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p87)
-											r.SetPathValue("deliveryId", p89)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V1Get()
 										case "POST":
 											r.Pattern = "POST /api/v1/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p87)
-											r.SetPathValue("deliveryId", p89)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V1Post()
 										case "PUT":
 											r.Pattern = "PUT /api/v1/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p87)
-											r.SetPathValue("deliveryId", p89)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V1Put()
 										case "DELETE":
 											r.Pattern = "DELETE /api/v1/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p87)
-											r.SetPathValue("deliveryId", p89)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V1Delete()
 										case "PATCH":
 											r.Pattern = "PATCH /api/v1/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p87)
-											r.SetPathValue("deliveryId", p89)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V1Patch()
 										default:
 											w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -969,47 +968,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "integrations":
-						p90 := p2[i+1:]
-						if i := strings.IndexByte(p90, '/'); i > 0 {
-							p91 := p90[:i]
-							p92 := p90[i+1:]
-							if p93, ok := strings.CutPrefix(p92, "connections/"); ok {
-								if i := strings.IndexByte(p93, '/'); i > 0 {
-									p94 := p93[:i]
-									p95 := p93[i+1:]
-									if p96, ok := strings.CutPrefix(p95, "syncs/"); ok {
-										if strings.IndexByte(p96, '/') < 0 {
-											if p96 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "connections/"); ok {
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									s5 := p5[:i]
+									p6 := p5[i+1:]
+									if p7, ok := strings.CutPrefix(p6, "syncs/"); ok {
+										if strings.IndexByte(p7, '/') < 0 {
+											if p7 != "" {
 												switch r.Method {
 												case "GET":
 													r.Pattern = "GET /api/v1/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p91)
-													r.SetPathValue("connId", p94)
-													r.SetPathValue("syncId", p96)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V1Get()
 												case "POST":
 													r.Pattern = "POST /api/v1/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p91)
-													r.SetPathValue("connId", p94)
-													r.SetPathValue("syncId", p96)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V1Post()
 												case "PUT":
 													r.Pattern = "PUT /api/v1/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p91)
-													r.SetPathValue("connId", p94)
-													r.SetPathValue("syncId", p96)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V1Put()
 												case "DELETE":
 													r.Pattern = "DELETE /api/v1/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p91)
-													r.SetPathValue("connId", p94)
-													r.SetPathValue("syncId", p96)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V1Delete()
 												case "PATCH":
 													r.Pattern = "PATCH /api/v1/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p91)
-													r.SetPathValue("connId", p94)
-													r.SetPathValue("syncId", p96)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V1Patch()
 												default:
 													w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1023,30 +1022,40 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "orders":
-						p97 := p2[i+1:]
-						if i := strings.IndexByte(p97, '/'); i > 0 {
-							p98 := p97[:i]
-							if p99, err := strconv.Atoi(p98); err == nil {
-								p100 := p97[i+1:]
-								if p101, ok := strings.CutPrefix(p100, "lines/"); ok {
-									if strings.IndexByte(p101, '/') < 0 {
-										if p102, err := strconv.Atoi(p101); err == nil {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							if digits.MatchString(s3) {
+								p4 := p3[i+1:]
+								if p5, ok := strings.CutPrefix(p4, "lines/"); ok {
+									if strings.IndexByte(p5, '/') < 0 {
+										if digits.MatchString(p5) {
 											switch r.Method {
 											case "GET":
 												r.Pattern = "GET /api/v1/orders/{orderId}/lines/{lineNo}"
-												a.D16V1Get(p99, p102)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V1Get(s3, p5)
 											case "POST":
 												r.Pattern = "POST /api/v1/orders/{orderId}/lines/{lineNo}"
-												a.D16V1Post(p99, p102)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V1Post(s3, p5)
 											case "PUT":
 												r.Pattern = "PUT /api/v1/orders/{orderId}/lines/{lineNo}"
-												a.D16V1Put(p99, p102)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V1Put(s3, p5)
 											case "DELETE":
 												r.Pattern = "DELETE /api/v1/orders/{orderId}/lines/{lineNo}"
-												a.D16V1Delete(p99, p102)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V1Delete(s3, p5)
 											case "PATCH":
 												r.Pattern = "PATCH /api/v1/orders/{orderId}/lines/{lineNo}"
-												a.D16V1Patch(p99, p102)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V1Patch(s3, p5)
 											default:
 												w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
 												w.WriteHeader(http.StatusMethodNotAllowed)
@@ -1058,29 +1067,29 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "sessions":
-						p103 := p2[i+1:]
-						if strings.IndexByte(p103, '/') < 0 {
-							if p103 != "" {
+						p3 := p2[i+1:]
+						if strings.IndexByte(p3, '/') < 0 {
+							if p3 != "" {
 								switch r.Method {
 								case "GET":
 									r.Pattern = "GET /api/v1/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p103)
+									r.SetPathValue("sessionId", p3)
 									a.D17V1Get()
 								case "POST":
 									r.Pattern = "POST /api/v1/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p103)
+									r.SetPathValue("sessionId", p3)
 									a.D17V1Post()
 								case "PUT":
 									r.Pattern = "PUT /api/v1/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p103)
+									r.SetPathValue("sessionId", p3)
 									a.D17V1Put()
 								case "DELETE":
 									r.Pattern = "DELETE /api/v1/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p103)
+									r.SetPathValue("sessionId", p3)
 									a.D17V1Delete()
 								case "PATCH":
 									r.Pattern = "PATCH /api/v1/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p103)
+									r.SetPathValue("sessionId", p3)
 									a.D17V1Patch()
 								default:
 									w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1092,45 +1101,45 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			case "v2":
-				p104 := p1[i+1:]
-				if i := strings.IndexByte(p104, '/'); i > 0 {
-					switch p104[:i] {
+				p2 := p1[i+1:]
+				if i := strings.IndexByte(p2, '/'); i > 0 {
+					switch p2[:i] {
 					case "organizations":
-						p105 := p104[i+1:]
-						if i := strings.IndexByte(p105, '/'); i > 0 {
-							p106 := p105[:i]
-							p107 := p105[i+1:]
-							if i := strings.IndexByte(p107, '/'); i > 0 {
-								switch p107[:i] {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								switch p4[:i] {
 								case "projects":
-									p108 := p107[i+1:]
-									if i := strings.IndexByte(p108, '/'); i < 0 {
-										if p108 != "" {
+									p5 := p4[i+1:]
+									if i := strings.IndexByte(p5, '/'); i < 0 {
+										if p5 != "" {
 											switch r.Method {
 											case "GET":
 												r.Pattern = "GET /api/v2/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p106)
-												r.SetPathValue("projectId", p108)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V2Get()
 											case "POST":
 												r.Pattern = "POST /api/v2/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p106)
-												r.SetPathValue("projectId", p108)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V2Post()
 											case "PUT":
 												r.Pattern = "PUT /api/v2/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p106)
-												r.SetPathValue("projectId", p108)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V2Put()
 											case "DELETE":
 												r.Pattern = "DELETE /api/v2/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p106)
-												r.SetPathValue("projectId", p108)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V2Delete()
 											case "PATCH":
 												r.Pattern = "PATCH /api/v2/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p106)
-												r.SetPathValue("projectId", p108)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V2Patch()
 											default:
 												w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1139,41 +1148,41 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											return
 										}
 									} else if i > 0 {
-										p109 := p108[:i]
-										p110 := p108[i+1:]
-										if p111, ok := strings.CutPrefix(p110, "repositories/"); ok {
-											if i := strings.IndexByte(p111, '/'); i < 0 {
-												if p111 != "" {
+										s5 := p5[:i]
+										p6 := p5[i+1:]
+										if p7, ok := strings.CutPrefix(p6, "repositories/"); ok {
+											if i := strings.IndexByte(p7, '/'); i < 0 {
+												if p7 != "" {
 													switch r.Method {
 													case "GET":
 														r.Pattern = "GET /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("projectId", p109)
-														r.SetPathValue("repoId", p111)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V2Get()
 													case "POST":
 														r.Pattern = "POST /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("projectId", p109)
-														r.SetPathValue("repoId", p111)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V2Post()
 													case "PUT":
 														r.Pattern = "PUT /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("projectId", p109)
-														r.SetPathValue("repoId", p111)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V2Put()
 													case "DELETE":
 														r.Pattern = "DELETE /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("projectId", p109)
-														r.SetPathValue("repoId", p111)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V2Delete()
 													case "PATCH":
 														r.Pattern = "PATCH /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("projectId", p109)
-														r.SetPathValue("repoId", p111)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V2Patch()
 													default:
 														w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1182,58 +1191,58 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													return
 												}
 											} else if i > 0 {
-												p112 := p111[:i]
-												p113 := p111[i+1:]
-												if i := strings.IndexByte(p113, '/'); i > 0 {
-													switch p113[:i] {
+												s7 := p7[:i]
+												p8 := p7[i+1:]
+												if i := strings.IndexByte(p8, '/'); i > 0 {
+													switch p8[:i] {
 													case "branches":
-														p114 := p113[i+1:]
-														if i := strings.IndexByte(p114, '/'); i > 0 {
-															p115 := p114[:i]
-															p116 := p114[i+1:]
-															if p117, ok := strings.CutPrefix(p116, "commits/"); ok {
-																if i := strings.IndexByte(p117, '/'); i < 0 {
-																	if p117 != "" {
+														p9 := p8[i+1:]
+														if i := strings.IndexByte(p9, '/'); i > 0 {
+															s9 := p9[:i]
+															p10 := p9[i+1:]
+															if p11, ok := strings.CutPrefix(p10, "commits/"); ok {
+																if i := strings.IndexByte(p11, '/'); i < 0 {
+																	if p11 != "" {
 																		switch r.Method {
 																		case "GET":
 																			r.Pattern = "GET /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("branchName", p115)
-																			r.SetPathValue("commitSha", p117)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V2Get()
 																		case "POST":
 																			r.Pattern = "POST /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("branchName", p115)
-																			r.SetPathValue("commitSha", p117)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V2Post()
 																		case "PUT":
 																			r.Pattern = "PUT /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("branchName", p115)
-																			r.SetPathValue("commitSha", p117)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V2Put()
 																		case "DELETE":
 																			r.Pattern = "DELETE /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("branchName", p115)
-																			r.SetPathValue("commitSha", p117)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V2Delete()
 																		case "PATCH":
 																			r.Pattern = "PATCH /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("branchName", p115)
-																			r.SetPathValue("commitSha", p117)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V2Patch()
 																		default:
 																			w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1242,50 +1251,50 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																		return
 																	}
 																} else if i > 0 {
-																	p118 := p117[:i]
-																	p119 := p117[i+1:]
-																	if i := strings.IndexByte(p119, '/'); i < 0 {
-																		if p119 == "diff" {
+																	s11 := p11[:i]
+																	p12 := p11[i+1:]
+																	if i := strings.IndexByte(p12, '/'); i < 0 {
+																		if p12 == "diff" {
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V2Get()
 																			case "POST":
 																				r.Pattern = "POST /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V2Post()
 																			case "PUT":
 																				r.Pattern = "PUT /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V2Put()
 																			case "DELETE":
 																				r.Pattern = "DELETE /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V2Delete()
 																			case "PATCH":
 																				r.Pattern = "PATCH /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V2Patch()
 																			default:
 																				w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1294,53 +1303,53 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																			return
 																		}
 																	} else if i > 0 {
-																		if p119[:i] == "files" {
-																			p120 := p119[i+1:]
+																		if p12[:i] == "files" {
+																			p13 := p12[i+1:]
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
-																				r.SetPathValue("filepath", p120)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V2Get()
 																			case "POST":
 																				r.Pattern = "POST /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
-																				r.SetPathValue("filepath", p120)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V2Post()
 																			case "PUT":
 																				r.Pattern = "PUT /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
-																				r.SetPathValue("filepath", p120)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V2Put()
 																			case "DELETE":
 																				r.Pattern = "DELETE /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
-																				r.SetPathValue("filepath", p120)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V2Delete()
 																			case "PATCH":
 																				r.Pattern = "PATCH /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p106)
-																				r.SetPathValue("projectId", p109)
-																				r.SetPathValue("repoId", p112)
-																				r.SetPathValue("branchName", p115)
-																				r.SetPathValue("commitSha", p118)
-																				r.SetPathValue("filepath", p120)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V2Patch()
 																			default:
 																				w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1353,53 +1362,53 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 															}
 														}
 													case "issues":
-														p121 := p113[i+1:]
-														if i := strings.IndexByte(p121, '/'); i > 0 {
-															p122 := p121[:i]
-															p123 := p121[i+1:]
-															if p124, ok := strings.CutPrefix(p123, "comments/"); ok {
-																if strings.IndexByte(p124, '/') < 0 {
-																	if p124 != "" {
+														p9 := p8[i+1:]
+														if i := strings.IndexByte(p9, '/'); i > 0 {
+															s9 := p9[:i]
+															p10 := p9[i+1:]
+															if p11, ok := strings.CutPrefix(p10, "comments/"); ok {
+																if strings.IndexByte(p11, '/') < 0 {
+																	if p11 != "" {
 																		switch r.Method {
 																		case "GET":
 																			r.Pattern = "GET /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("issueId", p122)
-																			r.SetPathValue("commentId", p124)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V2Get()
 																		case "POST":
 																			r.Pattern = "POST /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("issueId", p122)
-																			r.SetPathValue("commentId", p124)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V2Post()
 																		case "PUT":
 																			r.Pattern = "PUT /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("issueId", p122)
-																			r.SetPathValue("commentId", p124)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V2Put()
 																		case "DELETE":
 																			r.Pattern = "DELETE /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("issueId", p122)
-																			r.SetPathValue("commentId", p124)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V2Delete()
 																		case "PATCH":
 																			r.Pattern = "PATCH /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p106)
-																			r.SetPathValue("projectId", p109)
-																			r.SetPathValue("repoId", p112)
-																			r.SetPathValue("issueId", p122)
-																			r.SetPathValue("commentId", p124)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V2Patch()
 																		default:
 																			w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1416,43 +1425,43 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										}
 									}
 								case "teams":
-									p125 := p107[i+1:]
-									if i := strings.IndexByte(p125, '/'); i > 0 {
-										p126 := p125[:i]
-										p127 := p125[i+1:]
-										if p128, ok := strings.CutPrefix(p127, "members/"); ok {
-											if strings.IndexByte(p128, '/') < 0 {
-												if p128 != "" {
+									p5 := p4[i+1:]
+									if i := strings.IndexByte(p5, '/'); i > 0 {
+										s5 := p5[:i]
+										p6 := p5[i+1:]
+										if p7, ok := strings.CutPrefix(p6, "members/"); ok {
+											if strings.IndexByte(p7, '/') < 0 {
+												if p7 != "" {
 													switch r.Method {
 													case "GET":
 														r.Pattern = "GET /api/v2/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("teamSlug", p126)
-														r.SetPathValue("userId", p128)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V2Get()
 													case "POST":
 														r.Pattern = "POST /api/v2/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("teamSlug", p126)
-														r.SetPathValue("userId", p128)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V2Post()
 													case "PUT":
 														r.Pattern = "PUT /api/v2/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("teamSlug", p126)
-														r.SetPathValue("userId", p128)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V2Put()
 													case "DELETE":
 														r.Pattern = "DELETE /api/v2/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("teamSlug", p126)
-														r.SetPathValue("userId", p128)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V2Delete()
 													case "PATCH":
 														r.Pattern = "PATCH /api/v2/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p106)
-														r.SetPathValue("teamSlug", p126)
-														r.SetPathValue("userId", p128)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V2Patch()
 													default:
 														w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1467,60 +1476,60 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "billing":
-						p129 := p104[i+1:]
-						if p130, ok := strings.CutPrefix(p129, "accounts/"); ok {
-							if i := strings.IndexByte(p130, '/'); i > 0 {
-								p131 := p130[:i]
-								p132 := p130[i+1:]
-								if i := strings.IndexByte(p132, '/'); i > 0 {
-									switch p132[:i] {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "accounts/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									switch p5[:i] {
 									case "subscriptions":
-										p133 := p132[i+1:]
-										if i := strings.IndexByte(p133, '/'); i > 0 {
-											p134 := p133[:i]
-											p135 := p133[i+1:]
-											if p136, ok := strings.CutPrefix(p135, "invoices/"); ok {
-												if i := strings.IndexByte(p136, '/'); i > 0 {
-													p137 := p136[:i]
-													p138 := p136[i+1:]
-													if p139, ok := strings.CutPrefix(p138, "line_items/"); ok {
-														if strings.IndexByte(p139, '/') < 0 {
-															if p139 != "" {
+										p6 := p5[i+1:]
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "invoices/"); ok {
+												if i := strings.IndexByte(p8, '/'); i > 0 {
+													s8 := p8[:i]
+													p9 := p8[i+1:]
+													if p10, ok := strings.CutPrefix(p9, "line_items/"); ok {
+														if strings.IndexByte(p10, '/') < 0 {
+															if p10 != "" {
 																switch r.Method {
 																case "GET":
 																	r.Pattern = "GET /api/v2/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p131)
-																	r.SetPathValue("subId", p134)
-																	r.SetPathValue("invoiceId", p137)
-																	r.SetPathValue("lineItemId", p139)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V2Get()
 																case "POST":
 																	r.Pattern = "POST /api/v2/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p131)
-																	r.SetPathValue("subId", p134)
-																	r.SetPathValue("invoiceId", p137)
-																	r.SetPathValue("lineItemId", p139)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V2Post()
 																case "PUT":
 																	r.Pattern = "PUT /api/v2/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p131)
-																	r.SetPathValue("subId", p134)
-																	r.SetPathValue("invoiceId", p137)
-																	r.SetPathValue("lineItemId", p139)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V2Put()
 																case "DELETE":
 																	r.Pattern = "DELETE /api/v2/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p131)
-																	r.SetPathValue("subId", p134)
-																	r.SetPathValue("invoiceId", p137)
-																	r.SetPathValue("lineItemId", p139)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V2Delete()
 																case "PATCH":
 																	r.Pattern = "PATCH /api/v2/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p131)
-																	r.SetPathValue("subId", p134)
-																	r.SetPathValue("invoiceId", p137)
-																	r.SetPathValue("lineItemId", p139)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V2Patch()
 																default:
 																	w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1534,43 +1543,43 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 										}
 									case "payment_methods":
-										p140 := p132[i+1:]
-										if i := strings.IndexByte(p140, '/'); i > 0 {
-											p141 := p140[:i]
-											p142 := p140[i+1:]
-											if p143, ok := strings.CutPrefix(p142, "transactions/"); ok {
-												if strings.IndexByte(p143, '/') < 0 {
-													if p143 != "" {
+										p6 := p5[i+1:]
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "transactions/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v2/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p131)
-															r.SetPathValue("pmId", p141)
-															r.SetPathValue("txnId", p143)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V2Get()
 														case "POST":
 															r.Pattern = "POST /api/v2/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p131)
-															r.SetPathValue("pmId", p141)
-															r.SetPathValue("txnId", p143)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V2Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v2/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p131)
-															r.SetPathValue("pmId", p141)
-															r.SetPathValue("txnId", p143)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V2Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v2/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p131)
-															r.SetPathValue("pmId", p141)
-															r.SetPathValue("txnId", p143)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V2Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v2/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p131)
-															r.SetPathValue("pmId", p141)
-															r.SetPathValue("txnId", p143)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V2Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1586,57 +1595,57 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "marketplace":
-						p144 := p104[i+1:]
-						if p145, ok := strings.CutPrefix(p144, "categories/"); ok {
-							if i := strings.IndexByte(p145, '/'); i > 0 {
-								p146 := p145[:i]
-								p147 := p145[i+1:]
-								if p148, ok := strings.CutPrefix(p147, "subcategories/"); ok {
-									if i := strings.IndexByte(p148, '/'); i > 0 {
-										p149 := p148[:i]
-										p150 := p148[i+1:]
-										if p151, ok := strings.CutPrefix(p150, "items/"); ok {
-											if i := strings.IndexByte(p151, '/'); i > 0 {
-												p152 := p151[:i]
-												p153 := p151[i+1:]
-												if p154, ok := strings.CutPrefix(p153, "variants/"); ok {
-													if strings.IndexByte(p154, '/') < 0 {
-														if p154 != "" {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "categories/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if p6, ok := strings.CutPrefix(p5, "subcategories/"); ok {
+									if i := strings.IndexByte(p6, '/'); i > 0 {
+										s6 := p6[:i]
+										p7 := p6[i+1:]
+										if p8, ok := strings.CutPrefix(p7, "items/"); ok {
+											if i := strings.IndexByte(p8, '/'); i > 0 {
+												s8 := p8[:i]
+												p9 := p8[i+1:]
+												if p10, ok := strings.CutPrefix(p9, "variants/"); ok {
+													if strings.IndexByte(p10, '/') < 0 {
+														if p10 != "" {
 															switch r.Method {
 															case "GET":
 																r.Pattern = "GET /api/v2/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p146)
-																r.SetPathValue("subSlug", p149)
-																r.SetPathValue("itemId", p152)
-																r.SetPathValue("variantId", p154)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V2Get()
 															case "POST":
 																r.Pattern = "POST /api/v2/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p146)
-																r.SetPathValue("subSlug", p149)
-																r.SetPathValue("itemId", p152)
-																r.SetPathValue("variantId", p154)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V2Post()
 															case "PUT":
 																r.Pattern = "PUT /api/v2/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p146)
-																r.SetPathValue("subSlug", p149)
-																r.SetPathValue("itemId", p152)
-																r.SetPathValue("variantId", p154)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V2Put()
 															case "DELETE":
 																r.Pattern = "DELETE /api/v2/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p146)
-																r.SetPathValue("subSlug", p149)
-																r.SetPathValue("itemId", p152)
-																r.SetPathValue("variantId", p154)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V2Delete()
 															case "PATCH":
 																r.Pattern = "PATCH /api/v2/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p146)
-																r.SetPathValue("subSlug", p149)
-																r.SetPathValue("itemId", p152)
-																r.SetPathValue("variantId", p154)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V2Patch()
 															default:
 																w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1653,51 +1662,51 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "observability":
-						p155 := p104[i+1:]
-						if i := strings.IndexByte(p155, '/'); i > 0 {
-							switch p155[:i] {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							switch p3[:i] {
 							case "dashboards":
-								p156 := p155[i+1:]
-								if i := strings.IndexByte(p156, '/'); i > 0 {
-									p157 := p156[:i]
-									p158 := p156[i+1:]
-									if p159, ok := strings.CutPrefix(p158, "panels/"); ok {
-										if i := strings.IndexByte(p159, '/'); i > 0 {
-											p160 := p159[:i]
-											p161 := p159[i+1:]
-											if p162, ok := strings.CutPrefix(p161, "queries/"); ok {
-												if strings.IndexByte(p162, '/') < 0 {
-													if p162 != "" {
+								p4 := p3[i+1:]
+								if i := strings.IndexByte(p4, '/'); i > 0 {
+									s4 := p4[:i]
+									p5 := p4[i+1:]
+									if p6, ok := strings.CutPrefix(p5, "panels/"); ok {
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "queries/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v2/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p157)
-															r.SetPathValue("panelId", p160)
-															r.SetPathValue("queryId", p162)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V2Get()
 														case "POST":
 															r.Pattern = "POST /api/v2/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p157)
-															r.SetPathValue("panelId", p160)
-															r.SetPathValue("queryId", p162)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V2Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v2/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p157)
-															r.SetPathValue("panelId", p160)
-															r.SetPathValue("queryId", p162)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V2Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v2/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p157)
-															r.SetPathValue("panelId", p160)
-															r.SetPathValue("queryId", p162)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V2Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v2/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p157)
-															r.SetPathValue("panelId", p160)
-															r.SetPathValue("queryId", p162)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V2Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1711,47 +1720,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									}
 								}
 							case "incidents":
-								p163 := p155[i+1:]
-								if i := strings.IndexByte(p163, '/'); i > 0 {
-									p164 := p163[:i]
-									p165 := p163[i+1:]
-									if p166, ok := strings.CutPrefix(p165, "timeline/"); ok {
-										if i := strings.IndexByte(p166, '/'); i > 0 {
-											p167 := p166[:i]
-											p168 := p166[i+1:]
-											if p169, ok := strings.CutPrefix(p168, "responders/"); ok {
-												if strings.IndexByte(p169, '/') < 0 {
-													if p169 != "" {
+								p4 := p3[i+1:]
+								if i := strings.IndexByte(p4, '/'); i > 0 {
+									s4 := p4[:i]
+									p5 := p4[i+1:]
+									if p6, ok := strings.CutPrefix(p5, "timeline/"); ok {
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "responders/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v2/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p164)
-															r.SetPathValue("eventId", p167)
-															r.SetPathValue("responderId", p169)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V2Get()
 														case "POST":
 															r.Pattern = "POST /api/v2/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p164)
-															r.SetPathValue("eventId", p167)
-															r.SetPathValue("responderId", p169)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V2Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v2/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p164)
-															r.SetPathValue("eventId", p167)
-															r.SetPathValue("responderId", p169)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V2Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v2/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p164)
-															r.SetPathValue("eventId", p167)
-															r.SetPathValue("responderId", p169)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V2Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v2/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p164)
-															r.SetPathValue("eventId", p167)
-															r.SetPathValue("responderId", p169)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V2Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1767,47 +1776,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "datasets":
-						p170 := p104[i+1:]
-						if i := strings.IndexByte(p170, '/'); i > 0 {
-							p171 := p170[:i]
-							p172 := p170[i+1:]
-							if p173, ok := strings.CutPrefix(p172, "tables/"); ok {
-								if i := strings.IndexByte(p173, '/'); i > 0 {
-									p174 := p173[:i]
-									p175 := p173[i+1:]
-									if p176, ok := strings.CutPrefix(p175, "columns/"); ok {
-										if strings.IndexByte(p176, '/') < 0 {
-											if p176 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "tables/"); ok {
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									s5 := p5[:i]
+									p6 := p5[i+1:]
+									if p7, ok := strings.CutPrefix(p6, "columns/"); ok {
+										if strings.IndexByte(p7, '/') < 0 {
+											if p7 != "" {
 												switch r.Method {
 												case "GET":
 													r.Pattern = "GET /api/v2/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p171)
-													r.SetPathValue("tableId", p174)
-													r.SetPathValue("columnId", p176)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V2Get()
 												case "POST":
 													r.Pattern = "POST /api/v2/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p171)
-													r.SetPathValue("tableId", p174)
-													r.SetPathValue("columnId", p176)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V2Post()
 												case "PUT":
 													r.Pattern = "PUT /api/v2/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p171)
-													r.SetPathValue("tableId", p174)
-													r.SetPathValue("columnId", p176)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V2Put()
 												case "DELETE":
 													r.Pattern = "DELETE /api/v2/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p171)
-													r.SetPathValue("tableId", p174)
-													r.SetPathValue("columnId", p176)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V2Delete()
 												case "PATCH":
 													r.Pattern = "PATCH /api/v2/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p171)
-													r.SetPathValue("tableId", p174)
-													r.SetPathValue("columnId", p176)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V2Patch()
 												default:
 													w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1821,57 +1830,57 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "ml":
-						p177 := p104[i+1:]
-						if p178, ok := strings.CutPrefix(p177, "models/"); ok {
-							if i := strings.IndexByte(p178, '/'); i > 0 {
-								p179 := p178[:i]
-								p180 := p178[i+1:]
-								if p181, ok := strings.CutPrefix(p180, "versions/"); ok {
-									if i := strings.IndexByte(p181, '/'); i > 0 {
-										p182 := p181[:i]
-										p183 := p181[i+1:]
-										if p184, ok := strings.CutPrefix(p183, "deployments/"); ok {
-											if i := strings.IndexByte(p184, '/'); i > 0 {
-												p185 := p184[:i]
-												p186 := p184[i+1:]
-												if p187, ok := strings.CutPrefix(p186, "predictions/"); ok {
-													if strings.IndexByte(p187, '/') < 0 {
-														if p187 != "" {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "models/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if p6, ok := strings.CutPrefix(p5, "versions/"); ok {
+									if i := strings.IndexByte(p6, '/'); i > 0 {
+										s6 := p6[:i]
+										p7 := p6[i+1:]
+										if p8, ok := strings.CutPrefix(p7, "deployments/"); ok {
+											if i := strings.IndexByte(p8, '/'); i > 0 {
+												s8 := p8[:i]
+												p9 := p8[i+1:]
+												if p10, ok := strings.CutPrefix(p9, "predictions/"); ok {
+													if strings.IndexByte(p10, '/') < 0 {
+														if p10 != "" {
 															switch r.Method {
 															case "GET":
 																r.Pattern = "GET /api/v2/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p179)
-																r.SetPathValue("versionId", p182)
-																r.SetPathValue("deployId", p185)
-																r.SetPathValue("predId", p187)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V2Get()
 															case "POST":
 																r.Pattern = "POST /api/v2/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p179)
-																r.SetPathValue("versionId", p182)
-																r.SetPathValue("deployId", p185)
-																r.SetPathValue("predId", p187)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V2Post()
 															case "PUT":
 																r.Pattern = "PUT /api/v2/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p179)
-																r.SetPathValue("versionId", p182)
-																r.SetPathValue("deployId", p185)
-																r.SetPathValue("predId", p187)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V2Put()
 															case "DELETE":
 																r.Pattern = "DELETE /api/v2/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p179)
-																r.SetPathValue("versionId", p182)
-																r.SetPathValue("deployId", p185)
-																r.SetPathValue("predId", p187)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V2Delete()
 															case "PATCH":
 																r.Pattern = "PATCH /api/v2/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p179)
-																r.SetPathValue("versionId", p182)
-																r.SetPathValue("deployId", p185)
-																r.SetPathValue("predId", p187)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V2Patch()
 															default:
 																w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1888,38 +1897,38 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "webhooks":
-						p188 := p104[i+1:]
-						if i := strings.IndexByte(p188, '/'); i > 0 {
-							p189 := p188[:i]
-							p190 := p188[i+1:]
-							if p191, ok := strings.CutPrefix(p190, "deliveries/"); ok {
-								if strings.IndexByte(p191, '/') < 0 {
-									if p191 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "deliveries/"); ok {
+								if strings.IndexByte(p5, '/') < 0 {
+									if p5 != "" {
 										switch r.Method {
 										case "GET":
 											r.Pattern = "GET /api/v2/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p189)
-											r.SetPathValue("deliveryId", p191)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V2Get()
 										case "POST":
 											r.Pattern = "POST /api/v2/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p189)
-											r.SetPathValue("deliveryId", p191)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V2Post()
 										case "PUT":
 											r.Pattern = "PUT /api/v2/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p189)
-											r.SetPathValue("deliveryId", p191)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V2Put()
 										case "DELETE":
 											r.Pattern = "DELETE /api/v2/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p189)
-											r.SetPathValue("deliveryId", p191)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V2Delete()
 										case "PATCH":
 											r.Pattern = "PATCH /api/v2/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p189)
-											r.SetPathValue("deliveryId", p191)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V2Patch()
 										default:
 											w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1931,47 +1940,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "integrations":
-						p192 := p104[i+1:]
-						if i := strings.IndexByte(p192, '/'); i > 0 {
-							p193 := p192[:i]
-							p194 := p192[i+1:]
-							if p195, ok := strings.CutPrefix(p194, "connections/"); ok {
-								if i := strings.IndexByte(p195, '/'); i > 0 {
-									p196 := p195[:i]
-									p197 := p195[i+1:]
-									if p198, ok := strings.CutPrefix(p197, "syncs/"); ok {
-										if strings.IndexByte(p198, '/') < 0 {
-											if p198 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "connections/"); ok {
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									s5 := p5[:i]
+									p6 := p5[i+1:]
+									if p7, ok := strings.CutPrefix(p6, "syncs/"); ok {
+										if strings.IndexByte(p7, '/') < 0 {
+											if p7 != "" {
 												switch r.Method {
 												case "GET":
 													r.Pattern = "GET /api/v2/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p193)
-													r.SetPathValue("connId", p196)
-													r.SetPathValue("syncId", p198)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V2Get()
 												case "POST":
 													r.Pattern = "POST /api/v2/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p193)
-													r.SetPathValue("connId", p196)
-													r.SetPathValue("syncId", p198)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V2Post()
 												case "PUT":
 													r.Pattern = "PUT /api/v2/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p193)
-													r.SetPathValue("connId", p196)
-													r.SetPathValue("syncId", p198)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V2Put()
 												case "DELETE":
 													r.Pattern = "DELETE /api/v2/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p193)
-													r.SetPathValue("connId", p196)
-													r.SetPathValue("syncId", p198)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V2Delete()
 												case "PATCH":
 													r.Pattern = "PATCH /api/v2/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p193)
-													r.SetPathValue("connId", p196)
-													r.SetPathValue("syncId", p198)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V2Patch()
 												default:
 													w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -1985,30 +1994,40 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "orders":
-						p199 := p104[i+1:]
-						if i := strings.IndexByte(p199, '/'); i > 0 {
-							p200 := p199[:i]
-							if p201, err := strconv.Atoi(p200); err == nil {
-								p202 := p199[i+1:]
-								if p203, ok := strings.CutPrefix(p202, "lines/"); ok {
-									if strings.IndexByte(p203, '/') < 0 {
-										if p204, err := strconv.Atoi(p203); err == nil {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							if digits.MatchString(s3) {
+								p4 := p3[i+1:]
+								if p5, ok := strings.CutPrefix(p4, "lines/"); ok {
+									if strings.IndexByte(p5, '/') < 0 {
+										if digits.MatchString(p5) {
 											switch r.Method {
 											case "GET":
 												r.Pattern = "GET /api/v2/orders/{orderId}/lines/{lineNo}"
-												a.D16V2Get(p201, p204)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V2Get(s3, p5)
 											case "POST":
 												r.Pattern = "POST /api/v2/orders/{orderId}/lines/{lineNo}"
-												a.D16V2Post(p201, p204)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V2Post(s3, p5)
 											case "PUT":
 												r.Pattern = "PUT /api/v2/orders/{orderId}/lines/{lineNo}"
-												a.D16V2Put(p201, p204)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V2Put(s3, p5)
 											case "DELETE":
 												r.Pattern = "DELETE /api/v2/orders/{orderId}/lines/{lineNo}"
-												a.D16V2Delete(p201, p204)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V2Delete(s3, p5)
 											case "PATCH":
 												r.Pattern = "PATCH /api/v2/orders/{orderId}/lines/{lineNo}"
-												a.D16V2Patch(p201, p204)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V2Patch(s3, p5)
 											default:
 												w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
 												w.WriteHeader(http.StatusMethodNotAllowed)
@@ -2020,29 +2039,29 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "sessions":
-						p205 := p104[i+1:]
-						if strings.IndexByte(p205, '/') < 0 {
-							if p205 != "" {
+						p3 := p2[i+1:]
+						if strings.IndexByte(p3, '/') < 0 {
+							if p3 != "" {
 								switch r.Method {
 								case "GET":
 									r.Pattern = "GET /api/v2/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p205)
+									r.SetPathValue("sessionId", p3)
 									a.D17V2Get()
 								case "POST":
 									r.Pattern = "POST /api/v2/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p205)
+									r.SetPathValue("sessionId", p3)
 									a.D17V2Post()
 								case "PUT":
 									r.Pattern = "PUT /api/v2/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p205)
+									r.SetPathValue("sessionId", p3)
 									a.D17V2Put()
 								case "DELETE":
 									r.Pattern = "DELETE /api/v2/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p205)
+									r.SetPathValue("sessionId", p3)
 									a.D17V2Delete()
 								case "PATCH":
 									r.Pattern = "PATCH /api/v2/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p205)
+									r.SetPathValue("sessionId", p3)
 									a.D17V2Patch()
 								default:
 									w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2054,45 +2073,45 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			case "v3":
-				p206 := p1[i+1:]
-				if i := strings.IndexByte(p206, '/'); i > 0 {
-					switch p206[:i] {
+				p2 := p1[i+1:]
+				if i := strings.IndexByte(p2, '/'); i > 0 {
+					switch p2[:i] {
 					case "organizations":
-						p207 := p206[i+1:]
-						if i := strings.IndexByte(p207, '/'); i > 0 {
-							p208 := p207[:i]
-							p209 := p207[i+1:]
-							if i := strings.IndexByte(p209, '/'); i > 0 {
-								switch p209[:i] {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								switch p4[:i] {
 								case "projects":
-									p210 := p209[i+1:]
-									if i := strings.IndexByte(p210, '/'); i < 0 {
-										if p210 != "" {
+									p5 := p4[i+1:]
+									if i := strings.IndexByte(p5, '/'); i < 0 {
+										if p5 != "" {
 											switch r.Method {
 											case "GET":
 												r.Pattern = "GET /api/v3/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p208)
-												r.SetPathValue("projectId", p210)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V3Get()
 											case "POST":
 												r.Pattern = "POST /api/v3/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p208)
-												r.SetPathValue("projectId", p210)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V3Post()
 											case "PUT":
 												r.Pattern = "PUT /api/v3/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p208)
-												r.SetPathValue("projectId", p210)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V3Put()
 											case "DELETE":
 												r.Pattern = "DELETE /api/v3/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p208)
-												r.SetPathValue("projectId", p210)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V3Delete()
 											case "PATCH":
 												r.Pattern = "PATCH /api/v3/organizations/{orgId}/projects/{projectId}"
-												r.SetPathValue("orgId", p208)
-												r.SetPathValue("projectId", p210)
+												r.SetPathValue("orgId", s3)
+												r.SetPathValue("projectId", p5)
 												a.D0V3Patch()
 											default:
 												w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2101,41 +2120,41 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											return
 										}
 									} else if i > 0 {
-										p211 := p210[:i]
-										p212 := p210[i+1:]
-										if p213, ok := strings.CutPrefix(p212, "repositories/"); ok {
-											if i := strings.IndexByte(p213, '/'); i < 0 {
-												if p213 != "" {
+										s5 := p5[:i]
+										p6 := p5[i+1:]
+										if p7, ok := strings.CutPrefix(p6, "repositories/"); ok {
+											if i := strings.IndexByte(p7, '/'); i < 0 {
+												if p7 != "" {
 													switch r.Method {
 													case "GET":
 														r.Pattern = "GET /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("projectId", p211)
-														r.SetPathValue("repoId", p213)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V3Get()
 													case "POST":
 														r.Pattern = "POST /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("projectId", p211)
-														r.SetPathValue("repoId", p213)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V3Post()
 													case "PUT":
 														r.Pattern = "PUT /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("projectId", p211)
-														r.SetPathValue("repoId", p213)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V3Put()
 													case "DELETE":
 														r.Pattern = "DELETE /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("projectId", p211)
-														r.SetPathValue("repoId", p213)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V3Delete()
 													case "PATCH":
 														r.Pattern = "PATCH /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("projectId", p211)
-														r.SetPathValue("repoId", p213)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("projectId", s5)
+														r.SetPathValue("repoId", p7)
 														a.D1V3Patch()
 													default:
 														w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2144,58 +2163,58 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													return
 												}
 											} else if i > 0 {
-												p214 := p213[:i]
-												p215 := p213[i+1:]
-												if i := strings.IndexByte(p215, '/'); i > 0 {
-													switch p215[:i] {
+												s7 := p7[:i]
+												p8 := p7[i+1:]
+												if i := strings.IndexByte(p8, '/'); i > 0 {
+													switch p8[:i] {
 													case "branches":
-														p216 := p215[i+1:]
-														if i := strings.IndexByte(p216, '/'); i > 0 {
-															p217 := p216[:i]
-															p218 := p216[i+1:]
-															if p219, ok := strings.CutPrefix(p218, "commits/"); ok {
-																if i := strings.IndexByte(p219, '/'); i < 0 {
-																	if p219 != "" {
+														p9 := p8[i+1:]
+														if i := strings.IndexByte(p9, '/'); i > 0 {
+															s9 := p9[:i]
+															p10 := p9[i+1:]
+															if p11, ok := strings.CutPrefix(p10, "commits/"); ok {
+																if i := strings.IndexByte(p11, '/'); i < 0 {
+																	if p11 != "" {
 																		switch r.Method {
 																		case "GET":
 																			r.Pattern = "GET /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("branchName", p217)
-																			r.SetPathValue("commitSha", p219)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V3Get()
 																		case "POST":
 																			r.Pattern = "POST /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("branchName", p217)
-																			r.SetPathValue("commitSha", p219)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V3Post()
 																		case "PUT":
 																			r.Pattern = "PUT /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("branchName", p217)
-																			r.SetPathValue("commitSha", p219)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V3Put()
 																		case "DELETE":
 																			r.Pattern = "DELETE /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("branchName", p217)
-																			r.SetPathValue("commitSha", p219)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V3Delete()
 																		case "PATCH":
 																			r.Pattern = "PATCH /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("branchName", p217)
-																			r.SetPathValue("commitSha", p219)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("branchName", s9)
+																			r.SetPathValue("commitSha", p11)
 																			a.D2V3Patch()
 																		default:
 																			w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2204,50 +2223,50 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																		return
 																	}
 																} else if i > 0 {
-																	p220 := p219[:i]
-																	p221 := p219[i+1:]
-																	if i := strings.IndexByte(p221, '/'); i < 0 {
-																		if p221 == "diff" {
+																	s11 := p11[:i]
+																	p12 := p11[i+1:]
+																	if i := strings.IndexByte(p12, '/'); i < 0 {
+																		if p12 == "diff" {
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V3Get()
 																			case "POST":
 																				r.Pattern = "POST /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V3Post()
 																			case "PUT":
 																				r.Pattern = "PUT /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V3Put()
 																			case "DELETE":
 																				r.Pattern = "DELETE /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V3Delete()
 																			case "PATCH":
 																				r.Pattern = "PATCH /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/diff"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
 																				a.D3V3Patch()
 																			default:
 																				w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2256,53 +2275,53 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																			return
 																		}
 																	} else if i > 0 {
-																		if p221[:i] == "files" {
-																			p222 := p221[i+1:]
+																		if p12[:i] == "files" {
+																			p13 := p12[i+1:]
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
-																				r.SetPathValue("filepath", p222)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V3Get()
 																			case "POST":
 																				r.Pattern = "POST /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
-																				r.SetPathValue("filepath", p222)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V3Post()
 																			case "PUT":
 																				r.Pattern = "PUT /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
-																				r.SetPathValue("filepath", p222)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V3Put()
 																			case "DELETE":
 																				r.Pattern = "DELETE /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
-																				r.SetPathValue("filepath", p222)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V3Delete()
 																			case "PATCH":
 																				r.Pattern = "PATCH /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
-																				r.SetPathValue("orgId", p208)
-																				r.SetPathValue("projectId", p211)
-																				r.SetPathValue("repoId", p214)
-																				r.SetPathValue("branchName", p217)
-																				r.SetPathValue("commitSha", p220)
-																				r.SetPathValue("filepath", p222)
+																				r.SetPathValue("orgId", s3)
+																				r.SetPathValue("projectId", s5)
+																				r.SetPathValue("repoId", s7)
+																				r.SetPathValue("branchName", s9)
+																				r.SetPathValue("commitSha", s11)
+																				r.SetPathValue("filepath", p13)
 																				a.D4V3Patch()
 																			default:
 																				w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2315,53 +2334,53 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 															}
 														}
 													case "issues":
-														p223 := p215[i+1:]
-														if i := strings.IndexByte(p223, '/'); i > 0 {
-															p224 := p223[:i]
-															p225 := p223[i+1:]
-															if p226, ok := strings.CutPrefix(p225, "comments/"); ok {
-																if strings.IndexByte(p226, '/') < 0 {
-																	if p226 != "" {
+														p9 := p8[i+1:]
+														if i := strings.IndexByte(p9, '/'); i > 0 {
+															s9 := p9[:i]
+															p10 := p9[i+1:]
+															if p11, ok := strings.CutPrefix(p10, "comments/"); ok {
+																if strings.IndexByte(p11, '/') < 0 {
+																	if p11 != "" {
 																		switch r.Method {
 																		case "GET":
 																			r.Pattern = "GET /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("issueId", p224)
-																			r.SetPathValue("commentId", p226)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V3Get()
 																		case "POST":
 																			r.Pattern = "POST /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("issueId", p224)
-																			r.SetPathValue("commentId", p226)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V3Post()
 																		case "PUT":
 																			r.Pattern = "PUT /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("issueId", p224)
-																			r.SetPathValue("commentId", p226)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V3Put()
 																		case "DELETE":
 																			r.Pattern = "DELETE /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("issueId", p224)
-																			r.SetPathValue("commentId", p226)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V3Delete()
 																		case "PATCH":
 																			r.Pattern = "PATCH /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/issues/{issueId}/comments/{commentId}"
-																			r.SetPathValue("orgId", p208)
-																			r.SetPathValue("projectId", p211)
-																			r.SetPathValue("repoId", p214)
-																			r.SetPathValue("issueId", p224)
-																			r.SetPathValue("commentId", p226)
+																			r.SetPathValue("orgId", s3)
+																			r.SetPathValue("projectId", s5)
+																			r.SetPathValue("repoId", s7)
+																			r.SetPathValue("issueId", s9)
+																			r.SetPathValue("commentId", p11)
 																			a.D5V3Patch()
 																		default:
 																			w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2378,43 +2397,43 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										}
 									}
 								case "teams":
-									p227 := p209[i+1:]
-									if i := strings.IndexByte(p227, '/'); i > 0 {
-										p228 := p227[:i]
-										p229 := p227[i+1:]
-										if p230, ok := strings.CutPrefix(p229, "members/"); ok {
-											if strings.IndexByte(p230, '/') < 0 {
-												if p230 != "" {
+									p5 := p4[i+1:]
+									if i := strings.IndexByte(p5, '/'); i > 0 {
+										s5 := p5[:i]
+										p6 := p5[i+1:]
+										if p7, ok := strings.CutPrefix(p6, "members/"); ok {
+											if strings.IndexByte(p7, '/') < 0 {
+												if p7 != "" {
 													switch r.Method {
 													case "GET":
 														r.Pattern = "GET /api/v3/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("teamSlug", p228)
-														r.SetPathValue("userId", p230)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V3Get()
 													case "POST":
 														r.Pattern = "POST /api/v3/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("teamSlug", p228)
-														r.SetPathValue("userId", p230)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V3Post()
 													case "PUT":
 														r.Pattern = "PUT /api/v3/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("teamSlug", p228)
-														r.SetPathValue("userId", p230)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V3Put()
 													case "DELETE":
 														r.Pattern = "DELETE /api/v3/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("teamSlug", p228)
-														r.SetPathValue("userId", p230)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V3Delete()
 													case "PATCH":
 														r.Pattern = "PATCH /api/v3/organizations/{orgId}/teams/{teamSlug}/members/{userId}"
-														r.SetPathValue("orgId", p208)
-														r.SetPathValue("teamSlug", p228)
-														r.SetPathValue("userId", p230)
+														r.SetPathValue("orgId", s3)
+														r.SetPathValue("teamSlug", s5)
+														r.SetPathValue("userId", p7)
 														a.D6V3Patch()
 													default:
 														w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2429,60 +2448,60 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "billing":
-						p231 := p206[i+1:]
-						if p232, ok := strings.CutPrefix(p231, "accounts/"); ok {
-							if i := strings.IndexByte(p232, '/'); i > 0 {
-								p233 := p232[:i]
-								p234 := p232[i+1:]
-								if i := strings.IndexByte(p234, '/'); i > 0 {
-									switch p234[:i] {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "accounts/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									switch p5[:i] {
 									case "subscriptions":
-										p235 := p234[i+1:]
-										if i := strings.IndexByte(p235, '/'); i > 0 {
-											p236 := p235[:i]
-											p237 := p235[i+1:]
-											if p238, ok := strings.CutPrefix(p237, "invoices/"); ok {
-												if i := strings.IndexByte(p238, '/'); i > 0 {
-													p239 := p238[:i]
-													p240 := p238[i+1:]
-													if p241, ok := strings.CutPrefix(p240, "line_items/"); ok {
-														if strings.IndexByte(p241, '/') < 0 {
-															if p241 != "" {
+										p6 := p5[i+1:]
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "invoices/"); ok {
+												if i := strings.IndexByte(p8, '/'); i > 0 {
+													s8 := p8[:i]
+													p9 := p8[i+1:]
+													if p10, ok := strings.CutPrefix(p9, "line_items/"); ok {
+														if strings.IndexByte(p10, '/') < 0 {
+															if p10 != "" {
 																switch r.Method {
 																case "GET":
 																	r.Pattern = "GET /api/v3/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p233)
-																	r.SetPathValue("subId", p236)
-																	r.SetPathValue("invoiceId", p239)
-																	r.SetPathValue("lineItemId", p241)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V3Get()
 																case "POST":
 																	r.Pattern = "POST /api/v3/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p233)
-																	r.SetPathValue("subId", p236)
-																	r.SetPathValue("invoiceId", p239)
-																	r.SetPathValue("lineItemId", p241)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V3Post()
 																case "PUT":
 																	r.Pattern = "PUT /api/v3/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p233)
-																	r.SetPathValue("subId", p236)
-																	r.SetPathValue("invoiceId", p239)
-																	r.SetPathValue("lineItemId", p241)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V3Put()
 																case "DELETE":
 																	r.Pattern = "DELETE /api/v3/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p233)
-																	r.SetPathValue("subId", p236)
-																	r.SetPathValue("invoiceId", p239)
-																	r.SetPathValue("lineItemId", p241)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V3Delete()
 																case "PATCH":
 																	r.Pattern = "PATCH /api/v3/billing/accounts/{accountId}/subscriptions/{subId}/invoices/{invoiceId}/line_items/{lineItemId}"
-																	r.SetPathValue("accountId", p233)
-																	r.SetPathValue("subId", p236)
-																	r.SetPathValue("invoiceId", p239)
-																	r.SetPathValue("lineItemId", p241)
+																	r.SetPathValue("accountId", s4)
+																	r.SetPathValue("subId", s6)
+																	r.SetPathValue("invoiceId", s8)
+																	r.SetPathValue("lineItemId", p10)
 																	a.D7V3Patch()
 																default:
 																	w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2496,43 +2515,43 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 										}
 									case "payment_methods":
-										p242 := p234[i+1:]
-										if i := strings.IndexByte(p242, '/'); i > 0 {
-											p243 := p242[:i]
-											p244 := p242[i+1:]
-											if p245, ok := strings.CutPrefix(p244, "transactions/"); ok {
-												if strings.IndexByte(p245, '/') < 0 {
-													if p245 != "" {
+										p6 := p5[i+1:]
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "transactions/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v3/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p233)
-															r.SetPathValue("pmId", p243)
-															r.SetPathValue("txnId", p245)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V3Get()
 														case "POST":
 															r.Pattern = "POST /api/v3/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p233)
-															r.SetPathValue("pmId", p243)
-															r.SetPathValue("txnId", p245)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V3Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v3/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p233)
-															r.SetPathValue("pmId", p243)
-															r.SetPathValue("txnId", p245)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V3Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v3/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p233)
-															r.SetPathValue("pmId", p243)
-															r.SetPathValue("txnId", p245)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V3Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v3/billing/accounts/{accountId}/payment_methods/{pmId}/transactions/{txnId}"
-															r.SetPathValue("accountId", p233)
-															r.SetPathValue("pmId", p243)
-															r.SetPathValue("txnId", p245)
+															r.SetPathValue("accountId", s4)
+															r.SetPathValue("pmId", s6)
+															r.SetPathValue("txnId", p8)
 															a.D8V3Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2548,57 +2567,57 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "marketplace":
-						p246 := p206[i+1:]
-						if p247, ok := strings.CutPrefix(p246, "categories/"); ok {
-							if i := strings.IndexByte(p247, '/'); i > 0 {
-								p248 := p247[:i]
-								p249 := p247[i+1:]
-								if p250, ok := strings.CutPrefix(p249, "subcategories/"); ok {
-									if i := strings.IndexByte(p250, '/'); i > 0 {
-										p251 := p250[:i]
-										p252 := p250[i+1:]
-										if p253, ok := strings.CutPrefix(p252, "items/"); ok {
-											if i := strings.IndexByte(p253, '/'); i > 0 {
-												p254 := p253[:i]
-												p255 := p253[i+1:]
-												if p256, ok := strings.CutPrefix(p255, "variants/"); ok {
-													if strings.IndexByte(p256, '/') < 0 {
-														if p256 != "" {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "categories/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if p6, ok := strings.CutPrefix(p5, "subcategories/"); ok {
+									if i := strings.IndexByte(p6, '/'); i > 0 {
+										s6 := p6[:i]
+										p7 := p6[i+1:]
+										if p8, ok := strings.CutPrefix(p7, "items/"); ok {
+											if i := strings.IndexByte(p8, '/'); i > 0 {
+												s8 := p8[:i]
+												p9 := p8[i+1:]
+												if p10, ok := strings.CutPrefix(p9, "variants/"); ok {
+													if strings.IndexByte(p10, '/') < 0 {
+														if p10 != "" {
 															switch r.Method {
 															case "GET":
 																r.Pattern = "GET /api/v3/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p248)
-																r.SetPathValue("subSlug", p251)
-																r.SetPathValue("itemId", p254)
-																r.SetPathValue("variantId", p256)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V3Get()
 															case "POST":
 																r.Pattern = "POST /api/v3/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p248)
-																r.SetPathValue("subSlug", p251)
-																r.SetPathValue("itemId", p254)
-																r.SetPathValue("variantId", p256)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V3Post()
 															case "PUT":
 																r.Pattern = "PUT /api/v3/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p248)
-																r.SetPathValue("subSlug", p251)
-																r.SetPathValue("itemId", p254)
-																r.SetPathValue("variantId", p256)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V3Put()
 															case "DELETE":
 																r.Pattern = "DELETE /api/v3/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p248)
-																r.SetPathValue("subSlug", p251)
-																r.SetPathValue("itemId", p254)
-																r.SetPathValue("variantId", p256)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V3Delete()
 															case "PATCH":
 																r.Pattern = "PATCH /api/v3/marketplace/categories/{catSlug}/subcategories/{subSlug}/items/{itemId}/variants/{variantId}"
-																r.SetPathValue("catSlug", p248)
-																r.SetPathValue("subSlug", p251)
-																r.SetPathValue("itemId", p254)
-																r.SetPathValue("variantId", p256)
+																r.SetPathValue("catSlug", s4)
+																r.SetPathValue("subSlug", s6)
+																r.SetPathValue("itemId", s8)
+																r.SetPathValue("variantId", p10)
 																a.D9V3Patch()
 															default:
 																w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2615,51 +2634,51 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "observability":
-						p257 := p206[i+1:]
-						if i := strings.IndexByte(p257, '/'); i > 0 {
-							switch p257[:i] {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							switch p3[:i] {
 							case "dashboards":
-								p258 := p257[i+1:]
-								if i := strings.IndexByte(p258, '/'); i > 0 {
-									p259 := p258[:i]
-									p260 := p258[i+1:]
-									if p261, ok := strings.CutPrefix(p260, "panels/"); ok {
-										if i := strings.IndexByte(p261, '/'); i > 0 {
-											p262 := p261[:i]
-											p263 := p261[i+1:]
-											if p264, ok := strings.CutPrefix(p263, "queries/"); ok {
-												if strings.IndexByte(p264, '/') < 0 {
-													if p264 != "" {
+								p4 := p3[i+1:]
+								if i := strings.IndexByte(p4, '/'); i > 0 {
+									s4 := p4[:i]
+									p5 := p4[i+1:]
+									if p6, ok := strings.CutPrefix(p5, "panels/"); ok {
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "queries/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v3/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p259)
-															r.SetPathValue("panelId", p262)
-															r.SetPathValue("queryId", p264)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V3Get()
 														case "POST":
 															r.Pattern = "POST /api/v3/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p259)
-															r.SetPathValue("panelId", p262)
-															r.SetPathValue("queryId", p264)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V3Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v3/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p259)
-															r.SetPathValue("panelId", p262)
-															r.SetPathValue("queryId", p264)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V3Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v3/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p259)
-															r.SetPathValue("panelId", p262)
-															r.SetPathValue("queryId", p264)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V3Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v3/observability/dashboards/{dashId}/panels/{panelId}/queries/{queryId}"
-															r.SetPathValue("dashId", p259)
-															r.SetPathValue("panelId", p262)
-															r.SetPathValue("queryId", p264)
+															r.SetPathValue("dashId", s4)
+															r.SetPathValue("panelId", s6)
+															r.SetPathValue("queryId", p8)
 															a.D10V3Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2673,47 +2692,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									}
 								}
 							case "incidents":
-								p265 := p257[i+1:]
-								if i := strings.IndexByte(p265, '/'); i > 0 {
-									p266 := p265[:i]
-									p267 := p265[i+1:]
-									if p268, ok := strings.CutPrefix(p267, "timeline/"); ok {
-										if i := strings.IndexByte(p268, '/'); i > 0 {
-											p269 := p268[:i]
-											p270 := p268[i+1:]
-											if p271, ok := strings.CutPrefix(p270, "responders/"); ok {
-												if strings.IndexByte(p271, '/') < 0 {
-													if p271 != "" {
+								p4 := p3[i+1:]
+								if i := strings.IndexByte(p4, '/'); i > 0 {
+									s4 := p4[:i]
+									p5 := p4[i+1:]
+									if p6, ok := strings.CutPrefix(p5, "timeline/"); ok {
+										if i := strings.IndexByte(p6, '/'); i > 0 {
+											s6 := p6[:i]
+											p7 := p6[i+1:]
+											if p8, ok := strings.CutPrefix(p7, "responders/"); ok {
+												if strings.IndexByte(p8, '/') < 0 {
+													if p8 != "" {
 														switch r.Method {
 														case "GET":
 															r.Pattern = "GET /api/v3/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p266)
-															r.SetPathValue("eventId", p269)
-															r.SetPathValue("responderId", p271)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V3Get()
 														case "POST":
 															r.Pattern = "POST /api/v3/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p266)
-															r.SetPathValue("eventId", p269)
-															r.SetPathValue("responderId", p271)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V3Post()
 														case "PUT":
 															r.Pattern = "PUT /api/v3/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p266)
-															r.SetPathValue("eventId", p269)
-															r.SetPathValue("responderId", p271)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V3Put()
 														case "DELETE":
 															r.Pattern = "DELETE /api/v3/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p266)
-															r.SetPathValue("eventId", p269)
-															r.SetPathValue("responderId", p271)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V3Delete()
 														case "PATCH":
 															r.Pattern = "PATCH /api/v3/observability/incidents/{incidentId}/timeline/{eventId}/responders/{responderId}"
-															r.SetPathValue("incidentId", p266)
-															r.SetPathValue("eventId", p269)
-															r.SetPathValue("responderId", p271)
+															r.SetPathValue("incidentId", s4)
+															r.SetPathValue("eventId", s6)
+															r.SetPathValue("responderId", p8)
 															a.D11V3Patch()
 														default:
 															w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2729,47 +2748,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "datasets":
-						p272 := p206[i+1:]
-						if i := strings.IndexByte(p272, '/'); i > 0 {
-							p273 := p272[:i]
-							p274 := p272[i+1:]
-							if p275, ok := strings.CutPrefix(p274, "tables/"); ok {
-								if i := strings.IndexByte(p275, '/'); i > 0 {
-									p276 := p275[:i]
-									p277 := p275[i+1:]
-									if p278, ok := strings.CutPrefix(p277, "columns/"); ok {
-										if strings.IndexByte(p278, '/') < 0 {
-											if p278 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "tables/"); ok {
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									s5 := p5[:i]
+									p6 := p5[i+1:]
+									if p7, ok := strings.CutPrefix(p6, "columns/"); ok {
+										if strings.IndexByte(p7, '/') < 0 {
+											if p7 != "" {
 												switch r.Method {
 												case "GET":
 													r.Pattern = "GET /api/v3/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p273)
-													r.SetPathValue("tableId", p276)
-													r.SetPathValue("columnId", p278)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V3Get()
 												case "POST":
 													r.Pattern = "POST /api/v3/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p273)
-													r.SetPathValue("tableId", p276)
-													r.SetPathValue("columnId", p278)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V3Post()
 												case "PUT":
 													r.Pattern = "PUT /api/v3/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p273)
-													r.SetPathValue("tableId", p276)
-													r.SetPathValue("columnId", p278)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V3Put()
 												case "DELETE":
 													r.Pattern = "DELETE /api/v3/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p273)
-													r.SetPathValue("tableId", p276)
-													r.SetPathValue("columnId", p278)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V3Delete()
 												case "PATCH":
 													r.Pattern = "PATCH /api/v3/datasets/{datasetId}/tables/{tableId}/columns/{columnId}"
-													r.SetPathValue("datasetId", p273)
-													r.SetPathValue("tableId", p276)
-													r.SetPathValue("columnId", p278)
+													r.SetPathValue("datasetId", s3)
+													r.SetPathValue("tableId", s5)
+													r.SetPathValue("columnId", p7)
 													a.D12V3Patch()
 												default:
 													w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2783,57 +2802,57 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "ml":
-						p279 := p206[i+1:]
-						if p280, ok := strings.CutPrefix(p279, "models/"); ok {
-							if i := strings.IndexByte(p280, '/'); i > 0 {
-								p281 := p280[:i]
-								p282 := p280[i+1:]
-								if p283, ok := strings.CutPrefix(p282, "versions/"); ok {
-									if i := strings.IndexByte(p283, '/'); i > 0 {
-										p284 := p283[:i]
-										p285 := p283[i+1:]
-										if p286, ok := strings.CutPrefix(p285, "deployments/"); ok {
-											if i := strings.IndexByte(p286, '/'); i > 0 {
-												p287 := p286[:i]
-												p288 := p286[i+1:]
-												if p289, ok := strings.CutPrefix(p288, "predictions/"); ok {
-													if strings.IndexByte(p289, '/') < 0 {
-														if p289 != "" {
+						p3 := p2[i+1:]
+						if p4, ok := strings.CutPrefix(p3, "models/"); ok {
+							if i := strings.IndexByte(p4, '/'); i > 0 {
+								s4 := p4[:i]
+								p5 := p4[i+1:]
+								if p6, ok := strings.CutPrefix(p5, "versions/"); ok {
+									if i := strings.IndexByte(p6, '/'); i > 0 {
+										s6 := p6[:i]
+										p7 := p6[i+1:]
+										if p8, ok := strings.CutPrefix(p7, "deployments/"); ok {
+											if i := strings.IndexByte(p8, '/'); i > 0 {
+												s8 := p8[:i]
+												p9 := p8[i+1:]
+												if p10, ok := strings.CutPrefix(p9, "predictions/"); ok {
+													if strings.IndexByte(p10, '/') < 0 {
+														if p10 != "" {
 															switch r.Method {
 															case "GET":
 																r.Pattern = "GET /api/v3/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p281)
-																r.SetPathValue("versionId", p284)
-																r.SetPathValue("deployId", p287)
-																r.SetPathValue("predId", p289)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V3Get()
 															case "POST":
 																r.Pattern = "POST /api/v3/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p281)
-																r.SetPathValue("versionId", p284)
-																r.SetPathValue("deployId", p287)
-																r.SetPathValue("predId", p289)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V3Post()
 															case "PUT":
 																r.Pattern = "PUT /api/v3/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p281)
-																r.SetPathValue("versionId", p284)
-																r.SetPathValue("deployId", p287)
-																r.SetPathValue("predId", p289)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V3Put()
 															case "DELETE":
 																r.Pattern = "DELETE /api/v3/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p281)
-																r.SetPathValue("versionId", p284)
-																r.SetPathValue("deployId", p287)
-																r.SetPathValue("predId", p289)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V3Delete()
 															case "PATCH":
 																r.Pattern = "PATCH /api/v3/ml/models/{modelId}/versions/{versionId}/deployments/{deployId}/predictions/{predId}"
-																r.SetPathValue("modelId", p281)
-																r.SetPathValue("versionId", p284)
-																r.SetPathValue("deployId", p287)
-																r.SetPathValue("predId", p289)
+																r.SetPathValue("modelId", s4)
+																r.SetPathValue("versionId", s6)
+																r.SetPathValue("deployId", s8)
+																r.SetPathValue("predId", p10)
 																a.D13V3Patch()
 															default:
 																w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2850,38 +2869,38 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "webhooks":
-						p290 := p206[i+1:]
-						if i := strings.IndexByte(p290, '/'); i > 0 {
-							p291 := p290[:i]
-							p292 := p290[i+1:]
-							if p293, ok := strings.CutPrefix(p292, "deliveries/"); ok {
-								if strings.IndexByte(p293, '/') < 0 {
-									if p293 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "deliveries/"); ok {
+								if strings.IndexByte(p5, '/') < 0 {
+									if p5 != "" {
 										switch r.Method {
 										case "GET":
 											r.Pattern = "GET /api/v3/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p291)
-											r.SetPathValue("deliveryId", p293)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V3Get()
 										case "POST":
 											r.Pattern = "POST /api/v3/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p291)
-											r.SetPathValue("deliveryId", p293)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V3Post()
 										case "PUT":
 											r.Pattern = "PUT /api/v3/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p291)
-											r.SetPathValue("deliveryId", p293)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V3Put()
 										case "DELETE":
 											r.Pattern = "DELETE /api/v3/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p291)
-											r.SetPathValue("deliveryId", p293)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V3Delete()
 										case "PATCH":
 											r.Pattern = "PATCH /api/v3/webhooks/{whId}/deliveries/{deliveryId}"
-											r.SetPathValue("whId", p291)
-											r.SetPathValue("deliveryId", p293)
+											r.SetPathValue("whId", s3)
+											r.SetPathValue("deliveryId", p5)
 											a.D14V3Patch()
 										default:
 											w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2893,47 +2912,47 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "integrations":
-						p294 := p206[i+1:]
-						if i := strings.IndexByte(p294, '/'); i > 0 {
-							p295 := p294[:i]
-							p296 := p294[i+1:]
-							if p297, ok := strings.CutPrefix(p296, "connections/"); ok {
-								if i := strings.IndexByte(p297, '/'); i > 0 {
-									p298 := p297[:i]
-									p299 := p297[i+1:]
-									if p300, ok := strings.CutPrefix(p299, "syncs/"); ok {
-										if strings.IndexByte(p300, '/') < 0 {
-											if p300 != "" {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							p4 := p3[i+1:]
+							if p5, ok := strings.CutPrefix(p4, "connections/"); ok {
+								if i := strings.IndexByte(p5, '/'); i > 0 {
+									s5 := p5[:i]
+									p6 := p5[i+1:]
+									if p7, ok := strings.CutPrefix(p6, "syncs/"); ok {
+										if strings.IndexByte(p7, '/') < 0 {
+											if p7 != "" {
 												switch r.Method {
 												case "GET":
 													r.Pattern = "GET /api/v3/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p295)
-													r.SetPathValue("connId", p298)
-													r.SetPathValue("syncId", p300)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V3Get()
 												case "POST":
 													r.Pattern = "POST /api/v3/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p295)
-													r.SetPathValue("connId", p298)
-													r.SetPathValue("syncId", p300)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V3Post()
 												case "PUT":
 													r.Pattern = "PUT /api/v3/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p295)
-													r.SetPathValue("connId", p298)
-													r.SetPathValue("syncId", p300)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V3Put()
 												case "DELETE":
 													r.Pattern = "DELETE /api/v3/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p295)
-													r.SetPathValue("connId", p298)
-													r.SetPathValue("syncId", p300)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V3Delete()
 												case "PATCH":
 													r.Pattern = "PATCH /api/v3/integrations/{provSlug}/connections/{connId}/syncs/{syncId}"
-													r.SetPathValue("provSlug", p295)
-													r.SetPathValue("connId", p298)
-													r.SetPathValue("syncId", p300)
+													r.SetPathValue("provSlug", s3)
+													r.SetPathValue("connId", s5)
+													r.SetPathValue("syncId", p7)
 													a.D15V3Patch()
 												default:
 													w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
@@ -2947,30 +2966,40 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "orders":
-						p301 := p206[i+1:]
-						if i := strings.IndexByte(p301, '/'); i > 0 {
-							p302 := p301[:i]
-							if p303, err := strconv.Atoi(p302); err == nil {
-								p304 := p301[i+1:]
-								if p305, ok := strings.CutPrefix(p304, "lines/"); ok {
-									if strings.IndexByte(p305, '/') < 0 {
-										if p306, err := strconv.Atoi(p305); err == nil {
+						p3 := p2[i+1:]
+						if i := strings.IndexByte(p3, '/'); i > 0 {
+							s3 := p3[:i]
+							if digits.MatchString(s3) {
+								p4 := p3[i+1:]
+								if p5, ok := strings.CutPrefix(p4, "lines/"); ok {
+									if strings.IndexByte(p5, '/') < 0 {
+										if digits.MatchString(p5) {
 											switch r.Method {
 											case "GET":
 												r.Pattern = "GET /api/v3/orders/{orderId}/lines/{lineNo}"
-												a.D16V3Get(p303, p306)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V3Get(s3, p5)
 											case "POST":
 												r.Pattern = "POST /api/v3/orders/{orderId}/lines/{lineNo}"
-												a.D16V3Post(p303, p306)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V3Post(s3, p5)
 											case "PUT":
 												r.Pattern = "PUT /api/v3/orders/{orderId}/lines/{lineNo}"
-												a.D16V3Put(p303, p306)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V3Put(s3, p5)
 											case "DELETE":
 												r.Pattern = "DELETE /api/v3/orders/{orderId}/lines/{lineNo}"
-												a.D16V3Delete(p303, p306)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V3Delete(s3, p5)
 											case "PATCH":
 												r.Pattern = "PATCH /api/v3/orders/{orderId}/lines/{lineNo}"
-												a.D16V3Patch(p303, p306)
+												r.SetPathValue("orderId", s3)
+												r.SetPathValue("lineNo", p5)
+												a.D16V3Patch(s3, p5)
 											default:
 												w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
 												w.WriteHeader(http.StatusMethodNotAllowed)
@@ -2982,29 +3011,29 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "sessions":
-						p307 := p206[i+1:]
-						if strings.IndexByte(p307, '/') < 0 {
-							if p307 != "" {
+						p3 := p2[i+1:]
+						if strings.IndexByte(p3, '/') < 0 {
+							if p3 != "" {
 								switch r.Method {
 								case "GET":
 									r.Pattern = "GET /api/v3/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p307)
+									r.SetPathValue("sessionId", p3)
 									a.D17V3Get()
 								case "POST":
 									r.Pattern = "POST /api/v3/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p307)
+									r.SetPathValue("sessionId", p3)
 									a.D17V3Post()
 								case "PUT":
 									r.Pattern = "PUT /api/v3/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p307)
+									r.SetPathValue("sessionId", p3)
 									a.D17V3Put()
 								case "DELETE":
 									r.Pattern = "DELETE /api/v3/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p307)
+									r.SetPathValue("sessionId", p3)
 									a.D17V3Delete()
 								case "PATCH":
 									r.Pattern = "PATCH /api/v3/sessions/{sessionId}"
-									r.SetPathValue("sessionId", p307)
+									r.SetPathValue("sessionId", p3)
 									a.D17V3Patch()
 								default:
 									w.Header().Set("Allow", "GET, POST, PUT, DELETE, PATCH")
