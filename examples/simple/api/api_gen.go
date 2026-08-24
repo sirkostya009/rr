@@ -214,6 +214,32 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			on405(w)
 		}
 		return
+	case "users/me":
+		if r.Method != "GET" {
+			w.Header().Set("Allow", "GET")
+			on405(w)
+			return
+		}
+		r.Pattern = "GET /api/users/me"
+		var v1 int
+		if v2 := r.Header.Get("X-User-Index"); v2 != "" {
+			var err error
+			if v1, err = atoi(v2); err != nil {
+				badRequest(w, r.Header.Get("X-Request-Id"), err)
+				return
+			}
+		}
+		v3, err := s.UsersApi.GetMe(v1)
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := encode.WriteTo(w, v3); err != nil {
+			handleError(w, err)
+			return
+		}
+		return
 	}
 	if i := strings.IndexByte(path, '/'); i > 0 {
 		switch path[:i] {

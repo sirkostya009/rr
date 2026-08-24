@@ -44,3 +44,12 @@ func (a *UsersApi) GetUser(id string) (User, error) {
 func (a *UsersApi) DeleteUser(id string) error {
 	return services.Users.DeleteByID(id)
 }
+
+// a static segment always wins over a param at the same position: /api/v2/users/me
+// lands in the whole-path switch, {id} never sees "me"
+//
+//rr:route GET /api/v2/users/me
+func (a *UsersApi) GetMe( /* rr:header X-User-Id */ id string) (User, error) {
+	u, err := services.Users.ByID(id)
+	return toUser(u), err
+}

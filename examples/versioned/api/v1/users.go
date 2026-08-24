@@ -1,6 +1,10 @@
 package v1
 
-import "versioned/services"
+import (
+	"strconv"
+
+	"versioned/services"
+)
 
 type UsersApi struct {
 	Foo string
@@ -77,4 +81,18 @@ func isUUID(s string) bool {
 		}
 	}
 	return true
+}
+
+// a static segment always wins over a param at the same position: /api/v1/users/me
+// lands in the whole-path switch, neither {i} nor {id=@isUUID} sees "me".
+// single header values are strings unless =@transform converts them.
+//
+//rr:route GET /api/v1/users/me
+func (a *UsersApi) GetMe( /* rr:header X-User-Index=@atoi */ i int) (User, error) {
+	u, err := services.Users.ByIndex(i)
+	return toUser(u), err
+}
+
+func atoi(s string) (int, error) {
+	return strconv.Atoi(s)
 }

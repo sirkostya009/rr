@@ -12,7 +12,8 @@ api/
   v1/           /api/v1 — legacy int ids (uuids accepted, not the default)
     api.go      //rr:api Api type + the four error-page handlers
     users.go    basic CRUD, (T, error) returns, `body` param, auto int path
-                param, uuid checker-string route alongside the int one
+                param, uuid checker-string route alongside the int one,
+                static `/users/me` beating both, header value via `=@transform`
     posts.go    `query` struct binding, `body` pointer, controller-level
                 onerror, two params sharing one path position (int vs.
                 checker-string), ggen-validated field
@@ -23,7 +24,7 @@ api/
     files.go    trailing wildcard path param
   v2/           /api/v2 — same resources, uuid string ids only
     api.go      //rr:api Api type + error handlers + the uuid checker
-    users.go    CRUD keyed by uuid, plain string path param
+    users.go    CRUD keyed by uuid, plain string path param, static `/users/me`
     posts.go    two checker-string params on one position (uuid vs. slug)
     admin.go    guarded stats + method catch-all
   (each version has its own api_gen.go router and api_ggen.go codecs,

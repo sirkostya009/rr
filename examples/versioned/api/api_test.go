@@ -112,6 +112,15 @@ func TestUsers(t *testing.T) {
 		t.Errorf("GET /api/v1/users/abc: %d", rec.Code)
 	}
 
+	// "me" is static: it wins over both param routes and takes its index off a header
+	if u := fromJSON[v1.User](t, do(t, a, "GET", "/api/v1/users/me", "", "X-User-Index", "1")); u.Name != "Gal" {
+		t.Errorf("GET /api/v1/users/me: %v", u)
+	}
+	// a failing header transform lands on the 400 handler
+	if rec := do(t, a, "GET", "/api/v1/users/me", "", "X-User-Index", "x"); rec.Code != 400 {
+		t.Errorf("GET /api/v1/users/me with a bad header: %d", rec.Code)
+	}
+
 	if rec := do(t, a, "DELETE", "/api/v1/users/1", ""); rec.Code != 200 {
 		t.Errorf("DELETE /api/v1/users/1: %d %s", rec.Code, rec.Body.String())
 	}
@@ -268,6 +277,11 @@ func TestV2Users(t *testing.T) {
 	}
 	if req.Pattern != "GET /api/v2/users/{id}" {
 		t.Errorf("Pattern = %q", req.Pattern)
+	}
+
+	// "me" is static: it wins over the {id} param and takes its id off a header
+	if u := fromJSON[v2.User](t, do(t, a, "GET", "/api/v2/users/me", "", "X-User-Id", created.ID)); u.Name != "Gal" {
+		t.Errorf("GET /api/v2/users/me: %v", u)
 	}
 
 	// unknown uuid: (User, error) routes through the v2 central onerror

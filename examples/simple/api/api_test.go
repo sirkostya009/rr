@@ -96,6 +96,15 @@ func TestUsers(t *testing.T) {
 		t.Errorf("GET /api/users/abc: %d", rec.Code)
 	}
 
+	// "me" is static: it wins over the {i} param and takes its index off a header
+	if u := fromJSON[User](t, do(t, a, "GET", "/api/users/me", "", "X-User-Index", "1")); u.Name != "Gal" {
+		t.Errorf("GET /api/users/me: %v", u)
+	}
+	// a failing header transform lands on the 400 handler
+	if rec := do(t, a, "GET", "/api/users/me", "", "X-User-Index", "x"); rec.Code != 400 {
+		t.Errorf("GET /api/users/me with a bad header: %d", rec.Code)
+	}
+
 	if rec := do(t, a, "DELETE", "/api/users/1", ""); rec.Code != 200 {
 		t.Errorf("DELETE /api/users/1: %d %s", rec.Code, rec.Body.String())
 	}

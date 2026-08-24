@@ -1,6 +1,9 @@
 package api
 
-import "errors"
+import (
+	"errors"
+	"strconv"
+)
 
 type UsersApi struct {
 	Foo string
@@ -49,4 +52,17 @@ func (a *UsersApi) DeleteUser(i int) error {
 	}
 	users = append(users[:i], users[i+1:]...)
 	return nil
+}
+
+// a static segment always wins over a param at the same position: /api/users/me
+// lands in the whole-path switch, {i} never sees "me".
+// single header values are strings unless =@transform converts them.
+//
+//rr:route GET /api/users/me
+func (a *UsersApi) GetMe( /* rr:header X-User-Index=@atoi */ i int) (User, error) {
+	return a.GetUser(i)
+}
+
+func atoi(s string) (int, error) {
+	return strconv.Atoi(s)
 }

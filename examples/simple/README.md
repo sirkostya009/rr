@@ -10,7 +10,8 @@ only as a dev tool (`go run rr/cmd`), never at runtime.
 api/
   api.go        //rr:api Api type + the four error-page handlers
   server.go     Server: wraps Api with sentry tracing + slog request logging
-  users.go      basic CRUD, (T, error) returns, `body` param, auto int path param
+  users.go      basic CRUD, (T, error) returns, `body` param, auto int path param,
+                static `/users/me` beating it, header value via `=@transform`
   posts.go      `query` struct binding, `body` pointer, controller-level
                 onerror, two params sharing one path position (int vs.
                 checker-string), ggen-validated field
