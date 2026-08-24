@@ -86,7 +86,10 @@ Handler params bind by NAME + TYPE for the common cases; an inline
 5. reserved name `query` — whole query: struct (`query:` tags), map[string]
    string/any, or `url.Values` (r.URL.Query() passthrough)
 6. reserved name `headers` — whole header struct (`header:` tags) or http.Header
-7. anything else (bare scalar not in route, struct not body/query/headers) — error
+7. named type (or *T) embedding `http.ResponseWriter` — the writer itself,
+   emitted as `w.(T)`; embeds are followed recursively, in-package types only.
+   A failing assertion panics — the wrapper is expected to always pass one
+8. anything else (bare scalar not in route, struct not body/query/headers) — error
 
 Annotations (override a name; `whole` = dispatch on type like the reserved name):
 - `/* rr:body */` — the body (type decides json/multipart/urlencoded)
@@ -123,7 +126,7 @@ belong in an outer wrapper like `example/api/server.go`.
   onerror is the only override, e.g. a controller mapping its errors →404).
 - Error/condition handlers (on404/on405/on400/onerror) bind params like route
   handlers via the same buildArgs, NOT a fixed signature: `http.ResponseWriter`
-  required; `*http.Request`, `error`, query and header binds optional; body and
+  (or a type embedding it) required; `*http.Request`, `error`, query and header binds optional; body and
   path params forbidden (no route context). onerror REQUIRES an error param;
   on400 may take one (nil for plain-bad); on404/on405 must NOT. Must be
   in-package (introspected for their args). `argError` binds the `err` var in

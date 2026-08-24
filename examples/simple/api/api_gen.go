@@ -54,6 +54,18 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		s.AdminApi.Maintenance(w)
 		return
+	case "admin/probe":
+		if r.Method != "GET" {
+			w.Header().Set("Allow", "GET")
+			on405(w)
+			return
+		}
+		r.Pattern = "GET /api/admin/probe"
+		if !requireToken(w, r.Header.Get("Authorization")) {
+			return
+		}
+		s.AdminApi.Probe(w.(*statusWriter))
+		return
 	case "admin/stats":
 		if r.Method != "GET" {
 			w.Header().Set("Allow", "GET")

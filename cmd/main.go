@@ -78,6 +78,7 @@ const (
 	argWriter         // http.ResponseWriter, bound by type
 	argRequest        // *http.Request, bound by type
 	argError          // error, bound by type (error handlers only)
+	argWriterCast     // named type embedding http.ResponseWriter, type-asserted from w
 )
 
 // query binding shapes, decided by the declared param type
@@ -598,6 +599,16 @@ func main() {
 	}
 	for _, name := range order {
 		a := apis[name]
+		// a param of a named type embedding http.ResponseWriter is the writer
+		// itself, type-asserted at the call site
+		castWriter := func(spec *argSpec) bool {
+			if spec.kind != argParam || spec.typeExpr == nil || !embedsWriter(spec.typeExpr, types, 0) {
+				return false
+			}
+			spec.kind = argWriterCast
+			spec.typ = renderType(fset, spec.typeExpr)
+			return true
+		}
 		for _, raw := range a.mwRaw {
 			mw := middleware{ref: resolve(a, raw, name)}
 			fd := methods[a.name][raw]
@@ -609,9 +620,11 @@ func main() {
 			}
 			mw.retErr = middlewareRet(fd, name)
 			mw.args = handlerArgs(fileOf[fd], fd)
-			for _, spec := range mw.args {
+			for k := range mw.args {
+				spec := &mw.args[k]
+				castWriter(spec)
 				switch spec.kind {
-				case argWriter, argRequest, argQuery, argHeader:
+				case argWriter, argWriterCast, argRequest, argQuery, argHeader:
 				default:
 					fatalf("%s: middleware @%s params must be http.ResponseWriter, *http.Request, rr:query or rr:header", name, raw)
 				}
@@ -710,6 +723,11 @@ func main() {
 				spec := &h.args[k]
 				switch spec.kind {
 				case argWriter:
+					hasW = true
+				case argParam:
+					if !castWriter(spec) {
+						fatalf("%s: %s handler @%s can only bind http.ResponseWriter, *http.Request, error, query and headers", name, kind, raw)
+					}
 					hasW = true
 				case argRequest:
 				case argError:
@@ -819,6 +837,9 @@ func main() {
 				case argError:
 					fatalf("%s.%s: handlers receive errors via return, not a param", name, rt.handler)
 				case argParam:
+					if castWriter(spec) {
+						break
+					}
 					var pp *param
 					for _, tk := range rt.tokens {
 						if tk.kind == tokParam && tk.p.name == spec.name {
@@ -1902,6 +1923,8 @@ func (g *gen) buildArgs(specs []argSpec, args map[string]string, recv string) st
 		switch spec.kind {
 		case argWriter:
 			parts = append(parts, "w")
+		case argWriterCast:
+			parts = append(parts, fmt.Sprintf("w.(%s)", spec.typ))
 		case argRequest:
 			parts = append(parts, "r")
 		case argError:
@@ -2414,6 +2437,50 @@ func wrKind(t ast.Expr) (int, bool) {
 		}
 	}
 	return 0, false
+}
+
+// embedsWriter reports whether t is an in-package named type (or pointer to
+// one) that embeds http.ResponseWriter, directly or through another such type.
+// Handlers taking one get `w` type-asserted into it.
+func embedsWriter(t ast.Expr, types map[string]*ast.TypeSpec, depth int) bool {
+	if depth > 8 {
+		return false
+	}
+	if st, ok := t.(*ast.StarExpr); ok {
+		t = st.X
+	}
+	id, ok := t.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	ts := types[id.Name]
+	if ts == nil {
+		return false
+	}
+	var fields *ast.FieldList
+	switch u := ts.Type.(type) {
+	case *ast.StructType:
+		fields = u.Fields
+	case *ast.InterfaceType:
+		fields = u.Methods
+	default:
+		return false
+	}
+	if fields == nil {
+		return false
+	}
+	for _, f := range fields.List {
+		if len(f.Names) > 0 { // not embedded
+			continue
+		}
+		if k, ok := wrKind(f.Type); ok && k == argWriter {
+			return true
+		}
+		if embedsWriter(f.Type, types, depth+1) {
+			return true
+		}
+	}
+	return false
 }
 
 // handlerArgs maps handler params to argSpecs. Roles are inferred:

@@ -26,3 +26,15 @@ func (ad *AdminApi) Stats() map[string]int {
 func (ad *AdminApi) Maintenance(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusAccepted)
 }
+
+// a param whose type embeds http.ResponseWriter is the writer itself,
+// type-asserted from w — the way to reach wrapper-only methods like
+// statusWriter.Status without threading a context through every signature
+//
+//rr:route GET /api/admin/probe
+func (ad *AdminApi) Probe(sw *statusWriter) {
+	sw.WriteHeader(http.StatusTeapot)
+	if code, wrote := sw.Status(); wrote {
+		sw.Write([]byte(http.StatusText(code)))
+	}
+}

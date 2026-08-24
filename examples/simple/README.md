@@ -15,7 +15,8 @@ api/
   posts.go      `query` struct binding, `body` pointer, controller-level
                 onerror, two params sharing one path position (int vs.
                 checker-string), ggen-validated field
-  admin.go      //rr:pre guard (bearer token), method catch-all route
+  admin.go      //rr:pre guard (bearer token), method catch-all route,
+                writer-embedding param (*statusWriter) asserted from w
   search.go     custom whole-query parser, single header value, url.Values
                 query, typed-dispatch trio (bool/float/string, one position)
   forms.go      `headers` struct, url.Values body, multipart.Form body

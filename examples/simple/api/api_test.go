@@ -194,6 +194,20 @@ func TestAdmin(t *testing.T) {
 		t.Errorf("maintenance: %d", rec.Code)
 	}
 
+	// a handler param embedding http.ResponseWriter gets w asserted into it,
+	// so it can reach the wrapper's own methods
+	req := httptest.NewRequest("GET", "/api/admin/probe", nil)
+	req.Header.Set("Authorization", "Bearer letmein")
+	rec := httptest.NewRecorder()
+	sw := &statusWriter{ResponseWriter: rec, status: http.StatusOK}
+	a.ServeHTTP(sw, req)
+	if code, wrote := sw.Status(); !wrote || code != http.StatusTeapot {
+		t.Errorf("probe status: %d %v", code, wrote)
+	}
+	if rec.Code != http.StatusTeapot || rec.Body.String() != "418" {
+		t.Errorf("probe: %d %q", rec.Code, rec.Body.String())
+	}
+
 	// mounted apis serve only through the central, annotations or not
 	var h any = &AdminApi{}
 	if _, ok := h.(http.Handler); ok {
