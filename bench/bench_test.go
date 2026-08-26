@@ -1,6 +1,6 @@
-// Package bench compares rr's generated dispatch against httx, gin and
-// httprouter on a realistic deeply-nested REST surface, adapted from
-// httx's own bench/bench_test.go (github.com/sirkostya009/httx/bench).
+// Package bench compares rr's generated dispatch against httx, gin,
+// httprouter, the standard ServeMux, and chi on a realistic deeply-nested REST
+// surface adapted from httx's own benchmark.
 //
 //	cd bench && go test -bench . -benchmem .
 package bench
@@ -9,20 +9,27 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
-	"runtime"
+	"net/url"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirkostya009/httx"
 )
 
-func init() {
+// Package-level routers are built before init functions run, so release mode
+// must itself be a preceding package initializer. The old init() left every
+// benchmark Engine constructed in gin's debug mode.
+var _ = func() struct{} {
 	gin.SetMode(gin.ReleaseMode)
-}
+	return struct{}{}
+}()
 
 // Realistic deeply-nested API surface modeled after GitHub/GitLab/AWS-style
 // services. Must stay in lockstep with bench/routes.go, which is the
@@ -236,6 +243,48 @@ func newGin(f bool) *gin.Engine {
 	return r
 }
 
+func serveMuxPattern(method, pattern string) string {
+	pattern = canonicalPath(pattern)
+	if pattern == "/" {
+		// A bare "/" is a subtree match in ServeMux, unlike rr's exact route.
+		pattern = "/{$}"
+	}
+	return method + " " + pattern
+}
+
+func newServeMux() *http.ServeMux {
+	m := http.NewServeMux()
+	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+	for _, tmpl := range buildTemplates() {
+		for _, method := range methods {
+			m.Handle(serveMuxPattern(method, tmpl.brace), h)
+		}
+	}
+	return m
+}
+
+func chiPath(pattern string) string {
+	pattern = stripRegex(pattern)
+	if i := strings.Index(pattern, "{filepath}"); i >= 0 && strings.HasSuffix(pattern, "{filepath}") {
+		return pattern[:i] + "*"
+	}
+	return pattern
+}
+
+func newChi() *chi.Mux {
+	r := chi.NewRouter()
+	r.NotFound(status404)
+	// Keep chi's default 405 handler: unlike a custom handler, it receives the
+	// matched method set and therefore emits the same required Allow work.
+	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+	for _, tmpl := range buildTemplates() {
+		for _, method := range methods {
+			r.Method(method, chiPath(tmpl.brace), h)
+		}
+	}
+	return r
+}
+
 type routerCase struct {
 	name string
 	h    http.Handler
@@ -251,7 +300,11 @@ func routers(f bool) []routerCase {
 		// rr's route set is fixed at compile time (bench/routes.go) and
 		// has no trailing-slash/case-insensitive redirect feature, so it
 		// only takes part in the "plain" registration.
-		rs = append([]routerCase{{"rr", newRR()}}, rs...)
+		rs = append([]routerCase{
+			{"rr", newRR()},
+			{"stdlib", newServeMux()},
+			{"chi", newChi()},
+		}, rs...)
 	}
 	return rs
 }
@@ -267,29 +320,62 @@ var (
 	// httprouter and gin have no regex param support; rr and httx do (rr via
 	// a {name=@digits} checker ref to a real *regexp.Regexp, same digit-only
 	// guarantee as httx's inline {orderId:\d+}).
-	regexOnly = []routerCase{plain[0], plain[1]} // rr, httx
+	regexOnly = []routerCase{{"rr", newRR()}, {"httx", newHTTX(false)}}
+	// httprouter/gin expose catch-all params with a leading slash while rr,
+	// httx, ServeMux and chi expose the tail. Keep the timing comparison on
+	// routers with equivalent handler-visible values.
+	wildcardOnly = []routerCase{
+		{"rr", newRR()},
+		{"httx", newHTTX(false)},
+		{"stdlib", newServeMux()},
+		{"chi", newChi()},
+	}
 )
 
-// warmup drives 200 hits through h to warm caches + lazy init.
-func warmup(h http.Handler, hits []hit) {
-	req := httptest.NewRequest("GET", "/", nil)
-	w := httptest.NewRecorder()
-	for i := range 200 {
-		ht := hits[i%len(hits)]
-		req.Method = ht.method
-		req.URL.Path = ht.path
-		h.ServeHTTP(w, req)
-	}
+// resetWriter models the server's per-request response state without bringing
+// httptest.ResponseRecorder's retained status/body into later iterations.
+type resetWriter struct {
+	header http.Header
+	code   int
 }
 
-func reportMem(b *testing.B, start, end *runtime.MemStats) {
-	totalBytes := end.TotalAlloc - start.TotalAlloc
-	gcs := end.NumGC - start.NumGC
-	b.ReportMetric(float64(end.HeapAlloc)/1024, "heap_KB")
-	b.ReportMetric(float64(totalBytes)/1024, "total_KB")
-	b.ReportMetric(float64(totalBytes)/float64(b.N), "totB/op")
-	b.ReportMetric(float64(gcs)/float64(b.N)*1e6, "gc/Mop")
-	b.ReportMetric(float64(gcs), "gc")
+func newResetWriter() *resetWriter         { return &resetWriter{header: make(http.Header)} }
+func (w *resetWriter) Header() http.Header { return w.header }
+func (w *resetWriter) Write(p []byte) (int, error) {
+	if w.code == 0 {
+		w.code = http.StatusOK
+	}
+	return len(p), nil
+}
+func (w *resetWriter) WriteHeader(code int) {
+	if w.code == 0 {
+		w.code = code
+	}
+}
+func (w *resetWriter) reset() {
+	clear(w.header)
+	w.code = 0
+}
+
+func hitURLs(hits []hit) []*url.URL {
+	urls := make([]*url.URL, len(hits))
+	for i := range hits {
+		urls[i] = &url.URL{Path: hits[i].path}
+	}
+	return urls
+}
+
+// warmup drives 200 hits through h to warm caches + lazy init.
+func warmup(h http.Handler, hits []hit, urls []*url.URL) {
+	req := new(http.Request)
+	w := newResetWriter()
+	for i := range 200 {
+		j := i % len(hits)
+		ht := hits[j]
+		*req = http.Request{Method: ht.method, URL: urls[j]}
+		w.reset()
+		h.ServeHTTP(w, req)
+	}
 }
 
 // benchmarkHits cycles through a precomputed deterministic-but-pseudorandom
@@ -305,59 +391,51 @@ func benchmarkHits(b *testing.B, rs []routerCase, hits []hit) {
 	if len(hits) == 0 {
 		b.Fatal("no hits")
 	}
+	urls := hitURLs(hits)
 	for _, rc := range rs {
 		b.Run(rc.name+"/serial", func(b *testing.B) {
-			warmup(rc.h, hits)
+			warmup(rc.h, hits, urls)
 
-			// per-iteration request — reused so we measure pure dispatch, not
-			// httptest.NewRequest allocations.
-			req := httptest.NewRequest("GET", "/", nil)
-			w := httptest.NewRecorder()
+			// Keep the request allocation out of the timing, but reset its entire
+			// routing metadata each iteration. This prevents rr/httx/stdlib from
+			// reusing a warmed PathValue map that a real incoming request lacks.
+			req := new(http.Request)
+			w := newResetWriter()
 
-			var start, end runtime.MemStats
-			runtime.ReadMemStats(&start)
 			b.ReportAllocs()
 			b.ResetTimer()
 
 			i := 0
 			for b.Loop() {
-				h := hits[i%len(hits)]
-				req.Method = h.method
-				req.URL.Path = h.path
+				j := i % len(hits)
+				h := hits[j]
+				*req = http.Request{Method: h.method, URL: urls[j]}
+				w.reset()
 				rc.h.ServeHTTP(w, req)
 				i++
 			}
-
-			b.StopTimer()
-			runtime.ReadMemStats(&end)
-			reportMem(b, &start, &end)
 		})
 		b.Run(rc.name+"/parallel", func(b *testing.B) {
-			warmup(rc.h, hits)
+			warmup(rc.h, hits, urls)
 
-			var start, end runtime.MemStats
-			runtime.ReadMemStats(&start)
 			b.ReportAllocs()
 			b.ResetTimer()
 
 			var goroutines atomic.Int64
 			b.RunParallel(func(pb *testing.PB) {
-				req := httptest.NewRequest("GET", "/", nil)
-				w := httptest.NewRecorder()
+				req := new(http.Request)
+				w := newResetWriter()
 				// prime-stride offset so goroutines walk different hit sequences.
 				i := int(goroutines.Add(1)) * 7919
 				for pb.Next() {
-					h := hits[i%len(hits)]
-					req.Method = h.method
-					req.URL.Path = h.path
+					j := i % len(hits)
+					h := hits[j]
+					*req = http.Request{Method: h.method, URL: urls[j]}
+					w.reset()
 					rc.h.ServeHTTP(w, req)
 					i++
 				}
 			})
-
-			b.StopTimer()
-			runtime.ReadMemStats(&end)
-			reportMem(b, &start, &end)
 		})
 	}
 }
@@ -449,7 +527,7 @@ func BenchmarkWildcard(b *testing.B) {
 				"/files/" + pick(r, tails),
 		}
 	}
-	benchmarkHits(b, plain, hits)
+	benchmarkHits(b, wildcardOnly, hits)
 }
 
 func BenchmarkMethodMismatch(b *testing.B) {
@@ -486,13 +564,13 @@ func BenchmarkNotFound(b *testing.B) {
 }
 
 func BenchmarkTrailingSlash(b *testing.B) {
-	// /inbox and /articles/published are the only two routes registered when f=true.
-	// Hit with trailing slash to force the redirect.
+	// /inbox and /articles/published are GET-only routes. Keep every hit on GET:
+	// the old varied-method workload silently measured 404/405 for most hits.
 	r := newRNG()
 	registered := []string{"/inbox/", "/articles/published/"}
 	hits := make([]hit, 64)
 	for i := range hits {
-		hits[i] = hit{method: pick(r, methods), path: pick(r, registered)}
+		hits[i] = hit{method: http.MethodGet, path: pick(r, registered)}
 	}
 	benchmarkHits(b, tsrOnly, hits)
 }
@@ -503,7 +581,396 @@ func BenchmarkCaseInsensitive(b *testing.B) {
 	variants := []string{"/ARTICLES/Published/", "/Articles/published/", "/INBOX/", "/Inbox/"}
 	hits := make([]hit, 64)
 	for i := range hits {
-		hits[i] = hit{method: pick(r, methods), path: pick(r, variants)}
+		hits[i] = hit{method: http.MethodGet, path: pick(r, variants)}
 	}
 	benchmarkHits(b, caseFix, hits)
+}
+
+// canonicalPath renders rr/httx route syntax as the public Go 1.22 route
+// pattern used by rr's generated dispatcher.
+func canonicalPath(pattern string) string {
+	var b strings.Builder
+	for i := 0; i < len(pattern); {
+		if pattern[i] != '{' {
+			b.WriteByte(pattern[i])
+			i++
+			continue
+		}
+		j := strings.IndexByte(pattern[i:], '}')
+		if j < 0 {
+			b.WriteString(pattern[i:])
+			break
+		}
+		inner := pattern[i+1 : i+j]
+		name, checker, hasChecker := strings.Cut(inner, ":")
+		b.WriteByte('{')
+		b.WriteString(name)
+		if hasChecker && checker == "*" {
+			b.WriteString("...")
+		}
+		b.WriteByte('}')
+		i += j + 1
+	}
+	return b.String()
+}
+
+func pathParamNames(pattern string) []string {
+	var names []string
+	for i := 0; i < len(pattern); {
+		start := strings.IndexByte(pattern[i:], '{')
+		if start < 0 {
+			break
+		}
+		start += i
+		end := strings.IndexByte(pattern[start:], '}')
+		if end < 0 {
+			break
+		}
+		end += start
+		inner := pattern[start+1 : end]
+		name, _, _ := strings.Cut(inner, ":")
+		names = append(names, name)
+		i = end + 1
+	}
+	return names
+}
+
+func concreteRoute(pattern string, n int) (string, map[string]string) {
+	params := make(map[string]string)
+	var b strings.Builder
+	for i := 0; i < len(pattern); {
+		if pattern[i] != '{' {
+			b.WriteByte(pattern[i])
+			i++
+			continue
+		}
+		j := strings.IndexByte(pattern[i:], '}')
+		if j < 0 {
+			panic("malformed benchmark route: " + pattern)
+		}
+		inner := pattern[i+1 : i+j]
+		name, checker, _ := strings.Cut(inner, ":")
+		value := name + "-value-" + strconv.Itoa(n)
+		switch {
+		case name == "orderId":
+			value = strconv.Itoa(100000 + n)
+		case name == "lineNo":
+			value = strconv.Itoa(10 + n%90)
+		case checker == "*":
+			value = "src/internal/file-" + strconv.Itoa(n) + ".go"
+		}
+		params[name] = value
+		b.WriteString(value)
+		i += j + 1
+	}
+	return b.String(), params
+}
+
+type routeObservation struct {
+	pattern string
+	params  map[string]string
+}
+
+func (o *routeObservation) reset() {
+	o.pattern = ""
+	o.params = nil
+}
+
+func (o *routeObservation) record(pattern string, names []string, value func(string) string) {
+	o.pattern = pattern
+	o.params = make(map[string]string, len(names))
+	for _, name := range names {
+		o.params[name] = value(name)
+	}
+}
+
+type observedRouter struct {
+	name string
+	h    http.Handler
+	obs  *routeObservation
+}
+
+func observedRouters() []observedRouter {
+	var out []observedRouter
+
+	{
+		o := new(routeObservation)
+		// Rebuild so route-specific handlers can expose which route and params
+		// were selected; the benchmark constructors deliberately use no-ops.
+		m := httx.NewMux()
+		m.RedirectTrailingSlash = false
+		m.RedirectCaseInsensitivePath = false
+		m.OnPanic = nil
+		m.GlobalOPTIONS = nil
+		for _, tmpl := range buildTemplates() {
+			for _, method := range methods {
+				pattern := method + " " + canonicalPath(tmpl.brace)
+				names := pathParamNames(tmpl.brace)
+				m.Handle(method, tmpl.brace, func(_ http.ResponseWriter, r *http.Request) error {
+					o.record(pattern, names, r.PathValue)
+					return nil
+				})
+			}
+		}
+		out = append(out, observedRouter{"httx", m, o})
+	}
+
+	{
+		o := new(routeObservation)
+		r := httprouter.New()
+		r.RedirectTrailingSlash = false
+		r.RedirectFixedPath = false
+		r.HandleOPTIONS = false
+		r.NotFound = http.HandlerFunc(status404)
+		r.MethodNotAllowed = http.HandlerFunc(status405)
+		for _, tmpl := range buildTemplates() {
+			for _, method := range methods {
+				pattern := method + " " + canonicalPath(tmpl.brace)
+				names := pathParamNames(tmpl.brace)
+				r.Handle(method, braceToColon(tmpl.brace), func(_ http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+					o.record(pattern, names, ps.ByName)
+				})
+			}
+		}
+		out = append(out, observedRouter{"httprouter", r, o})
+	}
+
+	{
+		o := new(routeObservation)
+		r := gin.New()
+		r.RedirectTrailingSlash = false
+		r.RedirectFixedPath = false
+		r.HandleMethodNotAllowed = true
+		r.NoRoute(func(c *gin.Context) { c.Status(http.StatusNotFound) })
+		r.NoMethod(func(c *gin.Context) { c.Status(http.StatusMethodNotAllowed) })
+		for _, tmpl := range buildTemplates() {
+			for _, method := range methods {
+				pattern := method + " " + canonicalPath(tmpl.brace)
+				names := pathParamNames(tmpl.brace)
+				r.Handle(method, braceToColon(tmpl.brace), func(c *gin.Context) {
+					o.record(pattern, names, c.Param)
+				})
+			}
+		}
+		out = append(out, observedRouter{"gin", r, o})
+	}
+
+	{
+		o := new(routeObservation)
+		m := http.NewServeMux()
+		for _, tmpl := range buildTemplates() {
+			for _, method := range methods {
+				pattern := method + " " + canonicalPath(tmpl.brace)
+				names := pathParamNames(tmpl.brace)
+				m.HandleFunc(serveMuxPattern(method, tmpl.brace), func(_ http.ResponseWriter, r *http.Request) {
+					o.record(pattern, names, r.PathValue)
+				})
+			}
+		}
+		out = append(out, observedRouter{"stdlib", m, o})
+	}
+
+	{
+		o := new(routeObservation)
+		r := chi.NewRouter()
+		for _, tmpl := range buildTemplates() {
+			for _, method := range methods {
+				pattern := method + " " + canonicalPath(tmpl.brace)
+				names := pathParamNames(tmpl.brace)
+				wildcard := strings.Contains(tmpl.brace, ":*")
+				r.MethodFunc(method, chiPath(tmpl.brace), func(_ http.ResponseWriter, r *http.Request) {
+					o.record(pattern, names, func(name string) string {
+						if wildcard && name == "filepath" {
+							return chi.URLParam(r, "*")
+						}
+						return chi.URLParam(r, name)
+					})
+				})
+			}
+		}
+		out = append(out, observedRouter{"chi", r, o})
+	}
+
+	return out
+}
+
+func TestRegisteredRoutesAgree(t *testing.T) {
+	rr := newRR()
+	peers := observedRouters()
+	n := 0
+	for _, tmpl := range buildTemplates() {
+		for _, method := range methods {
+			n++
+			path, params := concreteRoute(tmpl.brace, n)
+			wantPattern := method + " " + canonicalPath(tmpl.brace)
+
+			req := httptest.NewRequest(method, path, nil)
+			w := httptest.NewRecorder()
+			rr.ServeHTTP(w, req)
+			if w.Code != http.StatusOK {
+				t.Fatalf("rr %s %s: status=%d, want 200", method, path, w.Code)
+			}
+			if req.Pattern != wantPattern {
+				t.Fatalf("rr %s %s: pattern=%q, want %q", method, path, req.Pattern, wantPattern)
+			}
+			for name, want := range params {
+				if got := req.PathValue(name); got != want {
+					t.Fatalf("rr %s %s: %s=%q, want %q", method, path, name, got, want)
+				}
+			}
+
+			for _, peer := range peers {
+				peer.obs.reset()
+				req := httptest.NewRequest(method, path, nil)
+				w := httptest.NewRecorder()
+				peer.h.ServeHTTP(w, req)
+				if w.Code != http.StatusOK {
+					t.Fatalf("%s %s %s: status=%d, want 200", peer.name, method, path, w.Code)
+				}
+				if peer.obs.pattern != wantPattern {
+					t.Fatalf("%s %s %s: pattern=%q, want %q", peer.name, method, path, peer.obs.pattern, wantPattern)
+				}
+				gotParams := peer.obs.params
+				if strings.Contains(tmpl.brace, ":*") && (peer.name == "httprouter" || peer.name == "gin") {
+					gotParams = make(map[string]string, len(peer.obs.params))
+					for name, value := range peer.obs.params {
+						gotParams[name] = value
+					}
+					gotParams["filepath"] = strings.TrimPrefix(gotParams["filepath"], "/")
+				}
+				if !reflect.DeepEqual(gotParams, params) {
+					t.Fatalf("%s %s %s: params=%v, want %v", peer.name, method, path, peer.obs.params, params)
+				}
+			}
+		}
+	}
+}
+
+func TestMissAndMethodSemantics(t *testing.T) {
+	for _, rc := range plain {
+		t.Run(rc.name+"/404", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			rc.h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/not/a/registered/path", nil))
+			if w.Code != http.StatusNotFound {
+				t.Fatalf("status=%d, want 404", w.Code)
+			}
+		})
+		t.Run(rc.name+"/405", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			rc.h.ServeHTTP(w, httptest.NewRequest(http.MethodOptions, "/api/v1/sessions/session-1", nil))
+			if w.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("status=%d, want 405", w.Code)
+			}
+			if len(w.Header().Values("Allow")) == 0 {
+				t.Fatal("405 response omitted Allow")
+			}
+		})
+	}
+}
+
+func TestRegexFeatureParity(t *testing.T) {
+	path := "/api/v1/orders/not-digits/lines/7"
+	for _, rc := range plain {
+		w := httptest.NewRecorder()
+		rc.h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		want := http.StatusOK
+		if rc.name == "rr" || rc.name == "httx" {
+			want = http.StatusNotFound
+		}
+		if w.Code != want {
+			t.Errorf("%s status=%d, want %d", rc.name, w.Code, want)
+		}
+	}
+}
+
+func TestRedirectHitSetsAreActualRedirects(t *testing.T) {
+	for _, rc := range tsrOnly {
+		w := httptest.NewRecorder()
+		rc.h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/articles/published/", nil))
+		if w.Code < 300 || w.Code >= 400 {
+			t.Errorf("trailing slash: %s status=%d, want redirect", rc.name, w.Code)
+		}
+	}
+	for _, rc := range caseFix {
+		w := httptest.NewRecorder()
+		rc.h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/ARTICLES/Published/", nil))
+		if w.Code < 300 || w.Code >= 400 {
+			t.Errorf("case fix: %s status=%d, want redirect", rc.name, w.Code)
+		}
+	}
+}
+
+func TestAllowSets(t *testing.T) {
+	want := append([]string(nil), methods...)
+	sort.Strings(want)
+	for _, rc := range plain {
+		w := httptest.NewRecorder()
+		rc.h.ServeHTTP(w, httptest.NewRequest(http.MethodOptions, "/api/v1/sessions/session-1", nil))
+		var got []string
+		for _, line := range w.Header().Values("Allow") {
+			for _, method := range strings.Split(line, ",") {
+				got = append(got, strings.TrimSpace(method))
+			}
+		}
+		sort.Strings(got)
+		// ServeMux and chi treat GET as also allowing HEAD. rr and the legacy
+		// peers do not; record that intentional semantic disparity explicitly.
+		got = slicesDelete(got, http.MethodHead)
+		got = slicesDelete(got, http.MethodOptions)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s Allow=%v, want %v (ignoring automatic HEAD)", rc.name, got, want)
+		}
+	}
+}
+
+func TestWildcardParamRepresentation(t *testing.T) {
+	const path = "/api/v1/organizations/o/projects/p/repositories/r/branches/b/commits/c/files/src/main.go"
+	want := map[string]string{
+		"rr":         "src/main.go",
+		"httx":       "src/main.go",
+		"httprouter": "/src/main.go",
+		"gin":        "/src/main.go",
+		"stdlib":     "src/main.go",
+		"chi":        "src/main.go",
+	}
+
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	newRR().ServeHTTP(httptest.NewRecorder(), req)
+	if got := req.PathValue("filepath"); got != want["rr"] {
+		t.Errorf("rr filepath=%q, want %q", got, want["rr"])
+	}
+	for _, peer := range observedRouters() {
+		peer.obs.reset()
+		peer.h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, path, nil))
+		if got := peer.obs.params["filepath"]; got != want[peer.name] {
+			t.Errorf("%s filepath=%q, want %q", peer.name, got, want[peer.name])
+		}
+	}
+}
+
+func TestPercentEncodedSlashSemantics(t *testing.T) {
+	const path = "/api/v1/sessions/a%2Fb"
+	for _, rc := range plain {
+		w := httptest.NewRecorder()
+		rc.h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		want := http.StatusNotFound
+		if rc.name == "stdlib" || rc.name == "chi" {
+			// ServeMux unescapes path segments individually, preserving an
+			// encoded slash inside the wildcard; chi likewise routes the escaped
+			// segment. rr, httx, httprouter and gin use decoded URL.Path.
+			want = http.StatusOK
+		}
+		if w.Code != want {
+			t.Errorf("%s status=%d, want %d", rc.name, w.Code, want)
+		}
+	}
+}
+
+func slicesDelete(xs []string, value string) []string {
+	for i, x := range xs {
+		if x == value {
+			return append(xs[:i], xs[i+1:]...)
+		}
+	}
+	return xs
 }
