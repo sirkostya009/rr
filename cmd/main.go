@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -43,6 +44,13 @@ func (r refExpr) expr(recv string) string {
 // param type classes; same-class params cannot share a trie position since
 // their matchers overlap (any int parses as a float, etc.)
 const (
+	typString = "string"
+	typBool   = "bool"
+	typError  = "error"
+	pkgHTTP   = "http"
+)
+
+const (
 	classCustom  = iota // checker/regex/plain: not statically comparable
 	classNumeric        // int, float64, float32
 	classBool
@@ -71,14 +79,14 @@ type tok struct {
 }
 
 const (
-	argParam   = iota // a transformed path param, bound by name
-	argBody           // JSON-decoded request body
-	argQuery          // query string value(s)
-	argHeader         // header value
-	argWriter         // http.ResponseWriter, bound by type
-	argRequest        // *http.Request, bound by type
-	argError          // error, bound by type (error handlers only)
-	argWriterCast     // named type embedding http.ResponseWriter, type-asserted from w
+	argParam      = iota // a transformed path param, bound by name
+	argBody              // JSON-decoded request body
+	argQuery             // query string value(s)
+	argHeader            // header value
+	argWriter            // http.ResponseWriter, bound by type
+	argRequest           // *http.Request, bound by type
+	argError             // error, bound by type (error handlers only)
+	argWriterCast        // named type embedding http.ResponseWriter, type-asserted from w
 )
 
 // query binding shapes, decided by the declared param type
@@ -320,14 +328,20 @@ func main() {
 		for _, decl := range f.Decls {
 			if gd, ok := decl.(*ast.GenDecl); ok && gd.Tok == token.TYPE {
 				for _, spec := range gd.Specs {
-					ts := spec.(*ast.TypeSpec)
+					ts, ok := spec.(*ast.TypeSpec)
+					if !ok {
+						continue
+					}
 					types[ts.Name.Name] = ts
 				}
 				continue
 			}
 			if gd, ok := decl.(*ast.GenDecl); ok && gd.Tok == token.VAR {
 				for _, spec := range gd.Specs {
-					vs := spec.(*ast.ValueSpec)
+					vs, ok := spec.(*ast.ValueSpec)
+					if !ok {
+						continue
+					}
 					typed := isRegexpType(vs.Type)
 					for i, nm := range vs.Names {
 						if typed || (i < len(vs.Values) && isRegexpCompile(vs.Values[i])) {
@@ -404,7 +418,10 @@ func main() {
 					continue
 				}
 				for _, spec := range d.Specs {
-					ts := spec.(*ast.TypeSpec)
+					ts, ok := spec.(*ast.TypeSpec)
+					if !ok {
+						continue
+					}
 					doc := ts.Doc
 					if doc == nil && len(d.Specs) == 1 {
 						doc = d.Doc
@@ -679,7 +696,7 @@ func main() {
 					}
 					return
 				}
-				if id, ok := spec.typeExpr.(*ast.Ident); !ok || id.Name != "string" {
+				if id, ok := spec.typeExpr.(*ast.Ident); !ok || id.Name != typString {
 					fatalf("%s: single header value %q must be string, or add a =@transform", ctx, spec.name)
 				}
 			case argQuery:
@@ -700,7 +717,7 @@ func main() {
 					}
 					return
 				}
-				if id, ok := spec.typeExpr.(*ast.Ident); !ok || id.Name != "string" {
+				if id, ok := spec.typeExpr.(*ast.Ident); !ok || id.Name != typString {
 					fatalf("%s: single query value %q must be string, or add a =@transform", ctx, spec.name)
 				}
 			}
@@ -860,7 +877,7 @@ func main() {
 					if id != nil {
 						tn = id.Name
 					}
-					if tn != "string" && pp.checker != "" {
+					if tn != typString && pp.checker != "" {
 						fatalf("%s.%s: param {%s} already has a matcher; use {%s=@func} to transform it",
 							name, rt.handler, pp.name, pp.name)
 					}
@@ -871,7 +888,7 @@ func main() {
 						extraImports["strconv"] = true
 					}
 					switch tn {
-					case "string":
+					case typString:
 						// raw segment, nothing to derive
 					case "int":
 						derive("strconv.Atoi", classNumeric)
@@ -881,7 +898,7 @@ func main() {
 					case "float32":
 						derive("parseFloat32", classNumeric)
 						numHelpers["parseFloat32"] = true
-					case "bool":
+					case typBool:
 						// safe because bool ranks after numerics at a shared
 						// position: digits are claimed before ParseBool sees them
 						derive("strconv.ParseBool", classBool)
@@ -1029,10 +1046,10 @@ func main() {
 
 	src, err := format.Source([]byte(buf.String()))
 	if err != nil {
-		_ = os.WriteFile(out, []byte(buf.String()), 0o644)
+		_ = os.WriteFile(out, []byte(buf.String()), 0o644) //nolint:gosec // source file
 		fatalf("generated code has syntax errors (written unformatted to %s): %v", out, err)
 	}
-	if err := os.WriteFile(out, src, 0o644); err != nil {
+	if err := os.WriteFile(out, src, 0o644); err != nil { //nolint:gosec // source file
 		fatalf("%v", err)
 	}
 }
@@ -1311,20 +1328,20 @@ type gen struct {
 func (g *gen) needsReadPool() bool  { return g.useReadOne || g.useReadSlice }
 func (g *gen) needsWritePool() bool { return g.useWriteAny }
 
-func (g *gen) w(format string, args ...any) {
+func (g *gen) wf(format string, args ...any) {
 	g.b.WriteString(strings.Repeat("\t", g.depth))
 	fmt.Fprintf(&g.b, format, args...)
 	g.b.WriteByte('\n')
 }
 
-func (g *gen) open(format string, args ...any) {
-	g.w(format, args...)
+func (g *gen) openf(format string, args ...any) {
+	g.wf(format, args...)
 	g.depth++
 }
 
 func (g *gen) close() {
 	g.depth--
-	g.w("}")
+	g.wf("}")
 }
 
 // newVar names a handler-scoped temporary. The counter resets at every
@@ -1372,7 +1389,7 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 		recv = "a"
 	}
 
-	g.open("func (%s %s%s) ServeHTTP(w http.ResponseWriter, r *http.Request) {", recv, star, scope.name)
+	g.openf("func (%s %s%s) ServeHTTP(w http.ResponseWriter, r *http.Request) {", recv, star, scope.name)
 	g.curOwner = nil
 	for _, mw := range scope.middlewares {
 		g.emitGuard(mw, recv, nil)
@@ -1380,23 +1397,23 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 	// cross-package api fields: delegate to their own ServeHTTP by prefix
 	// (already sorted longest-first, so a more specific mount wins)
 	for _, xm := range scope.xmounts {
-		g.open("if strings.HasPrefix(r.URL.Path, %q) {", xm.prefix)
-		g.w("%s.%s.ServeHTTP(w, r)", recv, xm.field)
-		g.w("return")
+		g.openf("if strings.HasPrefix(r.URL.Path, %q) {", xm.prefix)
+		g.wf("%s.%s.ServeHTTP(w, r)", recv, xm.field)
+		g.wf("return")
 		g.close()
 	}
 	if len(routes) == 0 {
 		g.notFound()
 		g.close()
-		g.w("")
+		g.wf("")
 		return
 	}
 	prefix := commonPrefix(routes)
 
-	g.w("path, ok := strings.CutPrefix(r.URL.Path, %q)", prefix)
-	g.open("if !ok {")
+	g.wf("path, ok := strings.CutPrefix(r.URL.Path, %q)", prefix)
+	g.openf("if !ok {")
 	g.notFound()
-	g.w("return")
+	g.wf("return")
 	g.close()
 
 	staticByPath := map[string][]route{}
@@ -1416,14 +1433,14 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 
 	if len(keys) > 0 {
 		slices.Sort(keys)
-		g.w("switch path {")
+		g.wf("switch path {")
 		for _, k := range keys {
-			g.w("case %q:", k)
+			g.wf("case %q:", k)
 			g.depth++
 			g.emitDispatch(staticByPath[k], nil, nil)
 			g.depth--
 		}
-		g.w("}")
+		g.wf("}")
 	}
 
 	exhaustive := false
@@ -1439,7 +1456,7 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 		g.notFound()
 	}
 	g.close()
-	g.w("")
+	g.wf("")
 }
 
 func (g *gen) notFound() {
@@ -1447,7 +1464,7 @@ func (g *gen) notFound() {
 	if g.scope.notFound.isSet() {
 		g.emitEHandler(g.scope.notFound, g.recvOf[g.scope], "")
 	} else {
-		g.w("w.WriteHeader(http.StatusNotFound)")
+		g.wf("w.WriteHeader(http.StatusNotFound)")
 	}
 }
 
@@ -1469,11 +1486,11 @@ func (g *gen) notAllowed(routes []route, allow string) {
 			target = owner
 		}
 	}
-	g.w(`w.Header().Set("Allow", %q)`, allow)
+	g.wf(`w.Header().Set("Allow", %q)`, allow)
 	if target.notAllowed.isSet() {
 		g.emitEHandler(target.notAllowed, g.recvOf[target], "")
 	} else {
-		g.w("w.WriteHeader(http.StatusMethodNotAllowed)")
+		g.wf("w.WriteHeader(http.StatusMethodNotAllowed)")
 	}
 }
 
@@ -1487,10 +1504,10 @@ func (g *gen) openParamCheck(pe *paramEdge, v string, used bool, depth int) bind
 		if used {
 			val = tvar(depth)
 		}
-		g.open("if %s, err := %s(%s%s); err == nil {", val, p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
+		g.openf("if %s, err := %s(%s%s); err == nil {", val, p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
 		return binding{p.name, val, true}
 	}
-	g.open("if %s {", g.cond(p, g.recvOf[pe.owner], v))
+	g.openf("if %s {", g.cond(p, g.recvOf[pe.owner], v))
 	return binding{p.name, v, false}
 }
 
@@ -1544,21 +1561,21 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 		next := depth + strings.Count(seg, "/") + 1
 		switch {
 		case term && !child.hasDesc():
-			g.open("if %s == %q {", cur, seg)
+			g.openf("if %s == %q {", cur, seg)
 			g.emitLeaf(child.routes, binds)
 			g.close()
 		case !term:
 			v := pvar(next)
-			g.open("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg+"/")
+			g.openf("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg+"/")
 			g.emitNode(child, v, binds, next)
 			g.close()
 		default:
 			v := pvar(next)
-			g.open("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg)
-			g.open(`if %s == "" {`, v)
+			g.openf("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg)
+			g.openf(`if %s == "" {`, v)
 			g.emitLeaf(child.routes, binds)
 			g.close()
-			g.open(`if %s, ok := strings.CutPrefix(%s, "/"); ok {`, v, v)
+			g.openf(`if %s, ok := strings.CutPrefix(%s, "/"); ok {`, v, v)
 			g.emitNode(child, v, binds, next)
 			g.close()
 			g.close()
@@ -1640,18 +1657,18 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 		switch len(termLits) {
 		case 0:
 		case 1:
-			g.open("if %s == %q {", cur, termLits[0].seg)
+			g.openf("if %s == %q {", cur, termLits[0].seg)
 			g.emitLeaf(termLits[0].child.routes, binds)
 			g.close()
 		default:
-			g.w("switch %s {", cur)
+			g.wf("switch %s {", cur)
 			for _, e := range termLits {
-				g.w("case %q:", e.seg)
+				g.wf("case %q:", e.seg)
 				g.depth++
 				g.emitLeaf(e.child.routes, binds)
 				g.depth--
 			}
-			g.w("}")
+			g.wf("}")
 		}
 		for _, pe := range termParams {
 			b := g.openParamCheck(pe, cur, subtreeUsesPath(pe.child, pe.p.name), depth)
@@ -1664,7 +1681,7 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 			// gate the method before even slicing the rest of the path
 			hoisted := g.hoistMethod(e.child)
 			v := pvar(depth + 1)
-			g.w("%s := %s[i+1:]", v, cur)
+			g.wf("%s := %s[i+1:]", v, cur)
 			g.emitNode(e.child, v, binds, depth+1)
 			if hoisted {
 				g.hoisted = ""
@@ -1673,22 +1690,22 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 		switch len(descLits) {
 		case 0:
 		case 1:
-			g.open("if %s[:i] == %q {", cur, descLits[0].seg)
+			g.openf("if %s[:i] == %q {", cur, descLits[0].seg)
 			descend(descLits[0])
 			g.close()
 		default:
-			g.w("switch %s[:i] {", cur)
+			g.wf("switch %s[:i] {", cur)
 			for _, e := range descLits {
-				g.w("case %q:", e.seg)
+				g.wf("case %q:", e.seg)
 				g.depth++
 				descend(e)
 				g.depth--
 			}
-			g.w("}")
+			g.wf("}")
 		}
 		if len(descParams) > 0 {
 			seg := svar(depth)
-			g.w("%s := %s[:i]", seg, cur)
+			g.wf("%s := %s[:i]", seg, cur)
 			for _, pe := range descParams {
 				b := binding{pe.p.name, seg, false}
 				wrapped := constrained(pe.p) // i > 0 already guarantees a non-empty segment
@@ -1696,7 +1713,7 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 					b = g.openParamCheck(pe, seg, subtreeUsesPath(pe.child, pe.p.name), depth)
 				}
 				rest := pvar(depth + 1)
-				g.w("%s := %s[i+1:]", rest, cur)
+				g.wf("%s := %s[i+1:]", rest, cur)
 				g.emitNode(pe.child, rest, withBinding(binds, b), depth+1)
 				if wrapped {
 					g.close()
@@ -1709,19 +1726,19 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 	hasDesc := len(descLits)+len(descParams) > 0
 	switch {
 	case hasTerm && hasDesc:
-		g.open("if i := strings.IndexByte(%s, '/'); i < 0 {", cur)
+		g.openf("if i := strings.IndexByte(%s, '/'); i < 0 {", cur)
 		emitTerm()
 		g.depth--
-		g.w("} else if i > 0 {")
+		g.wf("} else if i > 0 {")
 		g.depth++
 		emitDesc()
 		g.close()
 	case hasTerm:
-		g.open("if strings.IndexByte(%s, '/') < 0 {", cur)
+		g.openf("if strings.IndexByte(%s, '/') < 0 {", cur)
 		emitTerm()
 		g.close()
 	case hasDesc:
-		g.open("if i := strings.IndexByte(%s, '/'); i > 0 {", cur)
+		g.openf("if i := strings.IndexByte(%s, '/'); i > 0 {", cur)
 		emitDesc()
 		g.close()
 	}
@@ -1742,7 +1759,7 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 func compress(e litEdge) (string, *tnode) {
 	seg, child := e.seg, e.child
 	for len(child.routes) == 0 && child.wild == nil && len(child.params) == 0 && len(child.lits) == 1 {
-		seg += "/" + child.lits[0].seg
+		seg = seg + "/" + child.lits[0].seg
 		child = child.lits[0].child
 	}
 	return seg, child
@@ -1781,30 +1798,30 @@ func (g *gen) emitDispatch(routes []route, args map[string]string, binds []bindi
 	case catch != nil && len(methods) == 0:
 		g.emitCall(*catch, args, binds)
 	case catch != nil && len(methods) == 1:
-		g.open("if r.Method == %q {", methods[0].method)
+		g.openf("if r.Method == %q {", methods[0].method)
 		g.emitCall(methods[0], args, binds)
 		g.depth--
-		g.w("} else {")
+		g.wf("} else {")
 		g.depth++
 		g.emitCall(*catch, args, binds)
 		g.close()
 	case catch == nil && len(methods) == 1:
 		if methods[0].method != g.hoisted {
-			g.open("if r.Method != %q {", methods[0].method)
+			g.openf("if r.Method != %q {", methods[0].method)
 			g.notAllowed(routes, methods[0].method)
-			g.w("return")
+			g.wf("return")
 			g.close()
 		}
 		g.emitCall(methods[0], args, binds)
 	default:
-		g.w("switch r.Method {")
+		g.wf("switch r.Method {")
 		for _, m := range methods {
-			g.w("case %q:", m.method)
+			g.wf("case %q:", m.method)
 			g.depth++
 			g.emitCall(m, args, binds)
 			g.depth--
 		}
-		g.w("default:")
+		g.wf("default:")
 		g.depth++
 		if catch != nil {
 			g.emitCall(*catch, args, binds)
@@ -1816,23 +1833,23 @@ func (g *gen) emitDispatch(routes []route, args map[string]string, binds []bindi
 			g.notAllowed(routes, strings.Join(allow, ", "))
 		}
 		g.depth--
-		g.w("}")
+		g.wf("}")
 	}
-	g.w("return")
+	g.wf("return")
 }
 
 // emitCall invokes the handler. In an app dispatcher, a route whose owning
 // api declares middleware gets it wrapped around just this call.
 func (g *gen) emitCall(rt route, args map[string]string, binds []binding) {
 	g.n = 0
-	g.w("r.Pattern = %q", displayPattern(rt))
+	g.wf("r.Pattern = %q", displayPattern(rt))
 	// every string param lands in PathValue: it is the request's public match
 	// metadata, argument binding or not; transformed values have no raw string
 	for _, b := range binds {
 		if b.arg {
 			continue
 		}
-		g.w("r.SetPathValue(%q, %s)", b.name, b.expr)
+		g.wf("r.SetPathValue(%q, %s)", b.name, b.expr)
 	}
 	owner := rt.owner
 	g.curOwner = owner
@@ -1876,9 +1893,9 @@ func (g *gen) hoistMethod(n *tnode) bool {
 			return false
 		}
 	}
-	g.open("if r.Method != %q {", m)
+	g.openf("if r.Method != %q {", m)
 	g.notAllowed(rts, m)
-	g.w("return")
+	g.wf("return")
 	g.close()
 	g.hoisted = m
 	return true
@@ -1889,7 +1906,7 @@ func (g *gen) hoistMethod(n *tnode) bool {
 func (g *gen) emitGuard(mw middleware, recv string, rt *route) {
 	call := fmt.Sprintf("%s(%s)", mw.ref.expr(recv), g.buildArgs(mw.args, nil, recv))
 	if mw.retErr {
-		g.open("if err := %s; err != nil {", call)
+		g.openf("if err := %s; err != nil {", call)
 		switch {
 		case rt != nil:
 			g.emitOnErr(*rt)
@@ -1898,11 +1915,11 @@ func (g *gen) emitGuard(mw middleware, recv string, rt *route) {
 		default:
 			fatalf("%s: middleware returns error but there is no onerror in scope", g.scope.name)
 		}
-		g.w("return")
+		g.wf("return")
 		g.close()
 	} else {
-		g.open("if !%s {", call)
-		g.w("return")
+		g.openf("if !%s {", call)
+		g.wf("return")
 		g.close()
 	}
 }
@@ -1914,7 +1931,7 @@ func (g *gen) buildArgs(specs []argSpec, args map[string]string, recv string) st
 	query := func() string {
 		if qv == "" {
 			qv = g.newVar()
-			g.w("%s := r.URL.Query()", qv)
+			g.wf("%s := r.URL.Query()", qv)
 		}
 		return qv
 	}
@@ -1962,9 +1979,9 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 	call := fmt.Sprintf("%s.%s(%s)", recv, rt.handler, g.buildArgs(rt.args, args, recv))
 	switch rt.retKind {
 	case retNone:
-		g.w("%s", call)
+		g.wf("%s", call)
 	case retErr:
-		g.open("if err := %s; err != nil {", call)
+		g.openf("if err := %s; err != nil {", call)
 		g.emitOnErr(rt)
 		g.close()
 	case retVal:
@@ -1972,21 +1989,21 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 			g.emitFastEncode(rt, call)
 			return
 		}
-		g.w(`w.Header().Set("Content-Type", "application/json")`)
-		g.w("_ = json.NewEncoder(w).Encode(%s)", call)
+		g.wf(`w.Header().Set("Content-Type", "application/json")`)
+		g.wf("_ = json.NewEncoder(w).Encode(%s)", call)
 	case retValErr:
 		v := g.newVar()
-		g.w("%s, err := %s", v, call)
-		g.open("if err != nil {")
+		g.wf("%s, err := %s", v, call)
+		g.openf("if err != nil {")
 		g.emitOnErr(rt)
-		g.w("return")
+		g.wf("return")
 		g.close()
 		if rt.enc != ggNone {
 			g.emitFastEncode(rt, v)
 			return
 		}
-		g.w(`w.Header().Set("Content-Type", "application/json")`)
-		g.w("_ = json.NewEncoder(w).Encode(%s)", v)
+		g.wf(`w.Header().Set("Content-Type", "application/json")`)
+		g.wf("_ = json.NewEncoder(w).Encode(%s)", v)
 	}
 }
 
@@ -2011,15 +2028,15 @@ func (g *gen) emitFastEncode(rt route, v string) {
 		call = fmt.Sprintf("encode.WriteTo(w, %s)", v)
 	}
 	if rt.enc != ggAny {
-		g.w(`w.Header().Set("Content-Type", "application/json")`)
+		g.wf(`w.Header().Set("Content-Type", "application/json")`)
 	}
-	g.open("if err := %s; err != nil {", call)
+	g.openf("if err := %s; err != nil {", call)
 	if h, recv, ok := g.routeErrH(rt); ok {
 		g.emitEHandler(h, recv, "err")
 	} else {
-		g.w("w.WriteHeader(http.StatusInternalServerError)")
+		g.wf("w.WriteHeader(http.StatusInternalServerError)")
 	}
-	g.w("return")
+	g.wf("return")
 	g.close()
 }
 
@@ -2039,7 +2056,7 @@ func (g *gen) routeErrH(rt route) (ehandler, string, bool) {
 // its error param slot ("err" in scope, "nil" for plain-bad, "" when absent).
 func (g *gen) emitEHandler(h ehandler, recv, errVar string) {
 	g.errVar = errVar
-	g.w("%s(%s)", h.ref.expr(recv), g.buildArgs(h.args, nil, recv))
+	g.wf("%s(%s)", h.ref.expr(recv), g.buildArgs(h.args, nil, recv))
 	g.errVar = ""
 }
 
@@ -2063,8 +2080,8 @@ func (g *gen) emitParser(spec argSpec, input, recv string) string {
 	if !safeVarName(v) {
 		v = g.newVar()
 	}
-	g.w("%s, err := %s(%s)", v, fn, input)
-	g.open("if err != nil {")
+	g.wf("%s, err := %s(%s)", v, fn, input)
+	g.openf("if err != nil {")
 	g.badRequest(true)
 	g.close()
 	return v
@@ -2077,14 +2094,14 @@ func (g *gen) emitQueryBind(spec argSpec, q string) string {
 	case bindValues:
 		return q
 	case bindMap:
-		vt := "string"
+		vt := typString
 		if spec.mapAny {
 			vt = "any"
 		}
 		v := g.newVar()
-		g.w("%s := make(map[string]%s, len(%s))", v, vt, q)
-		g.open("for k, vs := range %s {", q)
-		g.w("%s[k] = vs[0]", v)
+		g.wf("%s := make(map[string]%s, len(%s))", v, vt, q)
+		g.openf("for k, vs := range %s {", q)
+		g.wf("%s[k] = vs[0]", v)
 		g.close()
 		return v
 	default: // bindStruct
@@ -2100,20 +2117,20 @@ func (g *gen) emitStructBind(spec argSpec, getter string) string {
 	if !safeVarName(v) {
 		v = g.newVar()
 	}
-	g.w("var %s %s", v, spec.typ)
+	g.wf("var %s %s", v, spec.typ)
 	for _, fd := range spec.fields {
 		switch fd.kind {
 		case fString:
-			g.w("%s.%s = %s(%q)", v, fd.name, getter, fd.key)
+			g.wf("%s.%s = %s(%q)", v, fd.name, getter, fd.key)
 		default:
 			fn := "strconv.Atoi"
 			if fd.kind == fBool {
 				fn = "strconv.ParseBool"
 			}
 			rv := g.newVar()
-			g.open(`if %s := %s(%q); %s != "" {`, rv, getter, fd.key, rv)
-			g.w("var err error")
-			g.open("if %s.%s, err = %s(%s); err != nil {", v, fd.name, fn, rv)
+			g.openf(`if %s := %s(%q); %s != "" {`, rv, getter, fd.key, rv)
+			g.wf("var err error")
+			g.openf("if %s.%s, err = %s(%s); err != nil {", v, fd.name, fn, rv)
 			g.badRequest(true)
 			g.close()
 			g.close()
@@ -2132,8 +2149,8 @@ func (g *gen) badRequest(hasErr bool) {
 		target = g.curOwner
 	}
 	if !target.badReq.isSet() {
-		g.w("w.WriteHeader(http.StatusBadRequest)")
-		g.w("return")
+		g.wf("w.WriteHeader(http.StatusBadRequest)")
+		g.wf("return")
 		return
 	}
 	errVar := "nil" // no specific error at this site (e.g. a checker reject)
@@ -2141,7 +2158,7 @@ func (g *gen) badRequest(hasErr bool) {
 		errVar = "err"
 	}
 	g.emitEHandler(target.badReq, g.recvOf[target], errVar)
-	g.w("return")
+	g.wf("return")
 }
 
 // emitBodyDecode declares the body value, decodes JSON into it (a failure is
@@ -2151,7 +2168,7 @@ func (g *gen) badRequest(hasErr bool) {
 func (g *gen) emitBodyDecode(spec argSpec) string {
 	switch spec.bodyKind {
 	case bodyMultipart:
-		g.open("if err := r.ParseMultipartForm(32 << 20); err != nil {")
+		g.openf("if err := r.ParseMultipartForm(32 << 20); err != nil {")
 		g.badRequest(true)
 		g.close()
 		if spec.ptr {
@@ -2159,7 +2176,7 @@ func (g *gen) emitBodyDecode(spec argSpec) string {
 		}
 		return "*r.MultipartForm"
 	case bodyForm:
-		g.open("if err := r.ParseForm(); err != nil {")
+		g.openf("if err := r.ParseForm(); err != nil {")
 		g.badRequest(true)
 		g.close()
 		return "r.PostForm"
@@ -2171,8 +2188,8 @@ func (g *gen) emitBodyDecode(spec argSpec) string {
 	switch spec.fast {
 	case ggOne:
 		g.useReadOne = true
-		g.w("%s, err := readJSON[%s](r)", v, spec.typ)
-		g.open("if err != nil {")
+		g.wf("%s, err := readJSON[%s](r)", v, spec.typ)
+		g.openf("if err != nil {")
 		g.badRequest(true)
 		g.close()
 		if spec.ptr {
@@ -2181,18 +2198,18 @@ func (g *gen) emitBodyDecode(spec argSpec) string {
 		return v
 	case ggSlice:
 		g.useReadSlice = true
-		g.w("%s, err := readJSONSlice[%s](r)", v, spec.elem)
-		g.open("if err != nil {")
+		g.wf("%s, err := readJSONSlice[%s](r)", v, spec.elem)
+		g.openf("if err != nil {")
 		g.badRequest(true)
 		g.close()
 		return v
 	}
 	if spec.ptr {
-		g.w("%s := new(%s)", v, spec.typ)
-		g.open("if err := json.NewDecoder(r.Body).Decode(%s); err != nil {", v)
+		g.wf("%s := new(%s)", v, spec.typ)
+		g.openf("if err := json.NewDecoder(r.Body).Decode(%s); err != nil {", v)
 	} else {
-		g.w("var %s %s", v, spec.typ)
-		g.open("if err := json.NewDecoder(r.Body).Decode(&%s); err != nil {", v)
+		g.wf("var %s %s", v, spec.typ)
+		g.openf("if err := json.NewDecoder(r.Body).Decode(&%s); err != nil {", v)
 	}
 	g.badRequest(true)
 	g.close()
@@ -2212,18 +2229,18 @@ func (g *gen) emitExtract(spec argSpec, raw, recv string) string {
 			fn += ".MatchString"
 		}
 		v := g.newVar()
-		g.w("%s := %s", v, raw)
-		g.open("if !%s(%s) {", fn, v)
+		g.wf("%s := %s", v, raw)
+		g.openf("if !%s(%s) {", fn, v)
 		g.badRequest(false)
 		g.close()
 		return v
 	}
 	v := g.newVar()
-	g.w("var %s %s", v, spec.typ)
+	g.wf("var %s %s", v, spec.typ)
 	rv := g.newVar()
-	g.open("if %s := %s; %s != \"\" {", rv, raw, rv)
-	g.w("var err error")
-	g.open("if %s, err = %s(%s); err != nil {", v, fn, rv)
+	g.openf("if %s := %s; %s != \"\" {", rv, raw, rv)
+	g.wf("var err error")
+	g.openf("if %s, err = %s(%s); err != nil {", v, fn, rv)
 	g.badRequest(true)
 	g.close()
 	g.close()
@@ -2254,7 +2271,7 @@ func resultTypes(fd *ast.FuncDecl) []ast.Expr {
 			if n == 0 {
 				n = 1
 			}
-			for j := 0; j < n; j++ {
+			for range n {
 				types = append(types, f.Type)
 			}
 		}
@@ -2264,7 +2281,7 @@ func resultTypes(fd *ast.FuncDecl) []ast.Expr {
 
 func isErrorIdent(e ast.Expr) bool {
 	id, ok := e.(*ast.Ident)
-	return ok && id.Name == "error"
+	return ok && id.Name == typError
 }
 
 // isRegexpType reports whether t is *regexp.Regexp.
@@ -2425,7 +2442,7 @@ func wrKind(t ast.Expr) (int, bool) {
 	}
 	if st, ok := t.(*ast.StarExpr); ok {
 		if sel, ok := st.X.(*ast.SelectorExpr); ok {
-			if id, ok := sel.X.(*ast.Ident); ok && id.Name == "http" && sel.Sel.Name == "Request" {
+			if id, ok := sel.X.(*ast.Ident); ok && id.Name == pkgHTTP && sel.Sel.Name == "Request" {
 				return argRequest, true
 			}
 		}
@@ -2512,7 +2529,7 @@ func handlerArgs(f *ast.File, d *ast.FuncDecl) []argSpec {
 			if n == 0 {
 				n = 1
 			}
-			for j := 0; j < n; j++ {
+			for range n {
 				specs = append(specs, argSpec{kind: k})
 			}
 			continue
@@ -2632,7 +2649,7 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 	}
 	switch t := spec.typeExpr.(type) {
 	case *ast.Ident:
-		if t.Name == "string" {
+		if t.Name == typString {
 			return false // scalar
 		}
 		ts := types[t.Name]
@@ -2663,7 +2680,7 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 				}
 				qf := queryField{name: fn.Name, key: key}
 				switch {
-				case isIdent(fld.Type, "string"):
+				case isIdent(fld.Type, typString):
 					qf.kind = fString
 				case isIdent(fld.Type, "int"):
 					qf.kind = fInt
@@ -2679,13 +2696,13 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 		}
 		return needStrconv
 	case *ast.MapType:
-		if !isIdent(t.Key, "string") {
+		if !isIdent(t.Key, typString) {
 			fatalf("%s: query map key must be string", ctx)
 		}
 		switch v := t.Value.(type) {
 		case *ast.Ident:
 			switch v.Name {
-			case "string":
+			case typString:
 				spec.bind = bindMap
 			case "any":
 				spec.bind = bindMap
@@ -2694,7 +2711,7 @@ func analyzeQueryBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string)
 				fatalf("%s: query map value must be string, any or []string", ctx)
 			}
 		case *ast.ArrayType:
-			if v.Len != nil || !isIdent(v.Elt, "string") {
+			if v.Len != nil || !isIdent(v.Elt, typString) {
 				fatalf("%s: query map value must be string, any or []string", ctx)
 			}
 			spec.bind = bindValues
@@ -2754,7 +2771,7 @@ func analyzeHeaderBind(spec *argSpec, types map[string]*ast.TypeSpec, ctx string
 						key = v
 					}
 				}
-				if !isIdent(fld.Type, "string") {
+				if !isIdent(fld.Type, typString) {
 					fatalf("%s: header struct field %s.%s must be string", ctx, t.Name, fn.Name)
 				}
 				spec.fields = append(spec.fields, queryField{name: fn.Name, key: key, kind: fString})
@@ -2864,7 +2881,7 @@ func pkgDir(pkgPath string) string {
 	}
 	// -e: the package need not typecheck, and it usually doesn't yet — its own
 	// generated file may be missing or stale while we're discovering it
-	out, err := exec.Command("go", "list", "-e", "-f", "{{.Dir}}", pkgPath).Output()
+	out, err := exec.CommandContext(context.Background(), "go", "list", "-e", "-f", "{{.Dir}}", pkgPath).Output() //nolint:gosec // pkgPath is from parsed imports
 	if err != nil {
 		fatalf("go list %s: %v", pkgPath, err)
 	}

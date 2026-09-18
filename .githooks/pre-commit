@@ -1,2 +1,8 @@
 #!/bin/sh
-golangci-lint run --fix
+set -e
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+for dir in $(go work edit -json | jq -r '.Use[].DiskPath'); do
+	(cd "$dir" && golangci-lint run --fix ./...)
+done

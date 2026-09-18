@@ -1,0 +1,49 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: all
+  disable:
+    - depguard
+    - exhaustruct
+    - exhaustruct_v5
+    - funlen
+    - gochecknoglobals
+    - gocognit
+    - cyclop
+    - gocyclo
+    - nestif
+    - maintidx
+    - lll
+    - mnd
+    - nlreturn
+    - wsl
+    - wsl_v5
+    - varnamelen
+    - ireturn
+    - nonamedreturns
+    - paralleltest
+    - testpackage
+    - tagliatelle
+    - wrapcheck
+    - err113
+    - godot
+    - dupl
+    - forbidigo
+    - noinlineerr
+  exclusions:
+    paths:
+      - examples
+      - bench
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gofumpt
+  exclusions:
+    paths:
+      - examples
+      - bench
