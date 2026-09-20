@@ -87,6 +87,7 @@ const (
 	argRequest           // *http.Request, bound by type
 	argError             // error, bound by type (error handlers only)
 	argWriterCast        // named type embedding http.ResponseWriter, type-asserted from w
+	argContext           // context.Context, bound by type, emitted as r.Context()
 )
 
 // query binding shapes, decided by the declared param type
@@ -669,9 +670,9 @@ func main() {
 				spec := &mw.args[k]
 				castWriter(spec)
 				switch spec.kind {
-				case argWriter, argWriterCast, argRequest, argQuery, argHeader:
+				case argWriter, argWriterCast, argRequest, argContext, argQuery, argHeader:
 				default:
-					fatalf("%s: middleware @%s params must be http.ResponseWriter, *http.Request, rr:query or rr:header", name, raw)
+					fatalf("%s: middleware @%s params must be http.ResponseWriter, *http.Request, context.Context, rr:query or rr:header", name, raw)
 				}
 			}
 			a.middlewares = append(a.middlewares, mw)
@@ -771,10 +772,10 @@ func main() {
 					hasW = true
 				case argParam:
 					if !castWriter(spec) {
-						fatalf("%s: %s handler @%s can only bind http.ResponseWriter, *http.Request, error, query and headers", name, kind, raw)
+						fatalf("%s: %s handler @%s can only bind http.ResponseWriter, *http.Request, context.Context, error, query and headers", name, kind, raw)
 					}
 					hasW = true
-				case argRequest:
+				case argRequest, argContext:
 				case argError:
 					if !allowErr {
 						fatalf("%s: %s handler @%s must not take an error param", name, kind, raw)
@@ -783,7 +784,7 @@ func main() {
 				case argQuery, argHeader:
 					resolveQH(spec, ctx)
 				default:
-					fatalf("%s: %s handler @%s can only bind http.ResponseWriter, *http.Request, error, query and headers", name, kind, raw)
+					fatalf("%s: %s handler @%s can only bind http.ResponseWriter, *http.Request, context.Context, error, query and headers", name, kind, raw)
 				}
 			}
 			if !hasW {
@@ -1973,6 +1974,8 @@ func (g *gen) buildArgs(specs []argSpec, args map[string]string, recv string) st
 			parts = append(parts, fmt.Sprintf("w.(%s)", spec.typ))
 		case argRequest:
 			parts = append(parts, "r")
+		case argContext:
+			parts = append(parts, "r.Context()")
 		case argError:
 			parts = append(parts, g.errVar)
 		case argParam:
@@ -2489,8 +2492,8 @@ func parserReturnsErr(fd *ast.FuncDecl, ctx string) bool {
 	return false
 }
 
-// wrKind reports whether t is http.ResponseWriter, *http.Request, or error —
-// all bound by type, no annotation needed.
+// wrKind reports whether t is http.ResponseWriter, *http.Request,
+// context.Context or error — all bound by type, no annotation needed.
 func wrKind(t ast.Expr) (int, bool) {
 	if id, ok := t.(*ast.Ident); ok && id.Name == "error" {
 		return argError, true
@@ -2504,8 +2507,15 @@ func wrKind(t ast.Expr) (int, bool) {
 		return 0, false
 	}
 	if sel, ok := t.(*ast.SelectorExpr); ok {
-		if id, ok := sel.X.(*ast.Ident); ok && id.Name == "http" && sel.Sel.Name == "ResponseWriter" {
+		id, ok := sel.X.(*ast.Ident)
+		if !ok {
+			return 0, false
+		}
+		switch {
+		case id.Name == "http" && sel.Sel.Name == "ResponseWriter":
 			return argWriter, true
+		case id.Name == "context" && sel.Sel.Name == "Context":
+			return argContext, true
 		}
 	}
 	return 0, false
@@ -2556,7 +2566,8 @@ func embedsWriter(t ast.Expr, types map[string]*ast.TypeSpec, depth int) bool {
 }
 
 // handlerArgs maps handler params to argSpecs. Roles are inferred:
-//   - http.ResponseWriter / *http.Request bind by type, any position
+//   - http.ResponseWriter / *http.Request / context.Context bind by type, any
+//     position
 //   - a param named body / query / headers is that whole-object role (a route
 //     token of the same name overrides it back to a path param, resolved later)
 //   - an inline /* rr:query key=@check */ or /* rr:header Name=@check */ binds
@@ -2590,7 +2601,7 @@ func handlerArgs(f *ast.File, d *ast.FuncDecl) []argSpec {
 			continue
 		}
 		if len(fl.Names) == 0 {
-			fatalf("%s: handler params other than http.ResponseWriter and *http.Request must be named", d.Name.Name)
+			fatalf("%s: handler params other than http.ResponseWriter, *http.Request and context.Context must be named", d.Name.Name)
 		}
 		for _, nm := range fl.Names {
 			spec := argSpec{kind: argParam, name: nm.Name, typeExpr: fl.Type}

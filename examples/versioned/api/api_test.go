@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"mime/multipart"
 	"net/http"
@@ -82,6 +83,17 @@ func TestUsers(t *testing.T) {
 
 	if got := fromJSON[[]v1.User](t, do(t, a, "GET", "/api/v1/users", "")); len(got) != 1 || got[0].Name != "Guy" {
 		t.Fatalf("GET /api/v1/users: %v", got)
+	}
+
+	// GetUsers takes a context.Context — it is r.Context(), so a cancelled
+	// request surfaces as ctx.Err() through the central onerror
+	cancelled, cancel := context.WithCancel(t.Context())
+	cancel()
+	creq := httptest.NewRequest("GET", "/api/v1/users", nil).WithContext(cancelled)
+	crec := httptest.NewRecorder()
+	a.ServeHTTP(crec, creq)
+	if crec.Code != 500 || !strings.Contains(crec.Body.String(), "context canceled") {
+		t.Errorf("GET /api/v1/users cancelled: %d %s", crec.Code, crec.Body.String())
 	}
 
 	if got := fromJSON[[]v1.User](t, do(t, a, "POST", "/api/v1/users", `{"name":"Gal"}`)); len(got) != 2 {

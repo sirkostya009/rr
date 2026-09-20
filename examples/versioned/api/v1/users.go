@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"strconv"
 
 	"versioned/services"
@@ -28,8 +29,11 @@ func toUsers(us []services.User) []User {
 }
 
 //rr:route GET /api/v1/users
-func (a *UsersApi) GetUsers() []User {
-	return toUsers(services.Users.All())
+func (a *UsersApi) GetUsers(ctx context.Context) ([]User, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return toUsers(services.Users.All()), nil
 }
 
 // a param named body is the JSON request body — no annotation needed;

@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"context"
 	"net/http"
 
 	"versioned/services"
@@ -9,8 +10,8 @@ import (
 //rr:pre @requireToken
 type AdminApi struct{}
 
-func requireToken(w http.ResponseWriter /* rr:header Authorization */, auth string) bool {
-	if auth != "Bearer letmein" {
+func requireToken(ctx context.Context, w http.ResponseWriter /* rr:header Authorization */, auth string) bool {
+	if ctx.Err() != nil || auth != "Bearer letmein" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return false
 	}

@@ -67,8 +67,8 @@ composition (a `/v1` + `/v2` split over a shared service layer). See
   `url.Values`), `headers` a header struct (`header:` tags). A route `{token}`
   of the same name wins. Inline `/* rr:body */`, `/* rr:param */`,
   `/* rr:query [key][=@check] */`, `/* rr:header ... */` override the naming
-  when you need it; `http.ResponseWriter`/`*http.Request` bind by type and are
-  optional.
+  when you need it; `http.ResponseWriter`/`*http.Request`/`context.Context`
+  bind by type and are optional (the context is `r.Context()`).
 - **Composition.** `//rr:api` merges any number of api-typed fields into
   one dispatcher — one prefix cut, one switch, one trie across every mounted
   API — instead of stacking `http.ServeMux` handlers (which cost real

@@ -190,8 +190,13 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			r.Pattern = "GET /api/v1/users"
+			v1, err := s.UsersApi.GetUsers(r.Context())
+			if err != nil {
+				handleError(w, err)
+				return
+			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := ggen.WriteSliceTo(w, s.UsersApi.GetUsers()); err != nil {
+			if err := ggen.WriteSliceTo(w, v1); err != nil {
 				handleError(w, err)
 				return
 			}

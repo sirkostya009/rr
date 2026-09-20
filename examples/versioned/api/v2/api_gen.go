@@ -57,7 +57,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch path {
 	case "admin/maintenance":
 		r.Pattern = "/api/v2/admin/maintenance"
-		if !requireToken(w, r.Header.Get("Authorization")) {
+		if !requireToken(r.Context(), w, r.Header.Get("Authorization")) {
 			return
 		}
 		s.AdminApi.Maintenance(w)
@@ -69,7 +69,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "GET /api/v2/admin/stats"
-		if !requireToken(w, r.Header.Get("Authorization")) {
+		if !requireToken(r.Context(), w, r.Header.Get("Authorization")) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")

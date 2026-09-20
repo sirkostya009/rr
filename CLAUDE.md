@@ -76,7 +76,8 @@ Method directives: `//rr:route [METHOD] /path` only. Route-level
 Handler params bind by NAME + TYPE for the common cases; an inline
 /* rr:... */ annotation is the explicit override (e.g. a body param not named
 `body`). Resolution order per param:
-1. `http.ResponseWriter` / `*http.Request` — by type, any position, optional
+1. `http.ResponseWriter` / `*http.Request` / `context.Context` — by type, any
+   position, optional; the context is emitted as `r.Context()`
 2. explicit annotation, if present (see below) — overrides everything after
 3. name ∈ route `{tokens}` — path param; T ∈ string/int/float64/float32/bool
    derives the matcher (Atoi, ParseFloat, strict ParseBool); struct/iface/any
@@ -128,7 +129,8 @@ belong in an outer wrapper like `example/api/server.go`.
   onerror is the only override, e.g. a controller mapping its errors →404).
 - Error/condition handlers (on404/on405/on400/onerror) bind params like route
   handlers via the same buildArgs, NOT a fixed signature: `http.ResponseWriter`
-  (or a type embedding it) required; `*http.Request`, `error`, query and header binds optional; body and
+  (or a type embedding it) required; `*http.Request`, `context.Context`,
+  `error`, query and header binds optional; body and
   path params forbidden (no route context). onerror REQUIRES an error param;
   on400 may take one (nil for plain-bad); on404/on405 must NOT. Must be
   in-package (introspected for their args). `argError` binds the `err` var in
