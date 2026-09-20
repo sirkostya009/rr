@@ -151,7 +151,7 @@ const (
 	ggNone  = iota // no generated methods, use encoding/json
 	ggOne          // T has DecodeFromStream/AppendJSON
 	ggSlice        // []T with the methods on T
-	ggAny          // arbitrary value via encode.AppendAny, when ggen is in play
+	ggAny          // arbitrary value via ggen.AppendAny, when ggen is in play
 )
 
 type route struct {
@@ -573,7 +573,7 @@ func main() {
 	}
 
 	// once ggen is in the picture (generated methods on any type, or just
-	// imported), arbitrary response values ride encode.AppendAny too instead
+	// imported), arbitrary response values ride ggen.AppendAny too instead
 	// of falling back to encoding/json
 	ggenOn := false
 	for _, mm := range methods {
@@ -590,8 +590,33 @@ func main() {
 			}
 		}
 	}
+	if !ggenOn {
+	scan:
+		for _, name := range order {
+			for i := range apis[name].routes {
+				rt := &apis[name].routes[i]
+				types := make([]ast.Expr, 0, len(rt.args)+1)
+				if rt.retType != nil {
+					types = append(types, rt.retType)
+				}
+				for j := range rt.args {
+					types = append(types, rt.args[j].typeExpr)
+				}
+				for _, t := range types {
+					if st, ok := t.(*ast.StarExpr); ok {
+						t = st.X
+					}
+					if sh, _ := ggShape(nil, importsByName, t, "AppendJSON"); sh != ggNone {
+						ggenOn = true
+						break scan
+					}
+				}
+			}
+		}
+	}
 
 	extraImports := map[string]bool{}
+	importAlias := map[string]string{} // path → ident the sources refer to it by
 	numHelpers := map[string]bool{}
 	resolve := func(a *apiType, name, ctx string) refExpr {
 		if before, _, ok := strings.Cut(name, "."); ok {
@@ -603,6 +628,9 @@ func main() {
 				p = before
 			}
 			extraImports[p] = true
+			if before != path.Base(p) {
+				importAlias[p] = before
+			}
 			return refExpr{false, name}
 		}
 		if methods[a.name][name] != nil {
@@ -788,7 +816,7 @@ func main() {
 				if st, ok := t.(*ast.StarExpr); ok {
 					t = st.X
 				}
-				rt.enc, _ = ggShape(methods, t, "AppendJSON")
+				rt.enc, _ = ggShape(methods, importsByName, t, "AppendJSON")
 				if rt.enc == ggNone && ggenOn {
 					rt.enc = ggAny
 				}
@@ -836,7 +864,7 @@ func main() {
 						}
 					}
 					spec.typ = renderType(fset, t)
-					spec.fast, spec.elem = ggShape(methods, t, "DecodeFromStream")
+					spec.fast, spec.elem = ggShape(methods, importsByName, t, "DecodeFromStream")
 					if spec.ptr && spec.fast == ggSlice {
 						spec.fast = ggNone
 					}
@@ -847,6 +875,9 @@ func main() {
 								p = id.Name
 							}
 							extraImports[p] = true
+							if id.Name != path.Base(p) {
+								importAlias[p] = id.Name
+							}
 						}
 					}
 				case argHeader, argQuery:
@@ -998,14 +1029,8 @@ func main() {
 	if g.localRead || g.localWrite {
 		imports["sync"] = true
 	}
-	if g.useReadOne {
-		imports["github.com/sirkostya009/ggen/scan"] = true
-	}
-	if g.useReadOne || g.useReadSlice {
-		imports["github.com/sirkostya009/ggen/decode"] = true
-	}
-	if g.useWriteOne || g.useWriteSlice || g.useWriteAny {
-		imports["github.com/sirkostya009/ggen/encode"] = true
+	if g.useReadOne || g.useReadSlice || g.useWriteOne || g.useWriteSlice || g.useWriteAny {
+		imports["github.com/sirkostya009/ggen"] = true
 	}
 	for p := range extraImports {
 		imports[p] = true
@@ -1018,6 +1043,10 @@ func main() {
 	buf.WriteString("import (\n")
 	for _, p := range sorted {
 		buf.WriteString("\t")
+		if alias := importAlias[p]; alias != "" {
+			buf.WriteString(alias)
+			buf.WriteString(" ")
+		}
 		buf.WriteString(strconv.Quote(p))
 		buf.WriteString("\n")
 	}
@@ -2011,7 +2040,7 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 // surface, and they arrive before anything hit the wire, so they route through
 // the same owner→central onerror chain (bare 500 if none is in scope).
 //
-// Marshalers go straight to ggen's encode.WriteTo/WriteSliceTo, which own the
+// Marshalers go straight to ggen's WriteTo/WriteSliceTo, which own the
 // buffer pool — one per process instead of one per generated package. They
 // write bare, so Content-Type is stamped here, before the call.
 func (g *gen) emitFastEncode(rt route, v string) {
@@ -2019,13 +2048,13 @@ func (g *gen) emitFastEncode(rt route, v string) {
 	switch rt.enc {
 	case ggSlice:
 		g.useWriteSlice = true
-		call = fmt.Sprintf("encode.WriteSliceTo(w, %s)", v)
+		call = fmt.Sprintf("ggen.WriteSliceTo(w, %s)", v)
 	case ggAny:
 		g.useWriteAny = true
 		call = fmt.Sprintf("writeJSONAny(w, %s)", v)
 	default:
 		g.useWriteOne = true
-		call = fmt.Sprintf("encode.WriteTo(w, %s)", v)
+		call = fmt.Sprintf("ggen.WriteTo(w, %s)", v)
 	}
 	if rt.enc != ggAny {
 		g.wf(`w.Header().Set("Content-Type", "application/json")`)
@@ -2329,10 +2358,10 @@ func isTransformer(fd *ast.FuncDecl, ctx string) bool {
 // pooled-buffer JSON helpers, emitted once per output when a fast path is used
 // readJSON stream-decodes a request body through a pooled buffer. The stream
 // path copies strings out, so the buffer recycles immediately.
-const helperReadJSON = `func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
+const helperReadJSON = `func readJSON[T ggen.StreamDecoder[T]](r *http.Request) (T, error) {
 	bp := %s.Get().(*[]byte)
 	defer %s.Put(bp)
-	var s scan.Stream
+	var s ggen.Stream
 	s.Reset(r.Body, *bp)
 	var zero T
 	v, err := zero.DecodeFromStream(&s)
@@ -2343,23 +2372,24 @@ const helperReadJSON = `func readJSON[T decode.Decoder[T]](r *http.Request) (T, 
 `
 
 // readJSONSlice stream-decodes a JSON array body through a pooled buffer.
-const helperReadJSONSlice = `func readJSONSlice[T decode.Decoder[T]](r *http.Request) ([]T, error) {
+const helperReadJSONSlice = `func readJSONSlice[T ggen.StreamDecoder[T]](r *http.Request) ([]T, error) {
 	bp := %s.Get().(*[]byte)
 	defer %s.Put(bp)
-	vs, nb, err := decode.UnmarshalSliceStream[T](r.Body, (*bp)[:0])
-	*bp = nb
+	var s ggen.Stream
+	vs, err := s.Reset(r.Body, *bp).Slice[T]()
+	*bp = s.Bytes()
 	return vs, err
 }
 
 `
 
 // writeJSONAny writes values without generated methods (maps, mixed types).
-// encode has no pooled AppendAny writer, so this is the one write path that
+// ggen has no pooled AppendAny writer, so this is the one write path that
 // still needs a buffer of its own.
 const helperWriteJSONAny = `func writeJSONAny(w http.ResponseWriter, v any) error {
 	bp := %s.Get().(*[]byte)
 	defer %s.Put(bp)
-	b, err := encode.AppendAny((*bp)[:0], v)
+	b, err := ggen.AppendAny((*bp)[:0], v)
 	*bp = b
 	if err != nil {
 		return err
@@ -2382,23 +2412,48 @@ var numHelperSrc = map[string]string{
 }
 
 // ggShape reports whether t is a type (or slice of one) with the given
-// ggen-generated method, enabling the fast JSON paths.
-func ggShape(methods map[string]map[string]*ast.FuncDecl, t ast.Expr, method string) (int, string) {
+// ggen-generated method, enabling the fast JSON paths. pkg.T is looked up in
+// that package's sources.
+func ggShape(methods map[string]map[string]*ast.FuncDecl, imports map[string]string, t ast.Expr, method string) (int, string) {
+	shape := ggOne
+	if at, ok := t.(*ast.ArrayType); ok && at.Len == nil {
+		shape, t = ggSlice, at.Elt
+	}
 	switch tt := t.(type) {
 	case *ast.Ident:
 		if mm := methods[tt.Name]; mm != nil && mm[method] != nil {
-			return ggOne, tt.Name
+			return shape, tt.Name
 		}
-	case *ast.ArrayType:
-		if tt.Len == nil {
-			if id, ok := tt.Elt.(*ast.Ident); ok {
-				if mm := methods[id.Name]; mm != nil && mm[method] != nil {
-					return ggSlice, id.Name
-				}
-			}
+	case *ast.SelectorExpr:
+		id, ok := tt.X.(*ast.Ident)
+		if !ok {
+			break
+		}
+		p, ok := imports[id.Name]
+		if !ok {
+			break
+		}
+		if foreignGgen(p, tt.Sel.Name, method) {
+			return shape, id.Name + "." + tt.Sel.Name
 		}
 	}
 	return ggNone, ""
+}
+
+// foreignGgen reports whether pkgPath's typeName has the ggen method: either
+// already generated, or promised by a //ggen:generate directive, so the
+// sibling's ggen run need not come first.
+func foreignGgen(pkgPath, typeName, method string) bool {
+	pkgDir(pkgPath)
+	if _, std := pkgStd[pkgPath]; std {
+		return false
+	}
+	s := scanPkg(pkgPath)
+	if _, ok := s.ggen[typeName]; ok {
+		return true
+	}
+	_, ok := s.methods[typeName][method]
+	return ok
 }
 
 // middlewareRet reports whether a middleware returns error (true) or bool.
@@ -2841,10 +2896,13 @@ type pkgScan struct {
 	xfields map[string][]xFieldCand
 	imports map[string]string
 	vars    map[string]string
+	methods map[string]map[string]struct{}
+	ggen    map[string]struct{} // types carrying //ggen:generate
 }
 
 var (
 	pkgDirs    = map[string]string{}
+	pkgStd     = map[string]struct{}{}
 	pkgScans   = map[string]*pkgScan{}
 	prefixMemo = map[string]string{}
 
@@ -2881,13 +2939,16 @@ func pkgDir(pkgPath string) string {
 	}
 	// -e: the package need not typecheck, and it usually doesn't yet — its own
 	// generated file may be missing or stale while we're discovering it
-	out, err := exec.CommandContext(context.Background(), "go", "list", "-e", "-f", "{{.Dir}}", pkgPath).Output() //nolint:gosec // pkgPath is from parsed imports
+	out, err := exec.CommandContext(context.Background(), "go", "list", "-e", "-f", "{{.Standard}} {{.Dir}}", pkgPath).Output() //nolint:gosec // pkgPath is from parsed imports
 	if err != nil {
 		fatalf("go list %s: %v", pkgPath, err)
 	}
-	d := strings.TrimSpace(string(out))
+	std, d, _ := strings.Cut(strings.TrimSpace(string(out)), " ")
 	if d == "" {
 		fatalf("go list %s: package not found", pkgPath)
+	}
+	if std == "true" {
+		pkgStd[pkgPath] = struct{}{}
 	}
 	pkgDirs[pkgPath] = d
 	return d
@@ -2911,6 +2972,8 @@ func scanPkg(pkgPath string) *pkgScan {
 		xfields: map[string][]xFieldCand{},
 		imports: map[string]string{},
 		vars:    map[string]string{},
+		methods: map[string]map[string]struct{}{},
+		ggen:    map[string]struct{}{},
 	}
 	pkgScans[pkgPath] = s
 	fset := token.NewFileSet()
@@ -2951,6 +3014,9 @@ func scanPkg(pkgPath string) *pkgScan {
 					if !ok {
 						continue
 					}
+					if hasGgenDirective(ts.Doc) || len(d.Specs) == 1 && hasGgenDirective(d.Doc) {
+						s.ggen[ts.Name.Name] = struct{}{}
+					}
 					st, ok := ts.Type.(*ast.StructType)
 					if !ok {
 						continue
@@ -2975,6 +3041,10 @@ func scanPkg(pkgPath string) *pkgScan {
 				if tname == "" {
 					continue
 				}
+				if s.methods[tname] == nil {
+					s.methods[tname] = map[string]struct{}{}
+				}
+				s.methods[tname][d.Name.Name] = struct{}{}
 				for _, dir := range parseDirectives(d.Doc) {
 					if dir[0] != "route" {
 						continue
@@ -3053,6 +3123,18 @@ func apiField(fld *ast.Field) (fieldCand, xFieldCand, bool) {
 		return fieldCand{}, xFieldCand{fld.Names[0].Name, pid.Name, v.Sel.Name}, true
 	}
 	return fieldCand{}, xFieldCand{}, false
+}
+
+func hasGgenDirective(doc *ast.CommentGroup) bool {
+	if doc == nil {
+		return false
+	}
+	for _, c := range doc.List {
+		if c.Text == "//ggen:generate" || strings.HasPrefix(c.Text, "//ggen:generate ") {
+			return true
+		}
+	}
+	return false
 }
 
 func isGenerated(f *ast.File) bool {

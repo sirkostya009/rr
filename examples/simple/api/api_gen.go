@@ -3,9 +3,7 @@
 package api
 
 import (
-	"github.com/sirkostya009/ggen/decode"
-	"github.com/sirkostya009/ggen/encode"
-	"github.com/sirkostya009/ggen/scan"
+	"github.com/sirkostya009/ggen"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,10 +14,10 @@ var readBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return
 
 var writeBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return &b }}
 
-func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
+func readJSON[T ggen.StreamDecoder[T]](r *http.Request) (T, error) {
 	bp := readBufPool.Get().(*[]byte)
 	defer readBufPool.Put(bp)
-	var s scan.Stream
+	var s ggen.Stream
 	s.Reset(r.Body, *bp)
 	var zero T
 	v, err := zero.DecodeFromStream(&s)
@@ -30,7 +28,7 @@ func readJSON[T decode.Decoder[T]](r *http.Request) (T, error) {
 func writeJSONAny(w http.ResponseWriter, v any) error {
 	bp := writeBufPool.Get().(*[]byte)
 	defer writeBufPool.Put(bp)
-	b, err := encode.AppendAny((*bp)[:0], v)
+	b, err := ggen.AppendAny((*bp)[:0], v)
 	*bp = b
 	if err != nil {
 		return err
@@ -156,7 +154,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			query.Tag = v1.Get("tag")
 			w.Header().Set("Content-Type", "application/json")
-			if err := encode.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
+			if err := ggen.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -173,7 +171,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := encode.WriteTo(w, v1); err != nil {
+			if err := ggen.WriteTo(w, v1); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -205,7 +203,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			r.Pattern = "GET /api/users"
 			w.Header().Set("Content-Type", "application/json")
-			if err := encode.WriteSliceTo(w, s.UsersApi.GetUsers()); err != nil {
+			if err := ggen.WriteSliceTo(w, s.UsersApi.GetUsers()); err != nil {
 				handleError(w, err)
 				return
 			}
@@ -217,7 +215,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := encode.WriteSliceTo(w, s.UsersApi.PostUser(u)); err != nil {
+			if err := ggen.WriteSliceTo(w, s.UsersApi.PostUser(u)); err != nil {
 				handleError(w, err)
 				return
 			}
@@ -247,7 +245,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := encode.WriteTo(w, v3); err != nil {
+		if err := ggen.WriteTo(w, v3); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -268,7 +266,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							return
 						}
 						w.Header().Set("Content-Type", "application/json")
-						if err := encode.WriteTo(w, v1); err != nil {
+						if err := ggen.WriteTo(w, v1); err != nil {
 							handleError(w, err)
 							return
 						}
@@ -300,7 +298,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					w.Header().Set("Content-Type", "application/json")
-					if err := encode.WriteTo(w, v1); err != nil {
+					if err := ggen.WriteTo(w, v1); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
@@ -315,7 +313,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					w.Header().Set("Content-Type", "application/json")
-					if err := encode.WriteTo(w, v1); err != nil {
+					if err := ggen.WriteTo(w, v1); err != nil {
 						postNotFound(w, r, err)
 						return
 					}

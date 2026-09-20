@@ -2,7 +2,7 @@ package v2
 
 import "net/http"
 
-//go:generate go run github.com/sirkostya009/ggen/cli .
+//go:generate go run github.com/sirkostya009/ggen/cmd/ggen .
 //go:generate go run ../../../../cmd $GOFILE
 
 //rr:api onerror=@handleError on405=@on405 on404=@notFound on400=@badRequest

@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -352,6 +353,52 @@ func TestV2Admin(t *testing.T) {
 	}
 	if rec := do(t, a, "PURGE", "/api/v2/admin/maintenance", "", "Authorization", "Bearer letmein"); rec.Code != 202 {
 		t.Errorf("maintenance: %d", rec.Code)
+	}
+}
+
+// services.NewUser and services.Stats carry their ggen codecs in another
+// package, the routers still take the generated fast paths for them
+func TestForeignGgen(t *testing.T) {
+	a := &Api{}
+
+	// ggen rejects unknown keys, encoding/json would let them through
+	if rec := do(t, a, "POST", "/api/v2/users", `{"name":"Gal","admin":true}`); rec.Code != 400 {
+		t.Errorf("unknown key: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := do(t, a, "POST", "/api/v2/users/bulk", `[{"name":"Gal"},{"name":"Bob","admin":true}]`); rec.Code != 400 {
+		t.Errorf("bulk unknown key: %d %s", rec.Code, rec.Body.String())
+	}
+
+	created := fromJSON[[]v2.User](t, do(t, a, "POST", "/api/v2/users/bulk", `[{"name":"Gal"},{"name":"Bob"}]`))
+	if len(created) != 2 || created[0].Name != "Gal" || created[1].Name != "Bob" {
+		t.Fatalf("POST /api/v2/users/bulk: %+v", created)
+	}
+	for _, u := range created {
+		if rec := do(t, a, "DELETE", "/api/v2/users/"+u.ID, ""); rec.Code != 200 {
+			t.Errorf("DELETE %s: %d", u.ID, rec.Code)
+		}
+	}
+
+	// ggen sorts keys by json name, encoding/json keeps declaration order
+	// (Users before Posts)
+	rec := do(t, a, "GET", "/api/v2/admin/stats", "", "Authorization", "Bearer letmein")
+	body := rec.Body.String()
+	if p, u := strings.Index(body, `"posts"`), strings.Index(body, `"users"`); p < 0 || u < p {
+		t.Errorf("stats key order: %s", body)
+	}
+
+	src, err := os.ReadFile("v2/api_gen.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"readJSON[services.NewUser](r)",
+		"readJSONSlice[services.NewUser](r)",
+		"ggen.WriteTo(w, s.AdminApi.Stats())",
+	} {
+		if !strings.Contains(string(src), want) {
+			t.Errorf("v2/api_gen.go lacks %q", want)
+		}
 	}
 }
 

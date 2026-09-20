@@ -20,9 +20,11 @@ stdlib (+ ggen when present). Think NestJS annotations, compiled to a switch.
       v1 = int ids (uuid checker route as non-default), v2 = uuid string ids.
       Each has generated `api_gen.go` (router) + `api_ggen.go` (ggen codecs),
       each emitting its own buffer pools (no `-helpers`)
-    - `services/` — shared storage layer; records carry both id shapes
-- `go.work` ties in both examples plus `../ggen` and `../ggen/cli` (local,
-  unreleased module)
+    - `services/` — shared storage layer; records carry both id shapes. Also
+      owns ggen types (`NewUser`, `Stats`) v2 routes bind cross-package —
+      `TestForeignGgen` is the fixture for foreign ggen detection
+- `go.work` ties in root, both examples and `bench`; ggen comes from the
+  pinned pseudo-version in each example's go.mod
 
 ## Commands
 
@@ -137,13 +139,17 @@ belong in an outer wrapper like `example/api/server.go`.
   sibling packages). Helper doc comments live on the consts in cmd/main.go, not
   in the emitted string.
 - ggen integration: types with generated `DecodeFromStream`/`AppendJSON` use
-  pooled fast paths. Writes of Marshalers are NOT generated — they call
-  `encode.WriteTo` / `encode.WriteSliceTo`, which own ggen's pool, so
+  pooled fast paths. Foreign `pkg.T` / `[]pkg.T` count too: `foreignGgen`
+  scans that package's sources (`scanPkg`, stdlib skipped) for the method OR a
+  `//ggen:generate` directive on the type, so the sibling's ggen run need not
+  come first. A foreign ggen type in any route also flips `ggenOn`. Writes of
+  Marshalers are NOT generated — they call `ggen.WriteTo` /
+  `ggen.WriteSliceTo`, which own ggen's pool, so
   Content-Type is stamped BEFORE the call (it writes bare). Consequence: on an
   encode error the header is already set; `http.Error` overwrites it, a custom
   onerror that only calls WriteHeader does not. Still generated: `readJSON[T]`
   / `readJSONSlice[T]` (ggen has no pooled reader) and `writeJSONAny`
-  (`encode.AppendAny` has no pooled writer) — once ggen is in play at all,
+  (`ggen.AppendAny` has no pooled writer) — once ggen is in play at all,
   arbitrary values go through it instead of encoding/json.
 - Buffer pools: `-helpers <import path>` points at a package exporting
   `ReaderPool` and/or `WriterPool` (`sync.Pool` or `*sync.Pool`), shared by
@@ -177,7 +183,9 @@ consts appended once, gated by `gen.use*` flags. Output goes through
 ## ggen (../ggen)
 
 Sibling project, same author. Structs need `//ggen:generate`; validation via
-`pipe:"@fn"` tags (NOT `ggen:` — silently ignored). Its cli is a nested
-module (`../ggen/cli` in go.work). Decode-time validation failures surface as
+`pipe:"@fn"` tags (NOT `ggen:` — silently ignored). Everything lives in the root
+package `ggen` (the old `scan`/`decode`/`encode` subpackages are gone); the cli
+is a nested module, `github.com/sirkostya009/ggen/cmd/ggen`. Generic `Stream`
+methods mean consumers need go 1.27. Decode-time validation failures surface as
 readJSON errors → the 400 handler with the error attached.
 \

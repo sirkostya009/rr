@@ -1,5 +1,15 @@
 package services
 
+//go:generate go run github.com/sirkostya009/ggen/cmd/ggen .
+
+// NewUser is the creation payload. Its ggen codecs live here, a package away
+// from the routers decoding it.
+//
+//ggen:generate
+type NewUser struct {
+	Name string `json:"name"`
+}
+
 // User is the domain record: uuid-keyed, position-independent. v1 still
 // addresses users by slice index, v2 by ID.
 type User struct {

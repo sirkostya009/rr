@@ -18,8 +18,8 @@ func requireToken(w http.ResponseWriter /* rr:header Authorization */, auth stri
 }
 
 //rr:route GET /api/v2/admin/stats
-func (ad *AdminApi) Stats() map[string]int {
-	return map[string]int{"users": services.Users.Count(), "posts": services.Posts.Count()}
+func (ad *AdminApi) Stats() services.Stats {
+	return services.Stats{Users: services.Users.Count(), Posts: services.Posts.Count()}
 }
 
 //rr:route /api/v2/admin/maintenance -- method catch-all

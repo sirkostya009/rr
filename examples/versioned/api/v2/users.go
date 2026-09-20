@@ -28,8 +28,17 @@ func (a *UsersApi) GetUsers() []User {
 }
 
 //rr:route POST /api/v2/users -- returns the created user, id assigned by the service
-func (a *UsersApi) PostUser(body User) User {
+func (a *UsersApi) PostUser(body services.NewUser) User {
 	return toUser(services.Users.Create(body.Name))
+}
+
+//rr:route POST /api/v2/users/bulk
+func (a *UsersApi) PostUsers(body []services.NewUser) []User {
+	out := make([]User, len(body))
+	for i, nu := range body {
+		out[i] = toUser(services.Users.Create(nu.Name))
+	}
+	return out
 }
 
 // ids are opaque uuids now: a plain string param, no int route to compete with
