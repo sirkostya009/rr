@@ -2,7 +2,7 @@
 
 A small but complete service built on [rr](../), exercising nearly
 every generator feature. Separate Go module so it depends on the generator
-only as a dev tool (`go run rr/cmd`), never at runtime.
+only as a dev tool (`go run rr`), never at runtime.
 
 ## Layout
 

@@ -3,7 +3,7 @@ package api
 import "net/http"
 
 //go:generate go run github.com/sirkostya009/ggen/cmd/ggen .
-//go:generate go run ../../../cmd $GOFILE
+//go:generate go run ../../.. $GOFILE
 
 //rr:api onerror=@handleError on405=@on405 on404=@notFound on400=@badRequest
 type Api struct {

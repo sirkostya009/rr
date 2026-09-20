@@ -10,7 +10,7 @@ package bench
 
 import "regexp"
 
-//go:generate go run github.com/sirkostya009/rr/cmd $GOFILE
+//go:generate go run github.com/sirkostya009/rr $GOFILE
 
 // digits validates the order route params via a real regexp match, same
 // guarantee httx's inline {orderId:\d+} gives.

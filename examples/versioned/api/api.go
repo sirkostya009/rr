@@ -5,7 +5,7 @@ import (
 	v2 "versioned/api/v2"
 )
 
-//go:generate go run ../../../cmd $GOFILE
+//go:generate go run ../../.. $GOFILE
 
 // Api composes the versioned dispatchers. Each version is its own central in
 // another package, stamping the prefix it owns; the generator discovers those

@@ -23,7 +23,7 @@ func (a *UsersApi) GetUser(id int) (User, error) {
 ```
 
 ```sh
-go run ./cmd api.go   # -> api_gen.go, package-scoped
+go run . api.go   # -> api_gen.go, package-scoped
 ```
 
 ## Usage
@@ -31,13 +31,13 @@ go run ./cmd api.go   # -> api_gen.go, package-scoped
 Install globally:
 
 ```sh
-go install github.com/sirkostya009/rr/cmd
+go install github.com/sirkostya009/rr
 ```
 
 Or have it installed automatically (once) per go generate invocation:
 
 ```go
-//go:generate go run github.com/sirkostya009/rr/cmd@v $GOFILE
+//go:generate go run github.com/sirkostya009/rr@v $GOFILE
 ```
 
 `$GOFILE` must be the file with your aggregate API struct.
