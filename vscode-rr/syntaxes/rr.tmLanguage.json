@@ -109,7 +109,7 @@
       "name": "entity.name.function.reference.rr"
     },
     "httpMethod": {
-      "match": "\\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|CONNECT|TRACE)\\b",
+      "match": "\\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|CONNECT|TRACE|QUERY)\\b",
       "name": "support.constant.http-method.rr"
     },
     "wildcard": {
