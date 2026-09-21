@@ -4,6 +4,7 @@ go 1.26
 
 require (
 	github.com/gin-gonic/gin v1.12.0
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/sirkostya009/httx v0.3.0
 )
