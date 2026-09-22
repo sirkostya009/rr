@@ -1,6 +1,9 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
+	"strconv"
+)
 
 // The middleware guards every admin route. Middleware bind params like
 // handlers do and return bool (false = handled, stop) or error (goes to
@@ -35,6 +38,6 @@ func (ad *AdminApi) Maintenance(w http.ResponseWriter) {
 func (ad *AdminApi) Probe(sw *statusWriter) {
 	sw.WriteHeader(http.StatusTeapot)
 	if code, wrote := sw.Status(); wrote {
-		sw.Write([]byte(http.StatusText(code)))
+		sw.Write([]byte(strconv.Itoa(code)))
 	}
 }
