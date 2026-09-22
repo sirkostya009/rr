@@ -9,14 +9,17 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"go/types"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 func fatalf(format string, args ...any) {
@@ -64,6 +67,7 @@ type param struct {
 	transform bool    // checker returns (T, error); T becomes a handler argument
 	regex     bool    // checker is a *regexp.Regexp var, matched directly
 	class     int     // for auto-derived matchers
+	typ       string  // transformed value's type when known (derived matchers), for the hoisted slot
 }
 
 const (
@@ -162,6 +166,7 @@ type route struct {
 	errH    ehandler // owner onerror (central covers it at emission)
 	retKind int
 	retType ast.Expr // first result, for retVal/retValErr
+	retTyp  string   // retType rendered, for the hoisted result var (retValErr)
 	enc     int      // ggen shape of the response type
 	owner   *apiType
 	args    []argSpec
@@ -256,8 +261,20 @@ func main() {
 				fatalf("-helpers requires an import path")
 			}
 			helpersPkg = args[i]
+		case "-nopathvalue":
+			noPathValue = true
+		case "-hashmin":
+			i++
+			if i == len(args) {
+				fatalf("-hashmin requires a value")
+			}
+			n, err := strconv.Atoi(args[i])
+			if err != nil || n < -1 {
+				fatalf("-hashmin: want an integer >= -1 (0 = always, -1 = never), got %q", args[i])
+			}
+			hashMin = n
 		case "-h", "--help":
-			fmt.Println("usage: rr [-o output.go] [-helpers import/path] input.go...")
+			fmt.Println("usage: rr [-o output.go] [-helpers import/path] [-nopathvalue] [-hashmin n] input.go...")
 			return
 		default:
 			inputs = append(inputs, args[i])
@@ -643,6 +660,25 @@ func main() {
 		fatalf("%s: cannot resolve @%s to a package function or a method of %s", ctx, name, a.name)
 		return refExpr{}
 	}
+	// a qualified type named in the output needs its package imported
+	noteImport := func(t ast.Expr) {
+		sel, ok := t.(*ast.SelectorExpr)
+		if !ok {
+			return
+		}
+		id, ok := sel.X.(*ast.Ident)
+		if !ok {
+			return
+		}
+		p, ok := importsByName[id.Name]
+		if !ok {
+			p = id.Name
+		}
+		extraImports[p] = true
+		if id.Name != path.Base(p) {
+			importAlias[p] = id.Name
+		}
+	}
 	for _, name := range order {
 		a := apis[name]
 		// a param of a named type embedding http.ResponseWriter is the writer
@@ -821,6 +857,10 @@ func main() {
 				if rt.enc == ggNone && ggenOn {
 					rt.enc = ggAny
 				}
+				if rt.retKind == retValErr {
+					rt.retTyp = renderType(fset, rt.retType)
+					noteImport(t)
+				}
 			}
 			for _, tk := range rt.tokens {
 				if tk.kind == tokParam && tk.p.checker != "" {
@@ -869,18 +909,7 @@ func main() {
 					if spec.ptr && spec.fast == ggSlice {
 						spec.fast = ggNone
 					}
-					if sel, ok := t.(*ast.SelectorExpr); ok {
-						if id, ok := sel.X.(*ast.Ident); ok {
-							p, ok := importsByName[id.Name]
-							if !ok {
-								p = id.Name
-							}
-							extraImports[p] = true
-							if id.Name != path.Base(p) {
-								importAlias[p] = id.Name
-							}
-						}
-					}
+					noteImport(t)
 				case argHeader, argQuery:
 					resolveQH(spec, ctx)
 				case argError:
@@ -890,11 +919,19 @@ func main() {
 						break
 					}
 					var pp *param
+					wild := false
 					for _, tk := range rt.tokens {
-						if tk.kind == tokParam && tk.p.name == spec.name {
-							pp = tk.p
+						if (tk.kind == tokParam || tk.kind == tokWild && tk.p != nil) && tk.p.name == spec.name {
+							pp, wild = tk.p, tk.kind == tokWild
 							break
 						}
+					}
+					if wild {
+						if id, _ := spec.typeExpr.(*ast.Ident); id == nil || id.Name != typString {
+							fatalf("%s.%s: catch-all {%s...} binds the raw rest of the path, its param must be a string, not %s",
+								name, rt.handler, spec.name, renderType(fset, spec.typeExpr))
+						}
+						break
 					}
 					if pp == nil {
 						fatalf("%s.%s: param %q is not a route token and has no role; name it body/query/headers, add {%s} to the route, or annotate /* rr:query */ or /* rr:header */",
@@ -917,6 +954,7 @@ func main() {
 						pp.ref = refExpr{false, ref}
 						pp.transform = true
 						pp.class = class
+						pp.typ = tn
 						extraImports["strconv"] = true
 					}
 					switch tn {
@@ -971,7 +1009,7 @@ func main() {
 			merged = append(merged, m.api.routes...)
 		}
 		// stamp a prefix covering everything this dispatcher serves; parents
-		// discover it to route here. delegate longest-prefix-first.
+		// discover it to route here.
 		var cands []string
 		if len(merged) > 0 {
 			cands = append(cands, commonPrefix(merged))
@@ -980,9 +1018,6 @@ func main() {
 			cands = append(cands, xm.prefix)
 		}
 		a.prefix = lcpTrim(cands)
-		slices.SortFunc(a.xmounts, func(a, b xmount) int {
-			return len(b.prefix) - len(a.prefix)
-		})
 		g.emitDispatcher(a, merged, recvOf)
 	}
 
@@ -991,7 +1026,10 @@ func main() {
 	buf.WriteString("package ")
 	buf.WriteString(pkgName)
 	buf.WriteString("\n\n")
-	imports := map[string]bool{"net/http": true, "strings": true}
+	imports := map[string]bool{"net/http": true}
+	if g.useStrings {
+		imports["strings"] = true
+	}
 	for _, name := range order {
 		for _, rt := range apis[name].routes {
 			if (rt.retKind == retVal || rt.retKind == retValErr) && rt.enc == ggNone {
@@ -1052,6 +1090,9 @@ func main() {
 		buf.WriteString("\n")
 	}
 	buf.WriteString(")\n\n")
+	if g.useWriteStd || g.useWriteAny || g.useWriteOne || g.useWriteSlice {
+		buf.WriteString(helperJSONCT)
+	}
 	if g.localRead {
 		buf.WriteString("var readBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return &b }}\n\n")
 	}
@@ -1066,6 +1107,9 @@ func main() {
 	}
 	if g.useWriteAny {
 		fmt.Fprintf(&buf, helperWriteJSONAny, g.writePool, g.writePool)
+	}
+	if g.useWriteStd {
+		buf.WriteString(helperWriteJSON)
 	}
 	for _, h := range []string{"parseFloat32"} {
 		if numHelpers[h] {
@@ -1335,6 +1379,10 @@ type gen struct {
 	curOwner *apiType            // owner of the route currently being emitted
 	recvOf   map[*apiType]string // receiver expression per mounted api
 	hoisted  string              // method already verified by a subtree-level check
+	slots    map[string]string   // per dispatcher: type[@position] -> var declared once at the top of ServeHTTP
+	byType   map[string]string   // type -> the first of those, shared by results and bodies
+	decls    []string            // those declarations, in first-use order
+	useErr   bool                // a hoisted "err" is assigned somewhere in the dispatcher
 	errVar   string              // expr for an error handler's error param ("err"/"nil")
 
 	// ggen fast-path helpers used anywhere in the output
@@ -1343,6 +1391,9 @@ type gen struct {
 	useWriteOne   bool
 	useWriteSlice bool
 	useWriteAny   bool
+	useWriteStd   bool
+
+	useStrings bool // output calls strings.IndexByte, the only strings use left
 
 	// buffer pool expressions: a -helpers package's exported pool, or the
 	// package-local one emitted below when there isn't one
@@ -1382,6 +1433,108 @@ func (g *gen) newVar() string {
 	return fmt.Sprintf("v%d", g.n)
 }
 
+// slot returns the dispatcher-level variable for typ, declared once at the
+// top of ServeHTTP. Only one route runs per request, so every route of that
+// type assigns the same variable, instead of each `v, err :=` getting its own
+// stack slot: a 64B struct result per route is how a frame grows by the KB.
+// slot is the variable for a handler result or body of typ: the first slot
+// of that type already declared (a path param's, at any position), else a
+// new one. Params are passed before the result is assigned, so sharing is safe.
+func (g *gen) slot(typ string) string {
+	if v, ok := g.byType[typ]; ok {
+		return v
+	}
+	return g.slotAt(typ, 0)
+}
+
+// slotAt is the slot for a path param of typ at trie position depth: a route
+// can carry one param per position, so position keys the variable, and a
+// handler result of that type shares position 0's.
+func (g *gen) slotAt(typ string, depth int) string {
+	key := typ
+	if depth > 0 {
+		key = fmt.Sprintf("%s@%d", typ, depth)
+	}
+	if v, ok := g.slots[key]; ok {
+		return v
+	}
+	v := slotName(typ)
+	for base, n := v, 1; !safeVarName(v) || g.slotTaken(v); n++ {
+		v = base + strconv.Itoa(n)
+	}
+	g.slots[key] = v
+	if _, ok := g.byType[typ]; !ok {
+		g.byType[typ] = v
+	}
+	g.decls = append(g.decls, fmt.Sprintf("var %s %s", v, typ))
+	return v
+}
+
+func (g *gen) slotTaken(v string) bool {
+	for _, taken := range g.slots {
+		if taken == v {
+			return true
+		}
+	}
+	return false
+}
+
+// slotName derives a variable name from a type: the bare type name with its
+// first letter lowered, pluralized for a slice, so a `services.NewUser` body
+// is `newUser` and `[]services.NewUser` is `newUsers`.
+func slotName(typ string) string {
+	name := typ
+	slice := strings.HasPrefix(name, "[]")
+	name = strings.TrimLeft(name, "[]*")
+	if i := strings.LastIndexByte(name, '.'); i >= 0 {
+		name = name[i+1:]
+	}
+	if i := strings.IndexByte(name, '['); i >= 0 {
+		name = name[:i]
+	}
+	if name == "" || !unicode.IsLetter(rune(name[0])) {
+		return "val"
+	}
+	name = strings.ToLower(name[:1]) + name[1:]
+	if slice {
+		name += "s"
+	}
+	if token.IsKeyword(name) || types.Universe.Lookup(name) != nil {
+		name += "Val"
+	}
+	return name
+}
+
+// errSlot is the shared "err" those assignments write.
+func (g *gen) errSlot() string {
+	g.useErr = true
+	return errName
+}
+
+const errName = "err"
+
+// spliceDecls inserts the hoisted declarations at mark, right after the
+// ServeHTTP opening brace.
+func (g *gen) spliceDecls(mark int) {
+	if len(g.decls) == 0 && !g.useErr {
+		return
+	}
+	out := g.b.String()
+	var d strings.Builder
+	if g.useErr {
+		d.WriteString("\tvar err error\n")
+	}
+	for _, decl := range g.decls {
+		d.WriteString("\t")
+		d.WriteString(decl)
+		d.WriteString("\n")
+	}
+	g.b.Reset()
+	g.b.WriteString(out[:mark])
+	g.b.WriteString(d.String())
+	g.b.WriteString(out[mark:])
+}
+
 // Trie variables are named by segment position, not a counter, so generated
 // output is stable under route insertions: pvar is the rest-of-path starting
 // at segment i, svar the segment scanned at position i, tvar a checked or
@@ -1410,6 +1563,7 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 	g.scope = scope
 	g.recvOf = recvOf
 	g.hoisted = ""
+	g.slots, g.byType, g.decls, g.useErr = map[string]string{}, map[string]string{}, nil, false
 	star := ""
 	if scope.ptr {
 		star = "*"
@@ -1420,18 +1574,13 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 	}
 
 	g.openf("func (%s %s%s) ServeHTTP(w http.ResponseWriter, r *http.Request) {", recv, star, scope.name)
+	mark := g.b.Len()
+	defer g.spliceDecls(mark)
 	g.curOwner = nil
 	for _, mw := range scope.middlewares {
 		g.emitGuard(mw, recv, nil)
 	}
-	// cross-package api fields: delegate to their own ServeHTTP by prefix
-	// (already sorted longest-first, so a more specific mount wins)
-	for _, xm := range scope.xmounts {
-		g.openf("if strings.HasPrefix(r.URL.Path, %q) {", xm.prefix)
-		g.wf("%s.%s.ServeHTTP(w, r)", recv, xm.field)
-		g.wf("return")
-		g.close()
-	}
+	g.emitXMounts(recv, scope.xmounts, 0, "r.URL.Path", 0)
 	if len(routes) == 0 {
 		g.notFound()
 		g.close()
@@ -1440,11 +1589,12 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 	}
 	prefix := commonPrefix(routes)
 
-	g.wf("path, ok := strings.CutPrefix(r.URL.Path, %q)", prefix)
-	g.openf("if !ok {")
+	g.wf("path := r.URL.Path")
+	g.openf("if len(path) < %d || path[:%d] != %q {", len(prefix), len(prefix), prefix)
 	g.notFound()
 	g.wf("return")
 	g.close()
+	g.wf("path = path[%d:]", len(prefix))
 
 	staticByPath := map[string][]route{}
 	var keys []string
@@ -1463,14 +1613,11 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 
 	if len(keys) > 0 {
 		slices.Sort(keys)
-		g.wf("switch path {")
-		for _, k := range keys {
-			g.wf("case %q:", k)
-			g.depth++
-			g.emitDispatch(staticByPath[k], nil, nil)
-			g.depth--
+		cases := make([]strCase, len(keys))
+		for i, k := range keys {
+			cases[i] = strCase{k, func() { g.emitDispatch(staticByPath[k], nil, nil) }}
 		}
-		g.wf("}")
+		g.emitStrSwitch("path", "len(path)", cases)
 	}
 
 	exhaustive := false
@@ -1487,6 +1634,509 @@ func (g *gen) emitDispatcher(scope *apiType, routes []route, recvOf map[*apiType
 	}
 	g.close()
 	g.wf("")
+}
+
+// hasPrefix renders a constant-prefix test as a plain compare. The compiler
+// expands it in place at any function size, while strings.HasPrefix/CutPrefix
+// stop inlining once a dispatcher passes the inliner's big-function threshold.
+func hasPrefix(v, lit string) string {
+	return fmt.Sprintf("%s >= %d && %s == %q", lenExpr(v), len(lit), sliceExpr(v, "", strconv.Itoa(len(lit))), lit)
+}
+
+// Slices of slices fold into one: v[7:10] rather than v[:10][7:], and
+// len(v[11:]) is len(v)-11. Only the shapes the generator itself produces
+// (one constant or one identifier bound) are recognized.
+var (
+	reCut   = regexp.MustCompile(`^(\w+)\[(\w[\w+-]*):\]$`) // v[a:]
+	reWidth = regexp.MustCompile(`^(\w+)\[:(\w[\w+-]*)\]$`) // v[:k]
+)
+
+// addExpr sums two index expressions, folding constants: "i+1" + "2" = "i+3".
+func addExpr(a, b string) string {
+	an, aErr := strconv.Atoi(a)
+	bn, bErr := strconv.Atoi(b)
+	switch {
+	case aErr == nil && bErr == nil:
+		return strconv.Itoa(an + bn)
+	case aErr == nil:
+		a = b
+	case bErr == nil:
+		an = bn
+	default:
+		return a + "+" + b
+	}
+	if an == 0 {
+		return a
+	}
+	if i := strings.LastIndexByte(a, '+'); i > 0 {
+		if n, err := strconv.Atoi(a[i+1:]); err == nil {
+			return fmt.Sprintf("%s+%d", a[:i], n+an)
+		}
+	}
+	return fmt.Sprintf("%s+%d", a, an)
+}
+
+// sliceExpr renders v[lo:hi] ("" = open end) with nested slices folded.
+func sliceExpr(v, lo, hi string) string {
+	if m := reCut.FindStringSubmatch(v); m != nil {
+		if lo == "" {
+			lo = "0"
+		}
+		lo = addExpr(lo, m[2])
+		if hi != "" {
+			hi = addExpr(hi, m[2])
+		}
+		v = m[1]
+	} else if m := reWidth.FindStringSubmatch(v); m != nil {
+		if hi == "" {
+			hi = m[2]
+		}
+		v = m[1]
+	}
+	if lo == "0" {
+		lo = ""
+	}
+	return fmt.Sprintf("%s[%s:%s]", v, lo, hi)
+}
+
+// indexExpr renders v[at] with a nested slice folded.
+func indexExpr(v, at string) string {
+	if m := reCut.FindStringSubmatch(v); m != nil {
+		return fmt.Sprintf("%s[%s]", m[1], addExpr(at, m[2]))
+	}
+	if m := reWidth.FindStringSubmatch(v); m != nil {
+		return fmt.Sprintf("%s[%s]", m[1], at)
+	}
+	return fmt.Sprintf("%s[%s]", v, at)
+}
+
+func lenExpr(v string) string {
+	if m := reCut.FindStringSubmatch(v); m != nil {
+		if _, err := strconv.Atoi(m[2]); err == nil {
+			return fmt.Sprintf("len(%s)-%s", m[1], m[2])
+		}
+		return fmt.Sprintf("len(%s)-(%s)", m[1], m[2])
+	}
+	if m := reWidth.FindStringSubmatch(v); m != nil {
+		return m[2]
+	}
+	return "len(" + v + ")"
+}
+
+// openCut opens a block entered when v starts with lit, rest holding the tail.
+func (g *gen) openCut(rest, v, lit string) {
+	g.openf("if %s {", hasPrefix(v, lit))
+	g.advance(rest, v, fmt.Sprintf("[%d:]", len(lit)))
+}
+
+// advance sets rest to v sliced by cut. A node whose remaining code never reads
+// v again passes rest == v and moves it in place: every declared variable gets
+// its own spill slot, and one per route grew a 2000-route frame to 32KB.
+func (g *gen) advance(rest, v, cut string) {
+	op := ":="
+	if rest == v {
+		op = "="
+	}
+	if lo, ok := strings.CutSuffix(strings.TrimPrefix(cut, "["), ":]"); ok {
+		g.wf("%s %s %s", rest, op, sliceExpr(v, lo, ""))
+		return
+	}
+	g.wf("%s %s %s%s", rest, op, v, cut)
+}
+
+// strCase is one literal arm of a generated string dispatch.
+type strCase struct {
+	key  string
+	body func()
+}
+
+// hashMin (-hashmin) is the sibling count from which a literal set dispatches
+// through a generated hash instead of a string switch: 0 hashes every set the
+// planner can hash, -1 never. Measured crossover for the default: the hash
+// always pays one mispredicted jump, so below ~256 keys skewed (Zipf) traffic
+// is faster through the compiler's binary search.
+var hashMin = 256
+
+// emitStrSwitch dispatches x, whose length is the expression n ("" when the
+// caller already pinned it to the keys' shared length), over literal keys. Go
+// compiles a string switch to a binary search: ~log2(n) conditional branches
+// that mispredict under spread-out traffic (4.6 misses a request at 2000
+// routes, 1 with the hash). From hashMin keys up, the distinguishing bytes are hashed
+// into a dense integer switch instead, which compiles to one jump table, and
+// the key is verified inside the arm; colliding keys chain there.
+func (g *gen) emitStrSwitch(x, n string, cases []strCase) {
+	plain := func(cases []strCase) {
+		// the shared head goes in front of the switch, the arms compare tails
+		lcp := commonHead(cases)
+		if len(cases) < 4 || len(lcp) < 2 {
+			lcp = ""
+		}
+		sw := x
+		if lcp != "" {
+			g.openf("if %s >= %d && %s == %q {", lenExpr(x), len(lcp), sliceExpr(x, "", strconv.Itoa(len(lcp))), lcp)
+			sw = sliceExpr(x, strconv.Itoa(len(lcp)), "")
+		}
+		g.wf("switch %s {", sw)
+		for _, c := range cases {
+			g.wf("case %q:", c.key[len(lcp):])
+			g.depth++
+			c.body()
+			g.depth--
+		}
+		g.wf("}")
+		if lcp != "" {
+			g.close()
+		}
+	}
+	// one short key caps the byte positions every key can be read at, so the
+	// shortest keys peel off into a plain switch until the rest hash well
+	lens := make([]int, 0, len(cases))
+	for _, c := range cases {
+		lens = append(lens, len(c.key))
+	}
+	slices.Sort(lens)
+	lens = slices.Compact(lens)
+	var plan hashPlan
+	var short []strCase
+	ok := false
+	for _, cut := range lens {
+		var long []strCase
+		short = short[:0]
+		for _, c := range cases {
+			if len(c.key) < cut {
+				short = append(short, c)
+			} else {
+				long = append(long, c)
+			}
+		}
+		if len(long) < max(hashMin, 2) {
+			break
+		}
+		keys := make([]string, len(long))
+		for i, c := range long {
+			keys[i] = c.key
+		}
+		if plan, ok = planHash(keys); ok {
+			cases = long
+			break
+		}
+	}
+	if !ok {
+		plain(cases)
+		return
+	}
+	switch {
+	case n == "":
+	case plan.minLen == plan.maxLen && len(short) == 0:
+		g.openf("if %s == %d {", n, plan.minLen)
+	default:
+		g.openf("if %s >= %d {", n, plan.minLen)
+	}
+	// the keys' shared head is verified once, before the hash; each arm then
+	// compares only the tail that tells its key apart
+	lcp := commonHead(cases)
+	if len(lcp) < 2 {
+		lcp = "" // not worth a compare of its own; arms then keep the whole key
+	}
+	tail := x
+	if lcp != "" {
+		g.openf("if %s == %q {", sliceExpr(x, "", strconv.Itoa(len(lcp))), lcp)
+		tail = sliceExpr(x, strconv.Itoa(len(lcp)), "")
+	}
+	var parts []string
+	for j, p := range plan.pos {
+		at := strconv.Itoa(p)
+		if p < 0 {
+			at = fmt.Sprintf("%s-%d", n, -p)
+		}
+		b := fmt.Sprintf("uint32(%s)", indexExpr(x, at))
+		if j > 0 {
+			b += fmt.Sprintf("<<%d", 8*j)
+		}
+		parts = append(parts, b)
+	}
+	u := strings.Join(parts, " | ")
+	if plan.useLen {
+		if u != "" {
+			u = "(" + u + ") + "
+		}
+		u += fmt.Sprintf("uint32(%s)*%#x", n, uint32(hashLenMul))
+	}
+	g.wf("switch ((%s) * %#x) >> %d {", u, plan.mul, 32-plan.bits)
+	slots := make([]uint32, 0, len(plan.slots))
+	for slot := range plan.slots {
+		slots = append(slots, slot)
+	}
+	slices.Sort(slots)
+	for _, slot := range slots {
+		g.wf("case %d:", slot)
+		g.depth++
+		for j, ci := range plan.slots[slot] {
+			if j == 0 {
+				g.openf("if %s == %q {", tail, cases[ci].key[len(lcp):])
+			} else {
+				g.depth--
+				g.wf("} else if %s == %q {", tail, cases[ci].key[len(lcp):])
+				g.depth++
+			}
+			cases[ci].body()
+		}
+		g.close()
+		g.depth--
+	}
+	g.wf("}")
+	if lcp != "" {
+		g.close()
+	}
+	if n == "" {
+		return
+	}
+	if len(short) > 0 {
+		g.depth--
+		g.wf("} else {")
+		g.depth++
+		plain(short)
+	}
+	g.close()
+}
+
+const hashLenMul = 0x27d4eb2f
+
+func commonHead(cases []strCase) string {
+	lcp := cases[0].key
+	for _, c := range cases[1:] {
+		k := 0
+		for k < len(lcp) && k < len(c.key) && lcp[k] == c.key[k] {
+			k++
+		}
+		lcp = lcp[:k]
+	}
+	return lcp
+}
+
+// hashPlan is a multiply-shift hash over up to four byte positions (negative =
+// counted from the end) plus, when key lengths differ, the length.
+type hashPlan struct {
+	pos            []int
+	useLen         bool
+	mul            uint32
+	bits           int
+	minLen, maxLen int
+	slots          map[uint32][]int
+}
+
+func (p *hashPlan) hash(key string) uint32 {
+	var u uint32
+	for j, at := range p.pos {
+		if at < 0 {
+			at += len(key)
+		}
+		u |= uint32(key[at]) << (8 * j)
+	}
+	if p.useLen {
+		u += uint32(len(key)) * hashLenMul //nolint:gosec // route literals are tiny
+	}
+	return (u * p.mul) >> (32 - p.bits)
+}
+
+// planHash picks byte positions greedily by how many keys they tell apart,
+// then the multiplier and table size with the shortest collision chains that
+// still meet the compiler's jump table density (a quarter of the range used).
+func planHash(keys []string) (hashPlan, bool) {
+	var best hashPlan
+	if hashMin < 0 || len(keys) < max(hashMin, 2) {
+		return best, false
+	}
+	p := hashPlan{minLen: len(keys[0]), maxLen: len(keys[0])}
+	for _, k := range keys[1:] {
+		p.minLen, p.maxLen = min(p.minLen, len(k)), max(p.maxLen, len(k))
+	}
+	p.useLen = p.minLen != p.maxLen
+	var cands []int
+	for at := range p.minLen {
+		cands = append(cands, at)
+	}
+	if p.useLen {
+		for back := 1; back <= p.minLen; back++ {
+			cands = append(cands, -back)
+		}
+	}
+	sig := make([]string, len(keys))
+	if p.useLen {
+		for i, k := range keys {
+			sig[i] = strconv.Itoa(len(k))
+		}
+	}
+	distinct := func(extra int) int {
+		seen := make(map[string]struct{}, len(keys))
+		for i, k := range keys {
+			at := extra
+			if at < 0 {
+				at += len(k)
+			}
+			seen[sig[i]+string(k[at])] = struct{}{}
+		}
+		return len(seen)
+	}
+	have := 1
+	if p.useLen {
+		seen := map[string]struct{}{}
+		for _, v := range sig {
+			seen[v] = struct{}{}
+		}
+		have = len(seen)
+	}
+	for len(p.pos) < 4 && have < len(keys) {
+		pick, got := 0, have
+		for _, c := range cands {
+			if d := distinct(c); d > got {
+				pick, got = c, d
+			}
+		}
+		if got == have {
+			break
+		}
+		for i, k := range keys {
+			at := pick
+			if at < 0 {
+				at += len(k)
+			}
+			sig[i] += string(k[at])
+		}
+		p.pos, have = append(p.pos, pick), got
+	}
+	// ascending offsets let the compiler fuse adjacent bytes into one load
+	slices.Sort(p.pos)
+
+	bestChain := 0
+	for bits := bitsFor(len(keys)); bits <= bitsFor(2*len(keys)); bits++ {
+		for _, mul := range [...]uint32{0x9e3779b1, 0x85ebca6b, 0xc2b2ae35, 0x165667b1, 0xd3a2646d, 0xfd7046c5, 0xb55a4f09} {
+			c := p
+			c.bits, c.mul, c.slots = bits, mul, map[uint32][]int{}
+			chain := 0
+			lo, hi := ^uint32(0), uint32(0)
+			for i, k := range keys {
+				h := c.hash(k)
+				c.slots[h] = append(c.slots[h], i)
+				chain = max(chain, len(c.slots[h]))
+				lo, hi = min(lo, h), max(hi, h)
+			}
+			// below the compiler's jump table minimums the switch is a compare
+			// chain again; only -hashmin 0 asks for that
+			if hashMin > 0 && (len(c.slots) < 8 || int(hi-lo)+1 > 4*len(c.slots)) {
+				continue
+			}
+			if best.slots == nil || chain < bestChain || chain == bestChain && len(c.slots) > len(best.slots) {
+				best, bestChain = c, chain
+			}
+		}
+	}
+	return best, best.slots != nil && bestChain <= 3
+}
+
+func bitsFor(n int) int {
+	bits := 3
+	for 1<<bits < n {
+		bits++
+	}
+	return bits
+}
+
+// emitXMounts delegates cross-package api fields to their own ServeHTTP by
+// prefix: the shared head is cut once, then a switch on the next segment picks
+// the mount. A mount whose prefix ends at off goes last, so a longer one wins.
+func (g *gen) emitXMounts(recv string, xms []xmount, off int, v string, depth int) {
+	var here *xmount
+	var rest []xmount
+	seen := map[string]struct{}{}
+	for i := range xms {
+		if _, dup := seen[xms[i].prefix]; dup {
+			continue
+		}
+		seen[xms[i].prefix] = struct{}{}
+		if len(xms[i].prefix) > off {
+			rest = append(rest, xms[i])
+		} else {
+			here = &xms[i]
+		}
+	}
+	delegate := func(xm xmount) {
+		g.wf("%s.%s.ServeHTTP(w, r)", recv, xm.field)
+		g.wf("return")
+	}
+	prefixed := func(xm xmount) {
+		g.openf("if %s {", hasPrefix(v, xm.prefix[off:]))
+		delegate(xm)
+		g.close()
+	}
+	switch {
+	case len(rest) == 1:
+		prefixed(rest[0])
+	case len(rest) > 1:
+		tails := make([]string, len(rest))
+		for i, xm := range rest {
+			tails[i] = xm.prefix[off:]
+		}
+		if lcp := lcpTrim(tails); strings.HasSuffix(lcp, "/") {
+			mp := fmt.Sprintf("mp%d", depth)
+			g.openCut(mp, v, lcp)
+			g.emitXMounts(recv, rest, off+len(lcp), mp, depth+1)
+			g.close()
+			break
+		}
+		bySeg := map[string][]xmount{}
+		var segs []string
+		for i, xm := range rest {
+			j := strings.IndexByte(tails[i], '/')
+			if j < 0 {
+				prefixed(xm)
+				continue
+			}
+			seg := tails[i][:j]
+			if _, ok := bySeg[seg]; !ok {
+				segs = append(segs, seg)
+			}
+			bySeg[seg] = append(bySeg[seg], xm)
+		}
+		slices.Sort(segs)
+		if len(segs) == 0 {
+			break
+		}
+		// equal-width segments slice fixed, the slash inside the case is the boundary
+		width := len(segs[0])
+		for _, seg := range segs[1:] {
+			if len(seg) != width {
+				width = -1
+				break
+			}
+		}
+		if width >= 0 {
+			g.openf("if len(%s) > %d {", v, width)
+			cases := make([]strCase, len(segs))
+			for i, seg := range segs {
+				cases[i] = strCase{seg + "/", func() {
+					g.emitXMounts(recv, bySeg[seg], off+width+1, fmt.Sprintf("%s[%d:]", v, width+1), depth+1)
+				}}
+			}
+			g.emitStrSwitch(fmt.Sprintf("%s[:%d]", v, width+1), "", cases)
+			g.close()
+			break
+		}
+		mi := fmt.Sprintf("mi%d", depth)
+		g.useStrings = true
+		g.openf("if %s := strings.IndexByte(%s, '/'); %s >= 0 {", mi, v, mi)
+		cases := make([]strCase, len(segs))
+		for i, seg := range segs {
+			cases[i] = strCase{seg, func() {
+				g.emitXMounts(recv, bySeg[seg], off+len(seg)+1, v+"["+mi+"+1:]", depth+1)
+			}}
+		}
+		g.emitStrSwitch(v+"[:"+mi+"]", mi, cases)
+		g.close()
+	}
+	if here != nil {
+		delegate(*here)
+	}
 }
 
 func (g *gen) notFound() {
@@ -1531,7 +2181,14 @@ func (g *gen) openParamCheck(pe *paramEdge, v string, used bool, depth int) bind
 	p := pe.p
 	if p.transform {
 		val := "_"
-		if used {
+		switch {
+		case !used:
+		case p.typ != "":
+			// a known type parses into the dispatcher-level slot for that
+			// type and position, shared with same-typed handler results
+			g.openf("if %s, %s = %s(%s%s); err == nil {", g.slotAt(p.typ, depth), g.errSlot(), p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
+			return binding{p.name, g.slotAt(p.typ, depth), true}
+		default:
 			val = tvar(depth)
 		}
 		g.openf("if %s, err := %s(%s%s); err == nil {", val, p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
@@ -1570,6 +2227,28 @@ func subtreeUsesPath(n *tnode, name string) bool {
 	return n.wild != nil && uses(n.wild.routes)
 }
 
+// readsRest reports whether emitting n reads its rest-of-path variable: only a
+// bare catch-all whose value goes nowhere doesn't.
+func readsRest(n *tnode) bool {
+	if n.wild == nil || len(n.lits)+len(n.params)+len(n.routes) > 0 {
+		return true
+	}
+	if n.wild.name == "" {
+		return false
+	}
+	if !noPathValue {
+		return true
+	}
+	for _, rt := range n.wild.routes {
+		for _, spec := range rt.args {
+			if spec.kind == argParam && spec.name == n.wild.name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // emitNode generates matching code for one trie node. Reports whether it
 // ends in an unconditional dispatch (a wildcard), making later code dead.
 //
@@ -1595,17 +2274,25 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 			g.emitLeaf(child.routes, binds)
 			g.close()
 		case !term:
-			v := pvar(next)
-			g.openf("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg+"/")
+			v := cur
+			if readsRest(child) {
+				g.openCut(v, cur, seg+"/")
+			} else {
+				g.openf("if %s {", hasPrefix(cur, seg+"/"))
+			}
 			g.emitNode(child, v, binds, next)
 			g.close()
 		default:
-			v := pvar(next)
-			g.openf("if %s, ok := strings.CutPrefix(%s, %q); ok {", v, cur, seg)
+			v := cur
+			g.openCut(v, cur, seg)
 			g.openf(`if %s == "" {`, v)
 			g.emitLeaf(child.routes, binds)
 			g.close()
-			g.openf(`if %s, ok := strings.CutPrefix(%s, "/"); ok {`, v, v)
+			if readsRest(child) {
+				g.openCut(v, v, "/")
+			} else {
+				g.openf("if %s {", hasPrefix(v, "/"))
+			}
 			g.emitNode(child, v, binds, next)
 			g.close()
 			g.close()
@@ -1691,14 +2378,11 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 			g.emitLeaf(termLits[0].child.routes, binds)
 			g.close()
 		default:
-			g.wf("switch %s {", cur)
-			for _, e := range termLits {
-				g.wf("case %q:", e.seg)
-				g.depth++
-				g.emitLeaf(e.child.routes, binds)
-				g.depth--
+			cases := make([]strCase, len(termLits))
+			for i, e := range termLits {
+				cases[i] = strCase{e.seg, func() { g.emitLeaf(e.child.routes, binds) }}
 			}
-			g.wf("}")
+			g.emitStrSwitch(cur, "len("+cur+")", cases)
 		}
 		for _, pe := range termParams {
 			b := g.openParamCheck(pe, cur, subtreeUsesPath(pe.child, pe.p.name), depth)
@@ -1706,12 +2390,33 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 			g.close()
 		}
 	}
+	// descLits of one width and no param siblings need no segment scan: the
+	// slash is checked at a constant offset and the switch slices fixed
+	width := -1
+	if len(descLits) > 1 && len(descParams) == 0 && n.wild == nil {
+		width = len(descLits[0].seg)
+		for _, e := range descLits[1:] {
+			if len(e.seg) != width {
+				width = -1
+				break
+			}
+		}
+	}
 	emitDesc := func() {
 		descend := func(e litEdge) {
 			// gate the method before even slicing the rest of the path
 			hoisted := g.hoistMethod(e.child)
-			v := pvar(depth + 1)
-			g.wf("%s := %s[i+1:]", v, cur)
+			v := cur
+			if len(descParams) > 0 || n.wild != nil {
+				v = pvar(depth + 1)
+			}
+			if readsRest(e.child) {
+				if width >= 0 {
+					g.advance(v, cur, fmt.Sprintf("[%d:]", width+1))
+				} else {
+					g.advance(v, cur, "[i+1:]")
+				}
+			}
 			g.emitNode(e.child, v, binds, depth+1)
 			if hoisted {
 				g.hoisted = ""
@@ -1724,26 +2429,59 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 			descend(descLits[0])
 			g.close()
 		default:
-			g.wf("switch %s[:i] {", cur)
-			for _, e := range descLits {
-				g.wf("case %q:", e.seg)
-				g.depth++
-				descend(e)
-				g.depth--
+			cases := make([]strCase, len(descLits))
+			for i, e := range descLits {
+				cases[i] = strCase{e.seg, func() { descend(e) }}
 			}
-			g.wf("}")
+			if width >= 0 {
+				g.emitStrSwitch(fmt.Sprintf("%s[:%d]", cur, width), "", cases)
+			} else {
+				g.emitStrSwitch(cur+"[:i]", "i", cases)
+			}
 		}
 		if len(descParams) > 0 {
 			seg := svar(depth)
-			g.wf("%s := %s[:i]", seg, cur)
+			used := !noPathValue
 			for _, pe := range descParams {
+				used = used || constrained(pe.p) || subtreeUsesPath(pe.child, pe.p.name)
+			}
+			if used {
+				g.wf("%s := %s[:i]", seg, cur)
+			}
+			// candidates each followed by one distinct terminal literal: switch
+			// on the literal and run only that candidate's validator, instead
+			// of parsing the segment once per candidate before looking past it
+			if lits := terminalLits(descParams); lits != nil {
+				g.wf("switch %s {", sliceExpr(cur, "i+1", ""))
+				for k, pe := range descParams {
+					g.wf("case %q:", lits[k])
+					g.depth++
+					b := binding{pe.p.name, seg, false}
+					if constrained(pe.p) {
+						b = g.openParamCheck(pe, seg, subtreeUsesPath(pe.child, pe.p.name), depth)
+						g.emitLeaf(pe.child.lits[0].child.routes, withBinding(binds, b))
+						g.close()
+					} else {
+						g.emitLeaf(pe.child.lits[0].child.routes, withBinding(binds, b))
+					}
+					g.depth--
+				}
+				g.wf("}")
+				return
+			}
+			for k, pe := range descParams {
 				b := binding{pe.p.name, seg, false}
 				wrapped := constrained(pe.p) // i > 0 already guarantees a non-empty segment
 				if wrapped {
 					b = g.openParamCheck(pe, seg, subtreeUsesPath(pe.child, pe.p.name), depth)
 				}
-				rest := pvar(depth + 1)
-				g.wf("%s := %s[i+1:]", rest, cur)
+				rest := cur
+				if k < len(descParams)-1 || n.wild != nil {
+					rest = pvar(depth + 1)
+				}
+				if readsRest(pe.child) {
+					g.advance(rest, cur, "[i+1:]")
+				}
 				g.emitNode(pe.child, rest, withBinding(binds, b), depth+1)
 				if wrapped {
 					g.close()
@@ -1754,8 +2492,20 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 
 	hasTerm := len(termLits)+len(termParams) > 0
 	hasDesc := len(descLits)+len(descParams) > 0
+	// terminal literals compare whole, so they need no "no slash" guard; only
+	// a terminal param (catch-any, or a matcher that could span a slash) does
+	termScan := len(termParams) > 0
+	fixedDesc := func() {
+		g.openf("if len(%s) > %d && %s[%d] == '/' {", cur, width, cur, width)
+		emitDesc()
+		g.close()
+	}
 	switch {
+	case hasTerm && hasDesc && !termScan && width >= 0:
+		emitTerm()
+		fixedDesc()
 	case hasTerm && hasDesc:
+		g.useStrings = true
 		g.openf("if i := strings.IndexByte(%s, '/'); i < 0 {", cur)
 		emitTerm()
 		g.depth--
@@ -1763,11 +2513,17 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 		g.depth++
 		emitDesc()
 		g.close()
+	case hasTerm && !termScan:
+		emitTerm()
 	case hasTerm:
+		g.useStrings = true
 		g.openf("if strings.IndexByte(%s, '/') < 0 {", cur)
 		emitTerm()
 		g.close()
+	case hasDesc && width >= 0:
+		fixedDesc()
 	case hasDesc:
+		g.useStrings = true
 		g.openf("if i := strings.IndexByte(%s, '/'); i > 0 {", cur)
 		emitDesc()
 		g.close()
@@ -1782,6 +2538,31 @@ func (g *gen) emitNode(n *tnode, cur string, binds []binding, depth int) bool {
 		return true
 	}
 	return false
+}
+
+// terminalLits reports the literal each candidate is followed by when every
+// candidate's subtree is exactly one terminal literal and no two share one.
+// Distinct literals make the candidates mutually exclusive, so dispatching on
+// the literal first preserves their order.
+func terminalLits(pes []*paramEdge) []string {
+	lits := make([]string, len(pes))
+	seen := make(map[string]struct{}, len(pes))
+	for k, pe := range pes {
+		c := pe.child
+		if len(c.lits) != 1 || len(c.params) > 0 || c.wild != nil || len(c.routes) > 0 {
+			return nil
+		}
+		lc := c.lits[0].child
+		if len(lc.routes) == 0 || lc.hasDesc() {
+			return nil
+		}
+		if _, dup := seen[c.lits[0].seg]; dup {
+			return nil
+		}
+		seen[c.lits[0].seg] = struct{}{}
+		lits[k] = c.lits[0].seg
+	}
+	return lits
 }
 
 // compress folds chains of single-literal-child nodes into one multi-segment
@@ -1876,7 +2657,7 @@ func (g *gen) emitCall(rt route, args map[string]string, binds []binding) {
 	// every string param lands in PathValue: it is the request's public match
 	// metadata, argument binding or not; transformed values have no raw string
 	for _, b := range binds {
-		if b.arg {
+		if b.arg || noPathValue {
 			continue
 		}
 		g.wf("r.SetPathValue(%q, %s)", b.name, b.expr)
@@ -1941,7 +2722,7 @@ func (g *gen) emitGuard(mw middleware, recv string, rt *route) {
 		case rt != nil:
 			g.emitOnErr(*rt)
 		case g.scope.errHandler.isSet():
-			g.emitEHandler(g.scope.errHandler, g.recvOf[g.scope], "err")
+			g.emitEHandler(g.scope.errHandler, g.recvOf[g.scope], errName)
 		default:
 			fatalf("%s: middleware returns error but there is no onerror in scope", g.scope.name)
 		}
@@ -2021,11 +2802,11 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 			g.emitFastEncode(rt, call)
 			return
 		}
-		g.wf(`w.Header().Set("Content-Type", "application/json")`)
-		g.wf("_ = json.NewEncoder(w).Encode(%s)", call)
+		g.useWriteStd = true
+		g.wf("writeJSON(w, %s)", call)
 	case retValErr:
-		v := g.newVar()
-		g.wf("%s, err := %s", v, call)
+		v := g.slot(rt.retTyp)
+		g.wf("%s, %s = %s", v, g.errSlot(), call)
 		g.openf("if err != nil {")
 		g.emitOnErr(rt)
 		g.wf("return")
@@ -2034,8 +2815,8 @@ func (g *gen) emitCallBare(rt route, args map[string]string, recv string) {
 			g.emitFastEncode(rt, v)
 			return
 		}
-		g.wf(`w.Header().Set("Content-Type", "application/json")`)
-		g.wf("_ = json.NewEncoder(w).Encode(%s)", v)
+		g.useWriteStd = true
+		g.wf("writeJSON(w, %s)", v)
 	}
 }
 
@@ -2060,11 +2841,11 @@ func (g *gen) emitFastEncode(rt route, v string) {
 		call = fmt.Sprintf("ggen.WriteTo(w, %s)", v)
 	}
 	if rt.enc != ggAny {
-		g.wf(`w.Header().Set("Content-Type", "application/json")`)
+		g.wf(`w.Header()["Content-Type"] = __jsonCT`)
 	}
 	g.openf("if err := %s; err != nil {", call)
 	if h, recv, ok := g.routeErrH(rt); ok {
-		g.emitEHandler(h, recv, "err")
+		g.emitEHandler(h, recv, errName)
 	} else {
 		g.wf("w.WriteHeader(http.StatusInternalServerError)")
 	}
@@ -2098,7 +2879,7 @@ func (g *gen) emitOnErr(rt route) {
 	if !ok {
 		fatalf("%s.%s returns error but no onerror in scope of %s", rt.owner.name, rt.handler, g.scope.name)
 	}
-	g.emitEHandler(h, recv, "err")
+	g.emitEHandler(h, recv, errName)
 }
 
 // emitParser calls a whole-input parser; a bare-T parser inlines into the
@@ -2187,7 +2968,7 @@ func (g *gen) badRequest(hasErr bool) {
 	}
 	errVar := "nil" // no specific error at this site (e.g. a checker reject)
 	if hasErr {
-		errVar = "err"
+		errVar = errName
 	}
 	g.emitEHandler(target.badReq, g.recvOf[target], errVar)
 	g.wf("return")
@@ -2220,7 +3001,8 @@ func (g *gen) emitBodyDecode(spec argSpec) string {
 	switch spec.fast {
 	case ggOne:
 		g.useReadOne = true
-		g.wf("%s, err := readJSON[%s](r)", v, spec.typ)
+		v = g.slot(spec.typ)
+		g.wf("%s, %s = readJSON[%s](r)", v, g.errSlot(), spec.typ)
 		g.openf("if err != nil {")
 		g.badRequest(true)
 		g.close()
@@ -2230,7 +3012,8 @@ func (g *gen) emitBodyDecode(spec argSpec) string {
 		return v
 	case ggSlice:
 		g.useReadSlice = true
-		g.wf("%s, err := readJSONSlice[%s](r)", v, spec.elem)
+		v = g.slot("[]" + spec.elem)
+		g.wf("%s, %s = readJSONSlice[%s](r)", v, g.errSlot(), spec.elem)
 		g.openf("if err != nil {")
 		g.badRequest(true)
 		g.close()
@@ -2240,7 +3023,7 @@ func (g *gen) emitBodyDecode(spec argSpec) string {
 		g.wf("%s := new(%s)", v, spec.typ)
 		g.openf("if err := json.NewDecoder(r.Body).Decode(%s); err != nil {", v)
 	} else {
-		g.wf("var %s %s", v, spec.typ)
+		v = g.slot(spec.typ)
 		g.openf("if err := json.NewDecoder(r.Body).Decode(&%s); err != nil {", v)
 	}
 	g.badRequest(true)
@@ -2386,6 +3169,26 @@ const helperReadJSONSlice = `func readJSONSlice[T ggen.StreamDecoder[T]](r *http
 
 `
 
+// Content-Type is stamped by direct map assignment of one shared slice:
+// Header.Set canonicalizes the key (a byte-validating walk over all 12) and
+// allocates a fresh []string per response, together ~30% of a small JSON
+// reply's CPU. The key is already canonical; net/http never appends to the
+// value slice in place.
+const helperJSONCT = `var __jsonCT = []string{"application/json"}
+
+`
+
+// writeJSON is the encoding/json write path. It is a function, not inline
+// code: json.NewEncoder inlines and its Encoder stays on the stack, and the
+// compiler gives every route's copy its own 120 byte slot — 780 routes made a
+// 91KB ServeHTTP frame.
+const helperWriteJSON = `func writeJSON(w http.ResponseWriter, v any) {
+	w.Header()["Content-Type"] = __jsonCT
+	_ = json.NewEncoder(w).Encode(v)
+}
+
+`
+
 // writeJSONAny writes values without generated methods (maps, mixed types).
 // ggen has no pooled AppendAny writer, so this is the one write path that
 // still needs a buffer of its own.
@@ -2397,7 +3200,7 @@ const helperWriteJSONAny = `func writeJSONAny(w http.ResponseWriter, v any) erro
 	if err != nil {
 		return err
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header()["Content-Type"] = __jsonCT
 	_, _ = w.Write(b)
 	return nil
 }
@@ -2920,6 +3723,9 @@ var (
 	// -helpers: import path of a package holding pools shared by every
 	// generated dispatcher in the tree, so N packages don't mean N pools
 	helpersPkg string
+
+	// -nopathvalue: emit no SetPathValue calls, sparing the per-request map
+	noPathValue bool
 )
 
 // resolvePool looks for an exported *sync.Pool-ish var named `name` in the

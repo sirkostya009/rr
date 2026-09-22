@@ -4,17 +4,21 @@ package api
 
 import (
 	"net/http"
-	"strings"
 )
 
 func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/api/v1/") {
-		s.V1.ServeHTTP(w, r)
-		return
-	}
-	if strings.HasPrefix(r.URL.Path, "/api/v2/") {
-		s.V2.ServeHTTP(w, r)
-		return
+	if len(r.URL.Path) >= 5 && r.URL.Path[:5] == "/api/" {
+		mp0 := r.URL.Path[5:]
+		if len(mp0) > 2 {
+			switch mp0[:3] {
+			case "v1/":
+				s.V1.ServeHTTP(w, r)
+				return
+			case "v2/":
+				s.V2.ServeHTTP(w, r)
+				return
+			}
+		}
 	}
 	w.WriteHeader(http.StatusNotFound)
 }

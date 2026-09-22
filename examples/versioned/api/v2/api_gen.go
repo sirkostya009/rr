@@ -11,6 +11,8 @@ import (
 	"versioned/services"
 )
 
+var __jsonCT = []string{"application/json"}
+
 var readBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return &b }}
 
 var writeBufPool = sync.Pool{New: func() any { b := make([]byte, 0, 4096); return &b }}
@@ -43,17 +45,23 @@ func writeJSONAny(w http.ResponseWriter, v any) error {
 	if err != nil {
 		return err
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header()["Content-Type"] = __jsonCT
 	_, _ = w.Write(b)
 	return nil
 }
 
 func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path, ok := strings.CutPrefix(r.URL.Path, "/api/v2/")
-	if !ok {
+	var err error
+	var post Post
+	var newUser services.NewUser
+	var newUsers []services.NewUser
+	var user User
+	path := r.URL.Path
+	if len(path) < 8 || path[:8] != "/api/v2/" {
 		notFound(w)
 		return
 	}
+	path = path[8:]
 	switch path {
 	case "admin/maintenance":
 		r.Pattern = "/api/v2/admin/maintenance"
@@ -72,7 +80,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !requireToken(r.Context(), w, r.Header.Get("Authorization")) {
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header()["Content-Type"] = __jsonCT
 		if err := ggen.WriteTo(w, s.AdminApi.Stats()); err != nil {
 			handleError(w, err)
 			return
@@ -92,25 +100,25 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			query.Tag = v1.Get("tag")
-			w.Header().Set("Content-Type", "application/json")
+			w.Header()["Content-Type"] = __jsonCT
 			if err := ggen.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/v2/posts"
-			body, err := readJSON[Post](r)
+			post, err = readJSON[Post](r)
 			if err != nil {
 				badRequest(w, err)
 				return
 			}
-			v1, err := s.PostsApi.CreatePost(&body)
+			post, err = s.PostsApi.CreatePost(&post)
 			if err != nil {
 				postNotFound(w, r, err)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			if err := ggen.WriteTo(w, v1); err != nil {
+			w.Header()["Content-Type"] = __jsonCT
+			if err := ggen.WriteTo(w, post); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -123,20 +131,20 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			r.Pattern = "GET /api/v2/users"
-			w.Header().Set("Content-Type", "application/json")
+			w.Header()["Content-Type"] = __jsonCT
 			if err := ggen.WriteSliceTo(w, s.UsersApi.GetUsers()); err != nil {
 				handleError(w, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/v2/users"
-			body, err := readJSON[services.NewUser](r)
+			newUser, err = readJSON[services.NewUser](r)
 			if err != nil {
 				badRequest(w, err)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			if err := ggen.WriteTo(w, s.UsersApi.PostUser(body)); err != nil {
+			w.Header()["Content-Type"] = __jsonCT
+			if err := ggen.WriteTo(w, s.UsersApi.PostUser(newUser)); err != nil {
 				handleError(w, err)
 				return
 			}
@@ -152,13 +160,13 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "POST /api/v2/users/bulk"
-		body, err := readJSONSlice[services.NewUser](r)
+		newUsers, err = readJSONSlice[services.NewUser](r)
 		if err != nil {
 			badRequest(w, err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		if err := ggen.WriteSliceTo(w, s.UsersApi.PostUsers(body)); err != nil {
+		w.Header()["Content-Type"] = __jsonCT
+		if err := ggen.WriteSliceTo(w, s.UsersApi.PostUsers(newUsers)); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -170,42 +178,42 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "GET /api/v2/users/me"
-		v1, err := s.UsersApi.GetMe(r.Header.Get("X-User-Id"))
+		user, err = s.UsersApi.GetMe(r.Header.Get("X-User-Id"))
 		if err != nil {
 			handleError(w, err)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		if err := ggen.WriteTo(w, v1); err != nil {
+		w.Header()["Content-Type"] = __jsonCT
+		if err := ggen.WriteTo(w, user); err != nil {
 			handleError(w, err)
 			return
 		}
 		return
 	}
-	if i := strings.IndexByte(path, '/'); i > 0 {
-		switch path[:i] {
+	if len(path) > 5 && path[5] == '/' {
+		switch path[:5] {
 		case "users":
-			p1 := path[i+1:]
-			if strings.IndexByte(p1, '/') < 0 {
-				if p1 != "" {
+			path = path[6:]
+			if strings.IndexByte(path, '/') < 0 {
+				if path != "" {
 					switch r.Method {
 					case "GET":
 						r.Pattern = "GET /api/v2/users/{id}"
-						r.SetPathValue("id", p1)
-						v1, err := s.UsersApi.GetUser(p1)
+						r.SetPathValue("id", path)
+						user, err = s.UsersApi.GetUser(path)
 						if err != nil {
 							handleError(w, err)
 							return
 						}
-						w.Header().Set("Content-Type", "application/json")
-						if err := ggen.WriteTo(w, v1); err != nil {
+						w.Header()["Content-Type"] = __jsonCT
+						if err := ggen.WriteTo(w, user); err != nil {
 							handleError(w, err)
 							return
 						}
 					case "DELETE":
 						r.Pattern = "DELETE /api/v2/users/{id}"
-						r.SetPathValue("id", p1)
-						if err := s.UsersApi.DeleteUser(p1); err != nil {
+						r.SetPathValue("id", path)
+						if err := s.UsersApi.DeleteUser(path); err != nil {
 							handleError(w, err)
 						}
 					default:
@@ -221,49 +229,50 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				on405(w)
 				return
 			}
-			p1 := path[i+1:]
-			if i := strings.IndexByte(p1, '/'); i < 0 {
-				if isUUID(p1) {
+			path = path[6:]
+			if i := strings.IndexByte(path, '/'); i < 0 {
+				if isUUID(path) {
 					r.Pattern = "GET /api/v2/posts/{id}"
-					r.SetPathValue("id", p1)
-					v1, err := s.PostsApi.GetPost(p1)
+					r.SetPathValue("id", path)
+					post, err = s.PostsApi.GetPost(path)
 					if err != nil {
 						postNotFound(w, r, err)
 						return
 					}
-					w.Header().Set("Content-Type", "application/json")
-					if err := ggen.WriteTo(w, v1); err != nil {
+					w.Header()["Content-Type"] = __jsonCT
+					if err := ggen.WriteTo(w, post); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					return
 				}
-				if isSlug(p1) {
+				if isSlug(path) {
 					r.Pattern = "GET /api/v2/posts/{slug}"
-					r.SetPathValue("slug", p1)
-					v1, err := s.PostsApi.GetPostBySlug(p1)
+					r.SetPathValue("slug", path)
+					post, err = s.PostsApi.GetPostBySlug(path)
 					if err != nil {
 						postNotFound(w, r, err)
 						return
 					}
-					w.Header().Set("Content-Type", "application/json")
-					if err := ggen.WriteTo(w, v1); err != nil {
+					w.Header()["Content-Type"] = __jsonCT
+					if err := ggen.WriteTo(w, post); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					return
 				}
 			} else if i > 0 {
-				s1 := p1[:i]
+				s1 := path[:i]
 				if isUUID(s1) {
-					p2 := p1[i+1:]
-					if p3, ok := strings.CutPrefix(p2, "comments/"); ok {
-						if strings.IndexByte(p3, '/') < 0 {
-							if isUUID(p3) {
+					path = path[i+1:]
+					if len(path) >= 9 && path[:9] == "comments/" {
+						path = path[9:]
+						if strings.IndexByte(path, '/') < 0 {
+							if isUUID(path) {
 								r.Pattern = "GET /api/v2/posts/{pid}/comments/{cid}"
 								r.SetPathValue("pid", s1)
-								r.SetPathValue("cid", p3)
-								if err := writeJSONAny(w, s.PostsApi.GetComment(s1, p3)); err != nil {
+								r.SetPathValue("cid", path)
+								if err := writeJSONAny(w, s.PostsApi.GetComment(s1, path)); err != nil {
 									postNotFound(w, r, err)
 									return
 								}

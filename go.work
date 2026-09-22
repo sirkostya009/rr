@@ -3,6 +3,7 @@ go 1.27
 use (
 	.
 	./bench
+	./examples/large
 	./examples/simple
 	./examples/versioned
 )
