@@ -1,107 +1,226 @@
 # rr
 
-Codegen-first HTTP routing for Go. Annotate structs and methods with
-`//rr:` directives, run the generator, get one hand-written-looking
-`ServeHTTP` per API — a common-prefix cut, a `switch` over static routes, and
-a segment trie for dynamic ones. No runtime router, no reflection, nothing
-imported at request time beyond stdlib (and [ggen](../ggen) if you use it).
-
-Think of it as the annotation ergonomics of a framework like NestJS or Spring
-compiled down to a plain `switch` statement.
+Codegen-first HTTP routing for Go. Annotate structs and methods with `//rr:`
+directives, run the generator, and get one `ServeHTTP` per API: a common-prefix
+cut, a switch over static routes, and a segment trie for dynamic ones. No
+runtime router, no reflection. Generated code imports only the standard library
+(plus [ggen](https://github.com/sirkostya009/ggen) if you use it).
 
 ```go
+//go:generate go run github.com/sirkostya009/rr@latest $GOFILE
+
 //rr:api onerror=@handleError on404=@notFound
 type Api struct {
 	UsersApi
 	PostsApi
 }
 
+type UsersApi struct{ db *sql.DB }
+
 //rr:route GET /api/users/{id}
-func (a *UsersApi) GetUser(id int) (User, error) {
+func (a *UsersApi) GetUser(ctx context.Context, id int) (User, error) {
+	...
+}
+
+//rr:route POST /api/users
+func (a *UsersApi) CreateUser(body NewUser) (User, error) {
 	...
 }
 ```
 
-```sh
-go run . api.go   # -> api_gen.go, package-scoped
-```
+`id int` makes the route match only numeric segments. `body` is decoded from
+JSON. The `User` result is encoded as JSON. Errors go to `handleError`.
 
-## Usage
-
-Install globally:
+## Install
 
 ```sh
-go install github.com/sirkostya009/rr
+go install github.com/sirkostya009/rr@latest
 ```
 
-Or have it installed automatically (once) per go generate invocation:
+Or run it from `go generate` without installing, as above. The input file only
+anchors the package and names the output (`api.go` → `api_gen.go`). Directives
+are read from every file in the package.
+
+```
+rr [-o output.go] [-helpers import/path] [-nopathvalue] [-hashmin n] input.go
+```
+
+| Flag           | Effect                                                                                                                            |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `-o`           | output file, defaults to `<input>_gen.go`                                                                                         |
+| `-helpers`     | package exporting `ReaderPool` / `WriterPool` (`sync.Pool`), shared by every generated dispatcher instead of one pool per package |
+| `-nopathvalue` | skip `r.SetPathValue`. Path params then reach the handler only as arguments, but a dynamic hit gets ~10x cheaper                  |
+| `-hashmin`     | literal sets this large dispatch through a generated hash instead of a string switch. Default 256, `0` always, `-1` never         |
+
+## Directives
+
+| Directive                                                 | On     | Meaning                                                              |
+| --------------------------------------------------------- | ------ | -------------------------------------------------------------------- |
+| `//rr:api [onerror=@f on400=@f on404=@f on405=@f]`        | struct | a dispatcher. Its api-typed fields (embedded or named) merge into it |
+| `//rr:controller [onerror=@f on400=@f on404=@f on405=@f]` | struct | optional, attaches error handlers to a mounted sub-api               |
+| `//rr:pre @f @g`                                          | struct | guard chain run before every route of that api                       |
+| `//rr:route [METHOD] /path`                               | method | a route. No method matches any method                                |
+
+Any directive may end with a `-- comment`.
+
+### Patterns
+
+- `/users/{id}`: one segment
+- `/users/{id=@ref}`: one segment, checked or converted by `@ref`
+- `/files/{path...}`: the rest of the path, slashes included
+- `/files/*`: same, unnamed
+
+Static segments always beat params at the same position. Several params may
+share a position (`/items/{id}` bound as `int` and `/items/{slug}` as
+`string`) and are tried in
+declaration order, with numbers before bools and plain strings last. Two of
+the same kind at one position is a generate error.
+
+### `@ref`
+
+A `@ref` names a package func, a method of the api, a `*regexp.Regexp` var, or
+a qualified `pkg.Fn`.
+
+- `func(string) bool` is a checker: false means try the next candidate, then 404
+- `func(string) (T, error)` is a transformer: its `T` is passed to the handler
+- a regexp is matched with `MatchString` as written, so anchor it yourself
+
+## Handler parameters
+
+Parameters bind by name and type. No annotation is needed for the usual cases.
+
+| Parameter                                                 | Binds                                                                                                             |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `http.ResponseWriter`, `*http.Request`, `context.Context` | by type, any position, all optional                                                                               |
+| name matches a `{token}`                                  | path param. `string`, `int`, `float64`, `float32`, `bool`. The type picks the matcher (`int` only matches digits) |
+| `body`                                                    | JSON (`T` or `*T`), `multipart.Form`, or `url.Values` (form post)                                                 |
+| `query`                                                   | struct with `query:` tags, `map[string]string`, `map[string]any`, or `url.Values`                                 |
+| `headers`                                                 | struct with `header:` tags, or `http.Header`                                                                      |
+| type embedding `http.ResponseWriter`                      | the writer itself, type-asserted from `w`                                                                         |
+
+Inline annotations override the name:
 
 ```go
-//go:generate go run github.com/sirkostya009/rr@v $GOFILE
+func (a *Api) Search(
+	in /* rr:body */ SearchRequest,
+	page /* rr:query page=@atoi */ int,
+	rid /* rr:header X-Request-Id */ string,
+	slug /* rr:param name */ string,
+) ([]Result, error)
 ```
 
-`$GOFILE` must be the file with your aggregate API struct.
+`/* rr:query */` and `/* rr:header */` take three forms: bare (whole value by
+type), `key[=@check]` (one value), or `@parser` (whole value through a custom
+func).
 
-See [examples/simple/] for a fully worked, single-package service exercising
-essentially every feature, and [examples/versioned/] for cross-package
-`//rr:api` composition (a `/v1` + `/v2` split over a shared service layer).
-See [CLAUDE.md] for the complete directive/semantics reference.
+## Results and errors
 
-## Highlights
+A handler returns nothing, `error`, `T`, or `(T, error)`. A `T` is always
+written as JSON.
 
-- **Zero-allocation static & typed-param matching.** Static routes are a
-  string switch; the segment trie shares literal prefixes across routes and
-  does at most one `IndexByte` per node.
-- **Path params bind by declared type.** `func GetUser(id int)` derives an
-  `Atoi` matcher automatically; `float64`/`float32`/`bool` too. Multiple
-  handlers can share a path position as long as their param types don't
-  overlap (`int` and `bool`, not `int` and `float64`) — dispatched in
-  declaration order, validated at generate time.
-- **`@ref` params**: `{slug=@isSlug}` (checker), `{id=@strconv.Atoi}`
-  (transformer, binds as a typed handler arg), or `{id=@someRegexp}` (a
-  `*regexp.Regexp` var, matched directly).
-- **Parameter binding by name + type**, no annotation for common cases: a
-  param named `body` is the request body (JSON `T`/`*T`, `multipart.Form`, or
-  `url.Values`), `query` the whole query (struct via `query:` tags, map,
-  `url.Values`), `headers` a header struct (`header:` tags). A route `{token}`
-  of the same name wins. Inline `/* rr:body */`, `/* rr:param */`,
-  `/* rr:query [key][=@check] */`, `/* rr:header ... */` override the naming
-  when you need it; `http.ResponseWriter`/`*http.Request`/`context.Context`
-  bind by type and are optional (the context is `r.Context()`).
-- **Composition.** `//rr:api` merges any number of api-typed fields into
-  one dispatcher — one prefix cut, one switch, one trie across every mounted
-  API — instead of stacking `http.ServeMux` handlers (which cost real
-  allocations per mount).
-- **Middleware are guards**, not `func(Handler) Handler`: plain functions
-  that bind params like handlers and return `bool` or `error`. No wrapping,
-  no closures, no allocation.
-- **[ggen](../ggen) integration.** If a request/response type has
-  ggen-generated `DecodeFromStream`/`AppendJSON` methods, the generator uses
-  them automatically through pooled buffers — no config. Falls back to
-  `encoding/json` per type when ggen isn't in play.
-- **`r.Pattern`** (Go 1.22+ `http.Request.Pattern`) is populated exactly like
-  `http.ServeMux` would, so tracing/metrics middleware works unmodified.
+Handler and encode errors go to the owning api's `onerror`, then the central
+`onerror`, then a bare 500. Error handlers bind parameters like handlers do.
+They need an `http.ResponseWriter`, and may take `*http.Request`,
+`context.Context`, query and header binds:
+
+- `onerror` must take an `error`
+- `on400` may take an `error` (nil when the request is just malformed)
+- `on404` and `on405` take none
+
+Without a handler, the response is a bodyless status code. A wrong method on
+an existing path is a 405, not a 404.
+
+## Guards
+
+`//rr:pre` functions are guards, not `func(http.Handler) http.Handler`. They
+bind parameters like handlers and return `bool` (false = already handled, stop)
+or `error` (sent to `onerror`).
+
+```go
+//rr:pre @requireToken
+type AdminApi struct{}
+
+func requireToken(w http.ResponseWriter, auth /* rr:header Authorization */ string) bool {
+	if auth != "Bearer letmein" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return false
+	}
+	return true
+}
+```
+
+Guards can't wrap the writer. Gzip, tracing and the like belong in an outer
+`http.Handler` around the generated one.
+
+## Composition
+
+Fields of an `//rr:api` from the same package merge into one dispatcher: one
+prefix cut, one switch and one trie for every mounted api.
+
+A field from another package (`v1.Api`) delegates by prefix instead. rr reads
+that package's sources to learn its prefix, so generation order doesn't matter
+and `go generate ./...` works from a clean tree. See
+[examples/versioned](examples/versioned).
+
+## ggen
+
+When a body or result type has [ggen](https://github.com/sirkostya009/ggen)
+`DecodeFromStream` / `AppendJSON` methods, rr uses them with pooled buffers.
+This also works for types from other packages. Other types fall back to
+`encoding/json`.
+
+## Request metadata
+
+`r.Pattern` is set the way `http.ServeMux` sets it, and string path params are
+available through `r.PathValue`, so existing middleware and tracing work
+unchanged.
+
+## Generating clients
+
+The parser is a library. `github.com/sirkostya009/rr/gen` returns every route
+with its api, handler, pattern (as written and in ServeMux form), segments and
+parameter bindings. The CLI uses the same package, so scripts see exactly what
+rr sees.
+
+```go
+set, err := gen.Load("./api/...")
+if err != nil {
+	log.Fatal(err)
+}
+for rt := range set.Routes() {
+	fmt.Println(rt.Method, rt.Path, "->", rt.API.Name+"."+rt.Handler)
+}
+```
+
+`gen` describes routes, not types. Pair it with `ggen/gen` for the JSON
+shapes. [examples/tsclient](examples/tsclient) builds a TypeScript fetch
+client and its types this way. The model is documented in
+[gen/SKILL.md](gen/SKILL.md).
+
+## Examples
+
+- [examples/simple](examples/simple): one package, nearly every feature
+- [examples/versioned](examples/versioned): `/v1` and `/v2` packages composed under one api
+- [examples/large](examples/large): hashed dispatch over sets of hundreds of routes
+- [examples/tsclient](examples/tsclient): TypeScript client generation
 
 ## Benchmarks
 
-| Benchmark                    | rr                    | [httx](github.com/sirkostya009/httx) | httprouter          | gin                 |
-| ---------------------------- | --------------------- | ------------------------------------ | ------------------- | ------------------- |
-| Simple (static)              | **5.4 ns**            | 9.6 ns                               | 13.8 ns             | 31.9 ns             |
-| SingleParam                  | **24.5 ns**           | 43.5 ns                              | 54.9 ns (1 alloc)   | 45.7 ns             |
-| MultiParam (5 params)        | **86.1 ns**           | 139.5 ns                             | 144.7 ns (1 alloc)  | 104.1 ns            |
-| RegexParam (digit-validated) | **30.5 ns**           | 294.8 ns (4 allocs)                  | —                   | —                   |
-| Wildcard                     | **94.0 ns**           | 158.8 ns                             | 149.4 ns (1 alloc)  | 114.1 ns            |
-| MethodMismatch (405)         | **79.4 ns** (1 alloc) | 316.7 ns (1 alloc)                   | 673.0 ns (7 allocs) | 355.4 ns (4 allocs) |
-| NotFound                     | **12.5 ns**           | 91.7 ns                              | 130.2 ns            | 126.3 ns (1 alloc)  |
-| TrailingSlash                | n/a                   | **86.0 ns**                          | 176.2 ns            | 221.6 ns            |
-| CaseInsensitive              | n/a                   | **87.2 ns**                          | 183.9 ns            | 220.1 ns            |
+From [bench](bench), a deeply nested REST surface, single goroutine, median of
+6 runs (`cd bench && go test -bench . -benchmem -count 6`):
 
-RegexParam only compares routers with real digit validation (httprouter/gin
-have none). TrailingSlash/CaseInsensitive only compare routers with a
-redirect feature — rr's route set is fixed at compile time and doesn't have
-one yet.
+| Benchmark                    | rr                    | [httx](https://github.com/sirkostya009/httx) | httprouter          | gin                 |
+| ---------------------------- | --------------------- | -------------------------------------------- | ------------------- | ------------------- |
+| Simple (static)              | **6.4 ns**            | 16.0 ns                                      | 25.3 ns             | 50.2 ns             |
+| SingleParam                  | **28.9 ns**           | 74.5 ns                                      | 77.4 ns (1 alloc)   | 77.4 ns             |
+| MultiParam (5 params)        | 235.5 ns              | 233.3 ns                                     | 206.1 ns (1 alloc)  | **178.4 ns**        |
+| RegexParam (digit-validated) | **241.4 ns**          | 421.9 ns (4 allocs)                          | —                   | —                   |
+| Wildcard                     | 289.9 ns              | 254.8 ns                                     | 211.8 ns (1 alloc)  | **186.5 ns**        |
+| MethodMismatch (405)         | **75.9 ns** (1 alloc) | 487.0 ns (1 alloc)                           | 893.5 ns (7 allocs) | 509.2 ns (4 allocs) |
+| NotFound                     | **9.6 ns**            | 148.8 ns                                     | 226.7 ns            | 172.2 ns (1 alloc)  |
+
+httprouter and gin don't validate digits, so they're left out of RegexParam.
 
 ## Status
 
-Actively evolving; the directive surface and generated-code shape are not
-stable across commits.
+The directive surface and generated code are still changing between commits.

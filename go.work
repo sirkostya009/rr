@@ -5,5 +5,6 @@ use (
 	./bench
 	./examples/large
 	./examples/simple
+	./examples/tsclient
 	./examples/versioned
 )

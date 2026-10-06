@@ -8,8 +8,19 @@ stdlib (+ ggen when present). Think NestJS annotations, compiled to a switch.
 
 ## Layout
 
-- `main.go` — the whole generator, single file
-- `examples/` — two independent modules, each a living fixture + test suite
+- `gen/` — the parser, exported as a consumer library (`gen.Load` ->
+  `Set`/`Package`/`API`/`Route`/`Segment`/`Param`/`Arg`). Owns everything that
+  decides MEANING: directives, patterns, handler args, annotations, query and
+  header struct binds, mounts, cross-package prefix discovery, `@ref`
+  classification. Stdlib + go/ast only. `gen/SKILL.md` is its user-facing doc
+- `main.go` — the CLI and the whole emitter. Parses through `gen`, so there is
+  one parser and it cannot drift from the library
+- `build.go` — the adapter: projects the `gen` model onto the emitter's
+  internal types (`apiType`/`route`/`param`/`argSpec`) and does everything
+  Go-specific the model deliberately leaves out — ggen fast-path shapes,
+  the matcher derived from a path param's declared type, rendered type names,
+  the import set
+- `examples/` — independent modules, each a living fixture + test suite
   - `simple/` (module `simple`) — the flat single-package example: one
     `//rr:api` central with a file per sub-API (`api.go`, `users.go`, …),
     `server.go` the sentry/slog wrapper, generated `api_gen.go`/`api_ggen.go`
@@ -34,15 +45,26 @@ stdlib (+ ggen when present). Think NestJS annotations, compiled to a switch.
     share a hash slot get 404, checks candidate order, and FAILS if
     `api_gen.go` stops containing 4 hashed switches or 1 literal-first switch
     (so a threshold or planner change can't silently drop coverage)
-- `go.work` ties in root, the three examples and `bench`; ggen comes from the
-  pinned pseudo-version in each example's go.mod
+  - `tsclient/` (module `tsclient`) — the consumer-library example: a script
+    generating BOTH a TypeScript fetch client (from `rr/gen` routes) and the
+    TypeScript types it sends and receives (from `ggen/gen` shapes), with
+    golden files for the versioned and simple services. Its own module
+    because `ggen/gen` pulls `golang.org/x/tools` and the rr root module
+    stays dependency-free; a `replace` points at `../..` so it builds
+    outside the workspace too. `names.go` is the one place the two
+    generators agree on a type's TypeScript name. Every type is declared
+    twice, `T` (encode) and `TInput` (decode), because the shapes differ
+- `go.work` ties in root, the four example modules and `bench`; ggen comes
+  from the pinned pseudo-version in each example's go.mod
 
 ## Commands
 
 ```sh
 go build .                                 # root module: the generator
+go test ./gen/...                          # the consumer library
 cd examples/versioned && go generate ./... # any order; ggen runs before rr per pkg
 cd examples/versioned && go vet ./... && go test ./...   # or examples/simple
+cd examples/tsclient && go test .          # its own module; -update rewrites goldens
 ```
 
 Generation is whole-package: the input file arg only anchors the directory and
@@ -176,7 +198,7 @@ belong in an outer wrapper like `example/api/server.go`.
   those calls stop inlining; the plain compare is expanded by the compiler at
   any size. `strings.IndexByte` has no such form and stays a call in big
   dispatchers. `strings` is imported only when IndexByte is emitted
-  (`gen.useStrings`) — a static-only dispatcher doesn't need it.
+  (the emitter's `useStrings`) — a static-only dispatcher doesn't need it.
   IndexByte is emitted only where a segment scan is unavoidable: sibling
   descLits of ONE width with no param/wildcard siblings check the slash at a
   constant offset and slice fixed (`if len(p) > k && p[k] == '/' { switch
@@ -186,7 +208,7 @@ belong in an outer wrapper like `example/api/server.go`.
   uniform/Zipf. For that terminal scan the call is the fastest form: an
   inline byte loop was +50% on uniform (no SIMD, mispredicted exit), a
   non-inlined local helper -3% but a wash on friendly; not worth a helper.
-- Rest-of-path advances IN PLACE (`path = path[i+1:]`, `gen.advance`) wherever
+- Rest-of-path advances IN PLACE (`path = path[i+1:]`, `emitter.advance`) wherever
   the node reads it no more afterwards: lone literal chains always, a literal
   descent when the node has no param edges or catch-all, the LAST param descent
   when there's no catch-all. Otherwise a fresh `pN` is declared, because a
@@ -209,14 +231,14 @@ belong in an outer wrapper like `example/api/server.go`.
   Emitted once (`helperJSONCT`) whenever any JSON write path is in use.
   Measured on 780 routes: ggen reply -45% and 0 allocs, encoding/json -18%.
 - `(T, error)` results and decoded JSON bodies assign into ONE variable per
-  type, declared at the top of ServeHTTP (`gen.slot`, named after the type: `post`, `newUsers`, ... plus a
+  type, declared at the top of ServeHTTP (`emitter.slot`, named after the type: `post`, `newUsers`, ... plus a
   shared `var err error`, spliced in by `spliceDecls` after the body is
   emitted). A `v1, err :=` per route gave every 64B `Post` result its own
   slot. Only one route runs per request, so sharing is safe. Derived path
   param matchers assign the same way (`if intVal, err = strconv.Atoi(s1)`),
-  keyed by type AND trie position (`gen.slotAt`: a route has one param per
+  keyed by type AND trie position (`emitter.slotAt`: a route has one param per
   position, so `intVal`, `intVal1`), and a same-typed handler result reuses
-  the first such slot (`gen.slot` -> `gen.byType`; args are passed before the
+  the first such slot (`emitter.slot` -> `emitter.byType`; args are passed before the
   result lands). Predeclared names get `Val` (`int` is not a keyword; `var int
   int` compiles and then breaks every later `int`). Measured: scalars were
   already register-resident with disjoint scopes, so this is uniformity, not
@@ -282,23 +304,32 @@ belong in an outer wrapper like `example/api/server.go`.
   request bodies, write buffers to responses. Stream decode = strings copied
   out, buffer recycles immediately.
 
-## Generator internals (main.go)
+## Generator internals
 
-Pipeline: parse package dir → collect apis/routes/directives (`apiType`,
-`route`, `tok`, `argSpec`) → link central mounts + cross-package `xmounts`
-(`discoverPrefix` → `scanPkg` re-parses the sibling package's sources for its
-route patterns and nested xmounts; both memoized by package) →
-resolve refs (`refExpr{method,name}` rendered against a receiver expr so `s.f`
-becomes `s.Some.f` in merged dispatchers) → classify checkers/ggen shapes → emit.
+Pipeline, front to back:
 
-Emission: `emitDispatcher` (per api/central; emits
+`gen.Load(dir)` — parse package dir (rr's own output skipped via `isGenerated`,
+so `-o` and staleness can't poison it) → collect apis/routes/directives
+(`API`, `Route`, `Segment`, `Arg`) → link central mounts + cross-package
+`XMounts` (`discoverPrefix` → `scanPkg` re-parses the sibling package's
+sources for its route patterns and nested xmounts; both memoized by package) →
+resolve refs and classify checkers → stamp each dispatcher's `Prefix`.
+Failures unwind by panic and come back from `Load` as a `*gen.Error` carrying
+the same message the CLI prints.
+
+`builder` (build.go) — project onto `apiType`/`route`/`tok`/`argSpec`, resolve
+`refExpr{method,name}` (rendered against a receiver expr so `s.f` becomes
+`s.Some.f` in merged dispatchers), classify ggen shapes, derive path-param
+matchers from declared types, collect imports.
+
+`emitter` (main.go) — `emitDispatcher` (per api/central; emits
 `xmount` prefix-delegations before its own tree, and short-circuits to just
 notFound when the central has no routes of its own) → static switch + trie
 (`tnode`/`insert`/`compress`) → `emitNode` (one IndexByte per node, sibling
 literals via segment switch, param edges term/desc split) → `emitLeaf` →
 `emitDispatch` (method) → `emitCall` (Pattern, PathValue, guards, bindings,
 call, response). Helpers (`readJSON` etc., float32 wrapper, pools) are string
-consts appended once, gated by `gen.use*` flags. Output goes through
+consts appended once, gated by the emitter's `use*` flags. Output goes through
 `format.Source`; on syntax errors the raw text is still written for debugging.
 
 ## ggen (../ggen)

@@ -3,3 +3,4 @@
 *.out
 /dist/
 /rr
+/examples/tsclient/tsclient
