@@ -246,7 +246,7 @@ func (g *tsgen) tsType(tr rr.TypeRef, input bool) string {
 	default:
 		base = "unknown"
 	}
-	if tr.Slice {
+	if tr.Slice || tr.Seq { // a sequence is a json array on the wire
 		base += "[]"
 	}
 	return base

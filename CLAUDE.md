@@ -122,7 +122,8 @@ Handler params bind by NAME + TYPE for the common cases; an inline
    explicit annotation). A named catch-all `{name...}` binds the same way but
    string ONLY (the raw rest of the path, slashes included) — under
    `-nopathvalue` an arg is the only way to read it
-4. reserved name `body` — JSON body (T or *T, ggen or stdlib), OR
+4. reserved name `body` — JSON body (T or *T, ggen or stdlib; `iter.Seq2[T,
+   error]` with ggen T only, see below), OR
    `multipart.Form`/`*multipart.Form` (ParseMultipartForm→r.MultipartForm),
    OR `url.Values` (ParseForm→r.PostForm)
 5. reserved name `query` — whole query: struct (`query:` tags), map[string]
@@ -294,6 +295,13 @@ belong in an outer wrapper like `example/api/server.go`.
   / `readJSONSlice[T]` (ggen has no pooled reader) and `writeJSONAny`
   (`ggen.AppendAny` has no pooled writer) — once ggen is in play at all,
   arbitrary values go through it instead of encoding/json.
+- An `iter.Seq2[T, error]` body (`gen.TypeRef.Seq`, emitter shape `ggSeq`) is
+  `readJSONSeq[T](r)`, a lazy `Stream.Array` over the body passed straight
+  into the handler call: no slot, no error check, no 400. Decode errors are
+  yielded to the handler, which reports them through its own error return.
+  The read buffer is drawn when the range starts and put back when it ends,
+  inside the iterator, so ServeHTTP gains no defer. A non-ggen `T` or a
+  pointer to the sequence is a generate-time error: stdlib has no lazy array.
 - Buffer pools: `-helpers <import path>` points at a package exporting
   `ReaderPool` and/or `WriterPool` (`sync.Pool` or `*sync.Pool`), shared by
   every generated dispatcher in the tree — otherwise each package pools alone

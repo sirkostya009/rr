@@ -4,6 +4,7 @@ package v2
 
 import (
 	"github.com/sirkostya009/ggen"
+	"iter"
 	"net/http"
 	"strconv"
 	"strings"
@@ -37,6 +38,20 @@ func readJSONSlice[T ggen.StreamDecoder[T]](r *http.Request) ([]T, error) {
 	return vs, err
 }
 
+func readJSONSeq[T ggen.StreamDecoder[T]](r *http.Request) iter.Seq2[T, error] {
+	return func(yield func(T, error) bool) {
+		bp := readBufPool.Get().(*[]byte)
+		defer readBufPool.Put(bp)
+		var s ggen.Stream
+		for v, err := range s.Reset(r.Body, *bp).Array[T]() {
+			if !yield(v, err) {
+				break
+			}
+		}
+		*bp = s.Bytes()
+	}
+}
+
 func writeJSONAny(w http.ResponseWriter, v any) error {
 	bp := writeBufPool.Get().(*[]byte)
 	defer writeBufPool.Put(bp)
@@ -56,6 +71,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var newUser services.NewUser
 	var newUsers []services.NewUser
 	var user User
+	var users []User
 	path := r.URL.Path
 	if len(path) < 8 || path[:8] != "/api/v2/" {
 		notFound(w)
@@ -185,6 +201,24 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header()["Content-Type"] = __jsonCT
 		if err := ggen.WriteTo(w, user); err != nil {
+			handleError(w, err)
+			return
+		}
+		return
+	case "users/stream":
+		if r.Method != "POST" {
+			w.Header().Set("Allow", "POST")
+			on405(w)
+			return
+		}
+		r.Pattern = "POST /api/v2/users/stream"
+		users, err = s.UsersApi.StreamUsers(readJSONSeq[services.NewUser](r))
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+		w.Header()["Content-Type"] = __jsonCT
+		if err := ggen.WriteSliceTo(w, users); err != nil {
 			handleError(w, err)
 			return
 		}

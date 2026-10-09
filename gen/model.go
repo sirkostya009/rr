@@ -329,6 +329,9 @@ type TypeRef struct {
 
 	Ptr   bool // declared as *T
 	Slice bool // declared as []T
+	// Seq is a body declared as iter.Seq2[T, error]: a JSON array of T, read
+	// an element at a time as the handler ranges over it.
+	Seq bool
 }
 
 // RefKind is what an @ref resolved to.

@@ -89,7 +89,7 @@ Route      API, Method, Pattern, Path, Segments, Handler, Doc, Decl, Pos,
 Segment    Kind (SegLit | SegParam | SegRest), Lit, Param
 Param      Name, Type, Check, Rest, Arg
 Arg        Kind, Name, Type, Param, Body, Whole, Shape, Key, Fields, MapAny, Check
-TypeRef    Node, Expr, Pkg, Name, Ptr, Slice
+TypeRef    Node, Expr, Pkg, Name, Ptr, Slice, Seq
 Ref        Name, Kind, Transform, Err, Decl
 Handler    Ref, Args, RetErr, TakesErr
 ```

@@ -199,6 +199,10 @@ export function createClient(options: ClientOptions = {}) {
         postUsers(body: NewUserInput[], init?: RequestInit): Promise<V2User[]> {
           return json<V2User[]>(send("POST", `/api/v2/users/bulk`, { body, json: true, init }));
         },
+        /** POST /api/v2/users/stream */
+        streamUsers(body: NewUserInput[], init?: RequestInit): Promise<V2User[]> {
+          return json<V2User[]>(send("POST", `/api/v2/users/stream`, { body, json: true, init }));
+        },
         /** GET /api/v2/users/{id} */
         getUser(id: string, init?: RequestInit): Promise<V2User> {
           return json<V2User>(send("GET", `/api/v2/users/${seg(id)}`, { init }));

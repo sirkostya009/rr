@@ -93,7 +93,7 @@ Parameters bind by name and type. No annotation is needed for the usual cases.
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `http.ResponseWriter`, `*http.Request`, `context.Context` | by type, any position, all optional                                                                               |
 | name matches a `{token}`                                  | path param. `string`, `int`, `float64`, `float32`, `bool`. The type picks the matcher (`int` only matches digits) |
-| `body`                                                    | JSON (`T` or `*T`), `multipart.Form`, or `url.Values` (form post)                                                 |
+| `body`                                                    | JSON (`T`, `*T` or `iter.Seq2[T, error]`), `multipart.Form`, or `url.Values` (form post)                          |
 | `query`                                                   | struct with `query:` tags, `map[string]string`, `map[string]any`, or `url.Values`                                 |
 | `headers`                                                 | struct with `header:` tags, or `http.Header`                                                                      |
 | type embedding `http.ResponseWriter`                      | the writer itself, type-asserted from `w`                                                                         |
@@ -168,6 +168,25 @@ When a body or result type has [ggen](https://github.com/sirkostya009/ggen)
 `DecodeFromStream` / `AppendJSON` methods, rr uses them with pooled buffers.
 This also works for types from other packages. Other types fall back to
 `encoding/json`.
+
+A body declared as `iter.Seq2[T, error]`, with ggen methods on `T`, is a JSON
+array read one element at a time as the handler ranges over it, so nothing is
+read before the loop and the array is never held whole. A malformed body
+shows up as an error inside the loop, not as a 400, so reporting it is the
+handler's job.
+
+```go
+//rr:route POST /users/import
+func (a *UsersApi) Import(body iter.Seq2[NewUser, error]) error {
+	for u, err := range body {
+		if err != nil {
+			return err
+		}
+		// ...
+	}
+	return nil
+}
+```
 
 ## Request metadata
 

@@ -165,8 +165,11 @@ func main() {
 	if g.localRead || g.localWrite {
 		imports["sync"] = true
 	}
-	if g.useReadOne || g.useReadSlice || g.useWriteOne || g.useWriteSlice || g.useWriteAny {
+	if g.useReadOne || g.useReadSlice || g.useReadSeq || g.useWriteOne || g.useWriteSlice || g.useWriteAny {
 		imports[ggenPkg] = true
+	}
+	if g.useReadSeq {
+		imports["iter"] = true
 	}
 	for p := range b.extraImports {
 		imports[p] = true
@@ -201,6 +204,9 @@ func main() {
 	}
 	if g.useReadSlice {
 		fmt.Fprintf(&buf, helperReadJSONSlice, g.readPool, g.readPool)
+	}
+	if g.useReadSeq {
+		fmt.Fprintf(&buf, helperReadJSONSeq, g.readPool, g.readPool)
 	}
 	if g.useWriteAny {
 		fmt.Fprintf(&buf, helperWriteJSONAny, g.writePool, g.writePool)
@@ -334,7 +340,7 @@ type argSpec struct {
 	ptr       bool     // body declared as *T
 	fast      int      // ggen shape of the body type
 	bodyKind  int      // argBody: json / multipart / form
-	elem      string   // ggSlice: the element type name
+	elem      string   // ggSlice, ggSeq: the element type name
 	bind      int      // argQuery/argHeader: whole-object binding shape
 	mapAny    bool     // bindMap: map[string]any instead of map[string]string
 	fields    []queryField
@@ -353,6 +359,7 @@ const (
 	ggNone  = iota // no generated methods, use encoding/json
 	ggOne          // T has DecodeFromStream/AppendJSON
 	ggSlice        // []T with the methods on T
+	ggSeq          // iter.Seq2[T, error] body, T with the methods
 	ggAny          // arbitrary value via ggen.AppendAny, when ggen is in play
 )
 
@@ -528,6 +535,7 @@ type emitter struct {
 	// ggen fast-path helpers used anywhere in the output
 	useReadOne    bool
 	useReadSlice  bool
+	useReadSeq    bool
 	useWriteOne   bool
 	useWriteSlice bool
 	useWriteAny   bool
@@ -546,7 +554,7 @@ type emitter struct {
 // needsReadPool reports whether anything in the output draws a read buffer.
 // Writes only need one on the any path — ggen's WriteTo/WriteSliceTo carry
 // their own pool for the rest.
-func (g *emitter) needsReadPool() bool  { return g.useReadOne || g.useReadSlice }
+func (g *emitter) needsReadPool() bool  { return g.useReadOne || g.useReadSlice || g.useReadSeq }
 func (g *emitter) needsWritePool() bool { return g.useWriteAny }
 
 func (g *emitter) wf(format string, args ...any) {
@@ -2158,6 +2166,10 @@ func (g *emitter) emitBodyDecode(spec argSpec) string {
 		g.badRequest(true)
 		g.close()
 		return v
+	case ggSeq:
+		// nothing is read until the handler ranges, so its errors are the handler's
+		g.useReadSeq = true
+		return fmt.Sprintf("readJSONSeq[%s](r)", spec.elem)
 	}
 	if spec.ptr {
 		g.wf("%s := new(%s)", v, spec.typ)
@@ -2242,6 +2254,25 @@ const helperReadJSONSlice = `func readJSONSlice[T ggen.StreamDecoder[T]](r *http
 	vs, err := s.Reset(r.Body, *bp).Slice[T]()
 	*bp = s.Bytes()
 	return vs, err
+}
+
+`
+
+// readJSONSeq reads a JSON array body an element at a time, as the handler
+// ranges over it. The buffer is drawn when the range starts and recycled when
+// it ends, so a sequence the handler never ranges over costs nothing.
+const helperReadJSONSeq = `func readJSONSeq[T ggen.StreamDecoder[T]](r *http.Request) iter.Seq2[T, error] {
+	return func(yield func(T, error) bool) {
+		bp := %s.Get().(*[]byte)
+		defer %s.Put(bp)
+		var s ggen.Stream
+		for v, err := range s.Reset(r.Body, *bp).Array[T]() {
+			if !yield(v, err) {
+				break
+			}
+		}
+		*bp = s.Bytes()
+	}
 }
 
 `

@@ -1,6 +1,10 @@
 package v2
 
-import "versioned/services"
+import (
+	"iter"
+
+	"versioned/services"
+)
 
 type UsersApi struct{}
 
@@ -39,6 +43,20 @@ func (a *UsersApi) PostUsers(body []services.NewUser) []User {
 		out[i] = toUser(services.Users.Create(nu.Name))
 	}
 	return out
+}
+
+// the body is read an element at a time as the loop ranges over it
+//
+//rr:route POST /api/v2/users/stream
+func (a *UsersApi) StreamUsers(body iter.Seq2[services.NewUser, error]) ([]User, error) {
+	var out []User
+	for nu, err := range body {
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, toUser(services.Users.Create(nu.Name)))
+	}
+	return out, nil
 }
 
 // ids are opaque uuids now: a plain string param, no int route to compete with

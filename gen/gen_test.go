@@ -232,6 +232,9 @@ func TestVersionedComposition(t *testing.T) {
 	if b := route(t, v2users, "PostUsers").Body(); b == nil || b.Type.Pkg != servicesPkg || !b.Type.Slice {
 		t.Errorf("v2 PostUsers body = %+v", b)
 	}
+	if b := route(t, v2users, "StreamUsers").Body(); b == nil || b.Type.Pkg != servicesPkg || b.Type.Name != "NewUser" || !b.Type.Seq || b.Type.Slice {
+		t.Errorf("v2 StreamUsers body = %+v", b)
+	}
 	v2admin := set.API("versioned/api/v2", "AdminApi")
 	if v2admin == nil {
 		t.Fatal("no v2.AdminApi")

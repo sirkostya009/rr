@@ -235,6 +235,19 @@ func (b *builder) bodyShape(spec *argSpec, ga *gen.Arg) {
 	}
 	spec.bodyKind = bodyJSON
 	spec.typ = renderType(b.fset, t)
+	if il, ok := t.(*ast.IndexListExpr); ok && ga.Type.Seq {
+		// only ggen's stream reads an array lazily
+		elem := il.Indices[0]
+		if spec.ptr {
+			fatalf("body %s: a sequence is passed by value, not as a pointer", ga.Type.Expr)
+		}
+		if spec.fast, spec.elem = ggShape(b.idx.Methods, b.idx.Imports, elem, "DecodeFromStream"); spec.fast != ggOne {
+			fatalf("body %s: the element type of an iter.Seq2 body needs ggen-generated methods", ga.Type.Expr)
+		}
+		spec.fast = ggSeq
+		b.noteImport(elem)
+		return
+	}
 	spec.fast, spec.elem = ggShape(b.idx.Methods, b.idx.Imports, t, "DecodeFromStream")
 	if spec.ptr && spec.fast == ggSlice {
 		spec.fast = ggNone

@@ -389,6 +389,9 @@ func (l *loader) typeRef(e ast.Expr) TypeRef {
 	if at, ok := t.(*ast.ArrayType); ok && at.Len == nil {
 		tr.Slice = true
 		t = at.Elt
+	} else if elem := l.seqElem(t); elem != nil {
+		tr.Seq = true
+		t = elem
 	}
 	if st, ok := t.(*ast.StarExpr); ok {
 		tr.Ptr = true
@@ -407,6 +410,25 @@ func (l *loader) typeRef(e ast.Expr) TypeRef {
 		}
 	}
 	return tr
+}
+
+// seqElem is T of an iter.Seq2[T, error], nil for any other type.
+func (l *loader) seqElem(e ast.Expr) ast.Expr {
+	il, ok := e.(*ast.IndexListExpr)
+	if !ok || len(il.Indices) != 2 {
+		return nil
+	}
+	sel, ok := il.X.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Seq2" {
+		return nil
+	}
+	if id, ok := sel.X.(*ast.Ident); !ok || l.idx.Imports[id.Name] != "iter" {
+		return nil
+	}
+	if id, ok := il.Indices[1].(*ast.Ident); !ok || id.Name != "error" {
+		return nil
+	}
+	return il.Indices[0]
 }
 
 // link attaches api-typed fields: in-package ones merge into this

@@ -391,6 +391,18 @@ func TestForeignGgen(t *testing.T) {
 		}
 	}
 
+	streamed := fromJSON[[]v2.User](t, do(t, a, "POST", "/api/v2/users/stream", `[{"name":"Gal"},{"name":"Bob"}]`))
+	if len(streamed) != 2 || streamed[0].Name != "Gal" || streamed[1].Name != "Bob" {
+		t.Fatalf("POST /api/v2/users/stream: %+v", streamed)
+	}
+	for _, u := range streamed {
+		do(t, a, "DELETE", "/api/v2/users/"+u.ID, "")
+	}
+	// a sequence is read by the handler, so a bad element is its error to report
+	if rec := do(t, a, "POST", "/api/v2/users/stream", `[{"name":"Gal"},{"name":1}]`); rec.Code != 500 {
+		t.Errorf("stream bad element: %d %s", rec.Code, rec.Body.String())
+	}
+
 	// ggen sorts keys by json name, encoding/json keeps declaration order
 	// (Users before Posts)
 	rec := do(t, a, "GET", "/api/v2/admin/stats", "", "Authorization", "Bearer letmein")
@@ -406,6 +418,7 @@ func TestForeignGgen(t *testing.T) {
 	for _, want := range []string{
 		"readJSON[services.NewUser](r)",
 		"readJSONSlice[services.NewUser](r)",
+		"s.UsersApi.StreamUsers(readJSONSeq[services.NewUser](r))",
 		"ggen.WriteTo(w, s.AdminApi.Stats())",
 	} {
 		if !strings.Contains(string(src), want) {
