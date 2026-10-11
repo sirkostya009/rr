@@ -478,7 +478,7 @@ func (l *loader) resolveAll() {
 			a.OnError = l.ehandler(a, raw.onError, "onerror", true, true)
 		}
 		if raw.on404 != "" {
-			a.On404 = l.ehandler(a, raw.on404, "on404", false, false)
+			a.On404 = l.ehandler(a, raw.on404, "on404", false, true)
 		}
 		if raw.on405 != "" {
 			a.On405 = l.ehandler(a, raw.on405, "on405", false, false)

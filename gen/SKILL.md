@@ -90,7 +90,7 @@ Segment    Kind (SegLit | SegParam | SegRest), Lit, Param
 Param      Name, Type, Check, Rest, Arg
 Arg        Kind, Name, Type, Param, Body, Whole, Shape, Key, Fields, MapAny, Check
 TypeRef    Node, Expr, Pkg, Name, Ptr, Slice, Seq
-Ref        Name, Kind, Transform, Err, Decl
+Ref        Name, Kind, Transform, Err, OK, Decl
 Handler    Ref, Args, RetErr, TakesErr
 ```
 
@@ -181,8 +181,8 @@ included. Interpolate it without escaping. A bare `*` is a `SegRest` with no
 
 `Param.Check` is the `{name=@ref}` validator. `Transform` tells a checker
 (`func(string) bool`, filters) from a transformer (`func(string) (T, error)`,
-produces `Param.Type`). A `RefRegexp` is a package-level `*regexp.Regexp`. A
-client usually only needs `Param.Type`.
+or `(T, bool)` with `OK` set, produces `Param.Type`). A `RefRegexp` is a
+package-level `*regexp.Regexp`. A client usually only needs `Param.Type`.
 
 ### Types
 

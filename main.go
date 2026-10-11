@@ -275,6 +275,7 @@ type param struct {
 	ref       refExpr // resolved checker
 	extraArgs string  // appended to the call, e.g. ", 64" for strconv.ParseFloat
 	transform bool    // checker returns (T, error); T becomes a handler argument
+	ok        bool    // transformer returns (T, bool) instead
 	regex     bool    // checker is a *regexp.Regexp var, matched directly
 	class     int     // for auto-derived matchers
 	typ       string  // transformed value's type when known (derived matchers), for the hoisted slot
@@ -340,6 +341,7 @@ type argSpec struct {
 	checker   string  // raw @ref for query/header validators and parsers
 	ref       refExpr // resolved checker
 	transform bool
+	ok        bool     // transformer returns (T, bool), not (T, error)
 	regex     bool     // checker is a *regexp.Regexp var, matched directly
 	typeExpr  ast.Expr // as declared in the handler signature
 	typ       string   // rendered type, for body/transformed/struct binds
@@ -705,7 +707,10 @@ func (g *emitter) errSlot() string {
 	return errName
 }
 
-const errName = "err"
+const (
+	errName = "err"
+	nilName = "nil"
+)
 
 // spliceDecls inserts the hoisted declarations at mark, right after the
 // ServeHTTP opening brace, and names the slots. A name must not be an
@@ -815,7 +820,7 @@ func (g *emitter) emitDispatcher(scope *apiType, routes []route, recvOf map[*api
 	}
 	g.emitXMounts(recv, scope.xmounts, 0, "r.URL.Path", 0)
 	if len(routes) == 0 {
-		g.notFound()
+		g.notFound(false)
 		g.close()
 		g.wf("")
 		return
@@ -824,7 +829,7 @@ func (g *emitter) emitDispatcher(scope *apiType, routes []route, recvOf map[*api
 
 	g.wf("path := r.URL.Path")
 	g.openf("if len(path) < %d || path[:%d] != %q {", len(prefix), len(prefix), prefix)
-	g.notFound()
+	g.notFound(false)
 	g.wf("return")
 	g.close()
 	g.wf("path = path[%d:]", len(prefix))
@@ -863,7 +868,7 @@ func (g *emitter) emitDispatcher(scope *apiType, routes []route, recvOf map[*api
 		exhaustive = g.emitNode(root, "path", nil, 0)
 	}
 	if !exhaustive {
-		g.notFound()
+		g.notFound(true)
 	}
 	g.close()
 	g.wf("")
@@ -1371,10 +1376,17 @@ func (g *emitter) emitXMounts(recv string, xms []xmount, off int, v string, dept
 	}
 }
 
-func (g *emitter) notFound() {
+// notFound responds 404. A handler taking an error gets err, the last path
+// param conversion that failed (a later successful one resets it), when
+// conversions ran before this site; nil otherwise.
+func (g *emitter) notFound(converted bool) {
 	g.n = 0
 	if g.scope.notFound.isSet() {
-		g.emitEHandler(g.scope.notFound, g.recvOf[g.scope], "")
+		errVar := nilName
+		if converted && g.useErr {
+			errVar = errName
+		}
+		g.emitEHandler(g.scope.notFound, g.recvOf[g.scope], errVar)
 	} else {
 		g.wf("w.WriteHeader(http.StatusNotFound)")
 	}
@@ -1412,26 +1424,40 @@ func (g *emitter) notAllowed(routes []route, allow string) {
 func (g *emitter) openParamCheck(pe *paramEdge, v string, used bool, depth int) binding {
 	p := pe.p
 	if p.transform {
+		call := fmt.Sprintf("%s(%s%s)", p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
 		val := "_"
 		switch {
 		case !used:
 		case p.typ != "":
 			// a known type parses into the dispatcher-level slot for that
 			// type and position, shared with same-typed handler results
-			g.openf("if %s, %s = %s(%s%s); err == nil {", g.slotAt(p.typ, depth), g.errSlot(), p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
-			return binding{p.name, g.slotAt(p.typ, depth), true}
+			val = g.slotAt(p.typ, depth)
 		default:
 			typ := paramArgType(pe.child, p.name)
 			if typ == "" {
 				// an external transformer and handlers disagreeing on the type:
-				// nothing single to declare, so this one stays scoped
+				// nothing single to declare, so this one stays scoped. External
+				// refs always return (T, error)
 				val = fmt.Sprintf("t%d", depth)
-				g.openf("if %s, err := %s(%s%s); err == nil {", val, p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
+				if g.scope.notFound.hasErr {
+					e := fmt.Sprintf("terr%d", depth)
+					g.openf("if %s, %s := %s; %s != nil {", val, e, call, e)
+					g.wf("%s = %s", g.errSlot(), e)
+					g.depth--
+					g.wf("} else {")
+					g.depth++
+				} else {
+					g.openf("if %s, err := %s; err == nil {", val, call)
+				}
 				return binding{p.name, val, true}
 			}
 			val = g.slotAt(typ, depth)
 		}
-		g.openf("if %s, %s = %s(%s%s); err == nil {", val, g.errSlot(), p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
+		if p.ok {
+			g.openf("if %s, %s = %s; ok {", val, g.fixedVar("ok", typBool), call)
+		} else {
+			g.openf("if %s, %s = %s; err == nil {", val, g.errSlot(), call)
+		}
 		return binding{p.name, val, true}
 	}
 	g.openf("if %s {", g.cond(p, g.recvOf[pe.owner], v))
@@ -2225,7 +2251,7 @@ func (g *emitter) badRequest(hasErr bool) {
 		g.wf("return")
 		return
 	}
-	errVar := "nil" // no specific error at this site (e.g. a checker reject)
+	errVar := nilName // no specific error at this site (e.g. a checker reject)
 	if hasErr {
 		errVar = errName
 	}
@@ -2300,7 +2326,8 @@ func (g *emitter) emitBodyDecode(spec argSpec) string {
 
 // emitExtract turns a raw query/header expression into the handler argument:
 // passed through as-is, validated (false is a 400), or transformed (a missing
-// value stays the zero value, an invalid one is a 400).
+// value stays the zero value, an invalid one is a 400, with a nil error for a
+// (T, bool) transformer).
 func (g *emitter) emitExtract(spec argSpec, raw, recv string) string {
 	if spec.checker == "" {
 		return raw
@@ -2323,8 +2350,12 @@ func (g *emitter) emitExtract(spec argSpec, raw, recv string) string {
 	g.wf("%s = *new(%s)", v, spec.typ)
 	rv := g.tmp("raw", typString)
 	g.openf("if %s = %s; %s != \"\" {", rv, raw, rv)
-	g.openf("if %s, %s = %s(%s); err != nil {", v, g.errSlot(), fn, rv)
-	g.badRequest(true)
+	if spec.ok {
+		g.openf("if %s, %s = %s(%s); !ok {", v, g.fixedVar("ok", typBool), fn, rv)
+	} else {
+		g.openf("if %s, %s = %s(%s); err != nil {", v, g.errSlot(), fn, rv)
+	}
+	g.badRequest(!spec.ok)
 	g.close()
 	g.close()
 	return v

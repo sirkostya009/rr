@@ -183,10 +183,12 @@ func resultTypes(fd *ast.FuncDecl) []ast.Expr {
 	return types
 }
 
-func isErrorIdent(e ast.Expr) bool {
+func isIdent(e ast.Expr, name string) bool {
 	id, ok := e.(*ast.Ident)
-	return ok && id.Name == typError
+	return ok && id.Name == name
 }
+
+func isErrorIdent(e ast.Expr) bool { return isIdent(e, typError) }
 
 // resultShape reports what a handler returns: the value type (nil for none)
 // and whether an error comes with it.

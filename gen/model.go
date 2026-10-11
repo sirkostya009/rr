@@ -352,13 +352,17 @@ type Ref struct {
 
 	// Transform reports whether the ref produces a value the handler
 	// receives, rather than filtering the request. A checker is
-	// func(string) bool; a transformer is func(string) (T, error).
+	// func(string) bool; a transformer is func(string) (T, error) or
+	// func(string) (T, bool).
 	Transform bool
 
 	// Err reports whether the ref returns an error alongside its value. A
-	// whole-query or whole-header parser may return a bare T; a path or value
-	// transformer always returns (T, error).
+	// whole-query or whole-header parser may return a bare T.
 	Err bool
+
+	// OK reports a transformer returning (T, bool): false rejects the input
+	// without an error.
+	OK bool
 
 	Decl *ast.FuncDecl // nil for a regexp var or an external ref
 }

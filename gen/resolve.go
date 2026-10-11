@@ -108,18 +108,20 @@ func isRegexpCompile(e ast.Expr) bool {
 	return ok && id.Name == "regexp" && strings.HasPrefix(sel.Sel.Name, "MustCompile")
 }
 
-func isTransformer(fd *ast.FuncDecl, ctx string) bool {
+// validatorShape reports whether a validator transforms, and whether a
+// transformer reports a reject as (T, bool) rather than (T, error).
+func validatorShape(fd *ast.FuncDecl, ctx string) (transform, ok bool) {
 	types := resultTypes(fd)
-	if len(types) == 1 {
-		if id, ok := types[0].(*ast.Ident); ok && id.Name == typBool {
-			return false
-		}
+	switch {
+	case len(types) == 1 && isIdent(types[0], typBool):
+		return false, false
+	case len(types) == 2 && isErrorIdent(types[1]):
+		return true, false
+	case len(types) == 2 && isIdent(types[1], typBool):
+		return true, true
 	}
-	if len(types) == 2 && isErrorIdent(types[1]) {
-		return true
-	}
-	fatalf("%s: validator @%s must be func(string) bool or func(string) (T, error)", ctx, fd.Name.Name)
-	return false
+	fatalf("%s: validator @%s must be func(string) bool, func(string) (T, error) or func(string) (T, bool)", ctx, fd.Name.Name)
+	return false, false
 }
 
 // middlewareRet reports whether a middleware returns error (true) or bool.
@@ -181,8 +183,8 @@ func (l *loader) resolveRef(a *API, name, ctx string) Ref {
 }
 
 // classify resolves a validator ref: a *regexp.Regexp var is matched directly,
-// a func either checks (bool) or transforms ((T, error)); qualified refs have
-// unknown signatures, assume func(string) (T, error).
+// a func either checks (bool) or transforms ((T, error) or (T, bool));
+// qualified refs have unknown signatures, assume func(string) (T, error).
 func (l *loader) classify(a *API, raw, ctx string) *Ref {
 	if !strings.Contains(raw, ".") {
 		if _, ok := l.idx.Regexps[raw]; ok {
@@ -191,8 +193,8 @@ func (l *loader) classify(a *API, raw, ctx string) *Ref {
 	}
 	ref := l.resolveRef(a, raw, ctx)
 	if fd := l.decl(a, raw); fd != nil {
-		ref.Transform = isTransformer(fd, ctx)
-		ref.Err = ref.Transform
+		ref.Transform, ref.OK = validatorShape(fd, ctx)
+		ref.Err = ref.Transform && !ref.OK
 		return &ref
 	}
 	ref.Transform, ref.Err = true, true
@@ -264,10 +266,6 @@ func (l *loader) resolveQH(a *API, spec *Arg, ctx string) {
 // struct (fields keyed by `query` tag or name), a map, url.Values passed
 // through, or a bare string, which is one value after all.
 func (l *loader) analyzeQueryBind(spec *Arg, ctx string) {
-	isIdent := func(e ast.Expr, name string) bool {
-		id, ok := e.(*ast.Ident)
-		return ok && id.Name == name
-	}
 	switch t := spec.Type.Node.(type) {
 	case *ast.Ident:
 		if t.Name == typString {
@@ -354,10 +352,6 @@ func (l *loader) analyzeQueryBind(spec *Arg, ctx string) {
 // analyzeHeaderBind picks the whole-header binding: a struct (fields keyed by
 // `header` tag or name) or http.Header passed through directly.
 func (l *loader) analyzeHeaderBind(spec *Arg, ctx string) {
-	isIdent := func(e ast.Expr, name string) bool {
-		id, ok := e.(*ast.Ident)
-		return ok && id.Name == name
-	}
 	switch t := spec.Type.Node.(type) {
 	case *ast.Ident:
 		ts := l.idx.Types[t.Name]

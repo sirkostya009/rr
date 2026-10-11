@@ -82,7 +82,8 @@ A `@ref` names a package func, a method of the api, a `*regexp.Regexp` var, or
 a qualified `pkg.Fn`.
 
 - `func(string) bool` is a checker: false means try the next candidate, then 404
-- `func(string) (T, error)` is a transformer: its `T` is passed to the handler
+- `func(string) (T, error)` or `func(string) (T, bool)` is a transformer: its
+  `T` is passed to the handler, an error or false rejects the value
 - a regexp is matched with `MatchString` as written, so anchor it yourself
 
 ## Handler parameters
@@ -125,7 +126,9 @@ They need an `http.ResponseWriter`, and may take `*http.Request`,
 
 - `onerror` must take an `error`
 - `on400` may take an `error` (nil when the request is just malformed)
-- `on404` and `on405` take none
+- `on404` may take an `error`: the path param conversion that failed, nil when
+  none did or the transformer returns `(T, bool)`
+- `on405` takes none
 
 Without a handler, the response is a bodyless status code. A wrong method on
 an existing path is a 405, not a 404.

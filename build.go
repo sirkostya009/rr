@@ -209,7 +209,7 @@ func (b *builder) arg(ga *gen.Arg) argSpec {
 			spec.transform = ga.Check.Err // a bare-T parser needs no error branch
 			spec.typ = ga.Type.Expr
 		} else {
-			spec.transform = ga.Check.Transform
+			spec.transform, spec.ok = ga.Check.Transform, ga.Check.OK
 			if spec.transform {
 				spec.typ = ga.Type.Expr
 			}
@@ -371,7 +371,7 @@ func (b *builder) param(gp *gen.Param, memo map[*gen.Param]*param) *param {
 	if gp.Check != nil {
 		p.checker = gp.Check.Name
 		p.ref = b.ref(*gp.Check)
-		p.transform = gp.Check.Transform
+		p.transform, p.ok = gp.Check.Transform, gp.Check.OK
 		p.regex = gp.Check.Kind == gen.RefRegexp
 		// the transformer's own result type types its top-scope slot; the
 		// handlers below may bind it to any type it is assignable to
@@ -476,7 +476,7 @@ func harmlessUse(stack []ast.Node, id *ast.Ident, methods map[string]*ast.FuncDe
 			other = p.Y
 		}
 		nilID, ok := other.(*ast.Ident)
-		return ok && nilID.Name == "nil" && (p.Op == token.EQL || p.Op == token.NEQ)
+		return ok && nilID.Name == nilName && (p.Op == token.EQL || p.Op == token.NEQ)
 	}
 	return false
 }
