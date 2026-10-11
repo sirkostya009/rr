@@ -97,7 +97,7 @@ func main() {
 	b.detectGgen(pkg)
 	apis := b.build(pkg)
 
-	g := &emitter{}
+	g := &emitter{quals: map[string]struct{}{}}
 	for _, a := range apis {
 		// a central emits below, and an api mounted into one serves through it
 		if a.central || a.mounted {
@@ -123,7 +123,13 @@ func main() {
 	buf.WriteString("package ")
 	buf.WriteString(pkg.Name)
 	buf.WriteString("\n\n")
+	for q := range g.quals {
+		b.noteImportPath(q)
+	}
 	imports := map[string]bool{"net/http": true}
+	if g.useURL {
+		imports["net/url"] = true
+	}
 	if g.useStrings {
 		imports["strings"] = true
 	}
@@ -338,6 +344,7 @@ type argSpec struct {
 	typeExpr  ast.Expr // as declared in the handler signature
 	typ       string   // rendered type, for body/transformed/struct binds
 	ptr       bool     // body declared as *T
+	keeps     bool     // *T body the handler may hold on to past the call
 	fast      int      // ggen shape of the body type
 	bodyKind  int      // argBody: json / multipart / form
 	elem      string   // ggSlice, ggSeq: the element type name
@@ -528,7 +535,11 @@ type emitter struct {
 	hoisted  string              // method already verified by a subtree-level check
 	slots    map[string]string   // per dispatcher: type[@position] -> var declared once at the top of ServeHTTP
 	byType   map[string]string   // type -> the first of those, shared by results and bodies
-	decls    []string            // those declarations, in first-use order
+	decls    []slotDecl          // those declarations, in first-use order, named by spliceDecls
+	fixed    map[string]string   // trie variables (sN, pN, iN, mpN, miN) -> type, declared at the top under their own names
+	fixedOrd []string            // fixed in first-use order
+	useURL   bool                // a top-scope url.Values needs net/url
+	quals    map[string]struct{} // package qualifiers the top-scope declarations name: imported
 	useErr   bool                // a hoisted "err" is assigned somewhere in the dispatcher
 	errVar   string              // expr for an error handler's error param ("err"/"nil")
 
@@ -573,59 +584,94 @@ func (g *emitter) close() {
 	g.wf("}")
 }
 
-// newVar names a handler-scoped temporary. The counter resets at every
-// route/handler emission entry (emitCall, notFound, notAllowed) so numbering
-// is local: adding a route never renames another route's variables.
-func (g *emitter) newVar() string {
-	g.n++
-	return fmt.Sprintf("v%d", g.n)
-}
+// Hoisted slots: a variable per type declared once at the top of ServeHTTP,
+// instead of one per route (Go never shares stack slots across switch cases).
+// Only one route runs per request, so routes of a type share it. Only values
+// whose address is never taken are hoisted: an escaping hoisted variable is
+// heap-allocated at function entry, on every request.
 
-// slot returns the dispatcher-level variable for typ, declared once at the
-// top of ServeHTTP. Only one route runs per request, so every route of that
-// type assigns the same variable, instead of each `v, err :=` getting its own
-// stack slot: a 64B struct result per route is how a frame grows by the KB.
-// slot is the variable for a handler result or body of typ: the first slot
-// of that type already declared (a path param's, at any position), else a
-// new one. Params are passed before the result is assigned, so sharing is safe.
+// slot is the variable a (T, error) handler result of typ lands in: a path
+// param slot of that type when there is one (args are evaluated before the
+// result is assigned), else its own.
 func (g *emitter) slot(typ string) string {
 	if v, ok := g.byType[typ]; ok {
 		return v
 	}
-	return g.slotAt(typ, 0)
+	return g.declSlot(typ, typ, "", true)
 }
 
 // slotAt is the slot for a path param of typ at trie position depth: a route
-// can carry one param per position, so position keys the variable, and a
-// handler result of that type shares position 0's.
+// carries one param per position, so position keys the variable.
 func (g *emitter) slotAt(typ string, depth int) string {
 	key := typ
 	if depth > 0 {
 		key = fmt.Sprintf("%s@%d", typ, depth)
 	}
+	return g.declSlot(key, typ, "", true)
+}
+
+// bodySlot is the slot for a JSON body. Never shared with a param or a
+// result: the params are still to be passed while it is decoded, and a
+// handler keeping a *T body must not see its result written over it.
+func (g *emitter) bodySlot(typ string) string {
+	return g.declSlot("body "+typ, typ, slotName(typ)+"Body", false)
+}
+
+// bodyPtr is a top-scope *T a route points at a fresh T: a body that
+// escapes anyway (kept by the handler, or decoded through an interface) is
+// then allocated by that route alone, not by every request.
+func (g *emitter) bodyPtr(typ string) string {
+	p := g.declSlot("bodyptr "+typ, "*"+typ, slotName(typ)+"BodyPtr", false)
+	g.wf("%s = new(%s)", p, typ)
+	return p
+}
+
+// hintName is a handler param name usable as a variable name hint, or "".
+func hintName(name string) string {
+	if token.IsIdentifier(name) && !token.IsKeyword(name) && name != "_" {
+		return name
+	}
+	return ""
+}
+
+// tmp is a top-scope variable for a route-local temporary. Routes are
+// exclusive and the ordinal (g.n) resets at every route/handler emission
+// entry (emitCall, notFound, notAllowed), so (role, type, ordinal) is the same
+// variable in every route: the frame holds one per shape, not per route.
+func (g *emitter) tmp(hint, typ string) string {
+	g.n++
+	return g.declSlot(fmt.Sprintf("tmp %s %s %d", hint, typ, g.n), typ, hint, false)
+}
+
+// declSlot returns a placeholder; spliceDecls names it once the whole body is
+// known, so the name can avoid everything the function refers to.
+func (g *emitter) declSlot(key, typ, hint string, shared bool) string {
 	if v, ok := g.slots[key]; ok {
 		return v
 	}
-	v := slotName(typ)
-	for base, n := v, 1; !safeVarName(v) || g.slotTaken(v); n++ {
-		v = base + strconv.Itoa(n)
-	}
+	v := fmt.Sprintf("__slot%d__", len(g.decls))
 	g.slots[key] = v
-	if _, ok := g.byType[typ]; !ok {
+	if _, ok := g.byType[typ]; shared && !ok {
 		g.byType[typ] = v
 	}
-	g.decls = append(g.decls, fmt.Sprintf("var %s %s", v, typ))
+	g.decls = append(g.decls, slotDecl{v, typ, hint})
 	return v
 }
 
-func (g *emitter) slotTaken(v string) bool {
-	for _, taken := range g.slots {
-		if taken == v {
-			return true
-		}
+type slotDecl struct{ placeholder, typ, hint string }
+
+// fixedVar declares a trie variable at the top under its own name. Names are
+// per trie depth, and depth only grows along a path, so the one variable is
+// never live in two places at once.
+func (g *emitter) fixedVar(name, typ string) string {
+	if _, ok := g.fixed[name]; !ok {
+		g.fixed[name] = typ
+		g.fixedOrd = append(g.fixedOrd, name)
 	}
-	return false
+	return name
 }
+
+func ivar(i int) string { return fmt.Sprintf("i%d", i) }
 
 // slotName derives a variable name from a type: the bare type name with its
 // first letter lowered, pluralized for a slice, so a `services.NewUser` body
@@ -662,35 +708,73 @@ func (g *emitter) errSlot() string {
 const errName = "err"
 
 // spliceDecls inserts the hoisted declarations at mark, right after the
-// ServeHTTP opening brace.
-func (g *emitter) spliceDecls(mark int) {
-	if len(g.decls) == 0 && !g.useErr {
+// ServeHTTP opening brace, and names the slots. A name must not be an
+// identifier the body or the slot types refer to (a package such as `user`
+// for `user.User`, a helper, a handler) nor the receiver: shadowing any of
+// those breaks the code that follows.
+func (g *emitter) spliceDecls(mark int, recv string) {
+	if len(g.decls) == 0 && len(g.fixedOrd) == 0 && !g.useErr {
 		return
 	}
 	out := g.b.String()
+	body := out[mark:]
+	taken := map[string]struct{}{recv: {}, "w": {}, "r": {}}
+	var refs strings.Builder
+	refs.WriteString(goStringLit.ReplaceAllString(body, `""`))
+	for _, d := range g.decls {
+		refs.WriteString(" " + d.typ)
+	}
+	for _, id := range goIdent.FindAllString(refs.String(), -1) {
+		taken[id] = struct{}{}
+	}
 	var d strings.Builder
 	if g.useErr {
 		d.WriteString("\tvar err error\n")
 	}
+	for _, name := range g.fixedOrd {
+		fmt.Fprintf(&d, "\tvar %s %s\n", name, g.fixed[name])
+	}
 	for _, decl := range g.decls {
-		d.WriteString("\t")
-		d.WriteString(decl)
-		d.WriteString("\n")
+		if decl.typ != "url.Values" {
+			for _, m := range goQual.FindAllStringSubmatch(decl.typ, -1) {
+				g.quals[m[1]] = struct{}{}
+			}
+		}
+		name := decl.hint
+		if name == "" {
+			name = slotName(decl.typ)
+		}
+		for base, n := name, 1; !safeVarName(name) || isTaken(taken, name); n++ {
+			name = base + strconv.Itoa(n)
+		}
+		taken[name] = struct{}{}
+		body = strings.ReplaceAll(body, decl.placeholder, name)
+		fmt.Fprintf(&d, "\tvar %s %s\n", name, decl.typ)
 	}
 	g.b.Reset()
 	g.b.WriteString(out[:mark])
 	g.b.WriteString(d.String())
-	g.b.WriteString(out[mark:])
+	g.b.WriteString(body)
 }
+
+func isTaken(set map[string]struct{}, name string) bool {
+	_, ok := set[name]
+	return ok
+}
+
+var (
+	goIdent     = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*`)
+	goQual      = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)\.`)
+	goStringLit = regexp.MustCompile(`"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'`)
+)
 
 // Trie variables are named by segment position, not a counter, so generated
 // output is stable under route insertions: pvar is the rest-of-path starting
-// at segment i, svar the segment scanned at position i, tvar a checked or
-// transformed value at position i. Sibling branches reuse the same name in
-// disjoint scopes; nested re-declarations shadow harmlessly.
+// at segment i, svar the segment scanned at position i (ivar its slash index,
+// next to fixedVar). All are declared once at the top; sibling branches
+// assign the same one, which only they use.
 func pvar(i int) string { return fmt.Sprintf("p%d", i) }
 func svar(i int) string { return fmt.Sprintf("s%d", i) }
-func tvar(i int) string { return fmt.Sprintf("t%d", i) }
 
 func (g *emitter) cond(p *param, recv, v string) string {
 	switch {
@@ -712,6 +796,7 @@ func (g *emitter) emitDispatcher(scope *apiType, routes []route, recvOf map[*api
 	g.recvOf = recvOf
 	g.hoisted = ""
 	g.slots, g.byType, g.decls, g.useErr = map[string]string{}, map[string]string{}, nil, false
+	g.fixed, g.fixedOrd = map[string]string{}, nil
 	star := ""
 	if scope.ptr {
 		star = "*"
@@ -723,7 +808,7 @@ func (g *emitter) emitDispatcher(scope *apiType, routes []route, recvOf map[*api
 
 	g.openf("func (%s %s%s) ServeHTTP(w http.ResponseWriter, r *http.Request) {", recv, star, scope.name)
 	mark := g.b.Len()
-	defer g.spliceDecls(mark)
+	defer g.spliceDecls(mark, recv)
 	g.curOwner = nil
 	for _, mw := range scope.middlewares {
 		g.emitGuard(mw, recv, nil)
@@ -881,15 +966,14 @@ func (g *emitter) openCut(rest, v, lit string) {
 // v again passes rest == v and moves it in place: every declared variable gets
 // its own spill slot, and one per route grew a 2000-route frame to 32KB.
 func (g *emitter) advance(rest, v, cut string) {
-	op := ":="
-	if rest == v {
-		op = "="
+	if rest != v {
+		g.fixedVar(rest, typString)
 	}
 	if lo, ok := strings.CutSuffix(strings.TrimPrefix(cut, "["), ":]"); ok {
-		g.wf("%s %s %s", rest, op, sliceExpr(v, lo, ""))
+		g.wf("%s = %s", rest, sliceExpr(v, lo, ""))
 		return
 	}
-	g.wf("%s %s %s%s", rest, op, v, cut)
+	g.wf("%s = %s%s", rest, v, cut)
 }
 
 // strCase is one literal arm of a generated string dispatch.
@@ -1270,9 +1354,9 @@ func (g *emitter) emitXMounts(recv string, xms []xmount, off int, v string, dept
 			g.close()
 			break
 		}
-		mi := fmt.Sprintf("mi%d", depth)
+		mi := g.fixedVar(fmt.Sprintf("mi%d", depth), "int")
 		g.useStrings = true
-		g.openf("if %s := strings.IndexByte(%s, '/'); %s >= 0 {", mi, v, mi)
+		g.openf("if %s = strings.IndexByte(%s, '/'); %s >= 0 {", mi, v, mi)
 		cases := make([]strCase, len(segs))
 		for i, seg := range segs {
 			cases[i] = strCase{seg, func() {
@@ -1337,31 +1421,65 @@ func (g *emitter) openParamCheck(pe *paramEdge, v string, used bool, depth int) 
 			g.openf("if %s, %s = %s(%s%s); err == nil {", g.slotAt(p.typ, depth), g.errSlot(), p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
 			return binding{p.name, g.slotAt(p.typ, depth), true}
 		default:
-			val = tvar(depth)
+			typ := paramArgType(pe.child, p.name)
+			if typ == "" {
+				// an external transformer and handlers disagreeing on the type:
+				// nothing single to declare, so this one stays scoped
+				val = fmt.Sprintf("t%d", depth)
+				g.openf("if %s, err := %s(%s%s); err == nil {", val, p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
+				return binding{p.name, val, true}
+			}
+			val = g.slotAt(typ, depth)
 		}
-		g.openf("if %s, err := %s(%s%s); err == nil {", val, p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
+		g.openf("if %s, %s = %s(%s%s); err == nil {", val, g.errSlot(), p.ref.expr(g.recvOf[pe.owner]), v, p.extraArgs)
 		return binding{p.name, val, true}
 	}
 	g.openf("if %s {", g.cond(p, g.recvOf[pe.owner], v))
 	return binding{p.name, v, false}
 }
 
-// subtreeUsesPath reports whether any route below n takes the transformed
-// path param as a handler argument.
-func subtreeUsesPath(n *tnode, name string) bool {
-	uses := func(rts []route) bool {
-		for _, rt := range rts {
-			for _, spec := range rt.args {
-				if spec.kind == argParam && spec.name == name {
-					return true
-				}
+// paramArgType is the type every handler below n binds path param name as,
+// standing in for an external transformer's unknown result type; "" when
+// they disagree.
+func paramArgType(n *tnode, name string) string {
+	typ := ""
+	for _, rt := range subtreeRoutes(n, nil) {
+		for _, spec := range rt.args {
+			if spec.kind != argParam || spec.name != name || spec.typeExpr == nil {
+				continue
+			}
+			t := renderType(token.NewFileSet(), spec.typeExpr)
+			if typ != "" && t != typ {
+				return ""
+			}
+			typ = t
+		}
+	}
+	return typ
+}
+
+// routesUse reports whether any of rts takes the path param as an argument.
+func routesUse(rts []route, name string) bool {
+	for _, rt := range rts {
+		for _, spec := range rt.args {
+			if spec.kind == argParam && spec.name == name {
+				return true
 			}
 		}
-		return false
 	}
-	if uses(n.routes) {
-		return true
-	}
+	return false
+}
+
+// subtreeUsesPath reports whether any route at or below n takes the path
+// param as a handler argument.
+func subtreeUsesPath(n *tnode, name string) bool {
+	return routesUse(n.routes, name) || belowUsesPath(n, name)
+}
+
+// belowUsesPath is subtreeUsesPath without n's own terminal routes. Those are
+// emitted by n's parent against the parent's variable, so they say nothing
+// about a variable handed to emitNode(n).
+func belowUsesPath(n *tnode, name string) bool {
 	for _, e := range n.lits {
 		if subtreeUsesPath(e.child, name) {
 			return true
@@ -1372,29 +1490,22 @@ func subtreeUsesPath(n *tnode, name string) bool {
 			return true
 		}
 	}
-	return n.wild != nil && uses(n.wild.routes)
+	return n.wild != nil && routesUse(n.wild.routes, name)
 }
 
-// readsRest reports whether emitting n reads its rest-of-path variable: only a
-// bare catch-all whose value goes nowhere doesn't.
+// readsRest reports whether emitNode(n, v) reads v. n's own terminal routes
+// don't count (see belowUsesPath), and a catch-all reads it only when its
+// value lands somewhere.
 func readsRest(n *tnode) bool {
-	if n.wild == nil || len(n.lits)+len(n.params)+len(n.routes) > 0 {
+	switch {
+	case len(n.lits)+len(n.params) > 0:
 		return true
-	}
-	if n.wild.name == "" {
+	case n.wild == nil || n.wild.name == "":
 		return false
-	}
-	if !noPathValue {
+	case !noPathValue:
 		return true
 	}
-	for _, rt := range n.wild.routes {
-		for _, spec := range rt.args {
-			if spec.kind == argParam && spec.name == n.wild.name {
-				return true
-			}
-		}
-	}
-	return false
+	return routesUse(n.wild.routes, n.wild.name)
 }
 
 // emitNode generates matching code for one trie node. Reports whether it
@@ -1533,15 +1644,17 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 			g.emitStrSwitch(cur, "len("+cur+")", cases)
 		}
 		for _, pe := range termParams {
-			b := g.openParamCheck(pe, cur, subtreeUsesPath(pe.child, pe.p.name), depth)
+			b := g.openParamCheck(pe, cur, routesUse(pe.child.routes, pe.p.name), depth)
 			g.emitLeaf(pe.child.routes, withBinding(binds, b))
 			g.close()
 		}
 	}
-	// descLits of one width and no param siblings need no segment scan: the
-	// slash is checked at a constant offset and the switch slices fixed
+	// descLits of one width with no param or wildcard sibling need no segment
+	// scan: the slash is checked at a constant offset and the switch slices
+	// fixed. A terminal param forces the scan, and the slices must then follow
+	// its i, not the width.
 	width := -1
-	if len(descLits) > 1 && len(descParams) == 0 && n.wild == nil {
+	if len(descLits) > 1 && len(descParams) == 0 && len(termParams) == 0 && n.wild == nil {
 		width = len(descLits[0].seg)
 		for _, e := range descLits[1:] {
 			if len(e.seg) != width {
@@ -1550,6 +1663,7 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 			}
 		}
 	}
+	iv := ivar(depth)
 	emitDesc := func() {
 		descend := func(e litEdge) {
 			// gate the method before even slicing the rest of the path
@@ -1562,7 +1676,7 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 				if width >= 0 {
 					g.advance(v, cur, fmt.Sprintf("[%d:]", width+1))
 				} else {
-					g.advance(v, cur, "[i+1:]")
+					g.advance(v, cur, "["+iv+"+1:]")
 				}
 			}
 			g.emitNode(e.child, v, binds, depth+1)
@@ -1573,7 +1687,7 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 		switch len(descLits) {
 		case 0:
 		case 1:
-			g.openf("if %s[:i] == %q {", cur, descLits[0].seg)
+			g.openf("if %s[:%s] == %q {", cur, iv, descLits[0].seg)
 			descend(descLits[0])
 			g.close()
 		default:
@@ -1584,23 +1698,23 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 			if width >= 0 {
 				g.emitStrSwitch(fmt.Sprintf("%s[:%d]", cur, width), "", cases)
 			} else {
-				g.emitStrSwitch(cur+"[:i]", "i", cases)
+				g.emitStrSwitch(cur+"[:"+iv+"]", iv, cases)
 			}
 		}
 		if len(descParams) > 0 {
 			seg := svar(depth)
 			used := !noPathValue
 			for _, pe := range descParams {
-				used = used || constrained(pe.p) || subtreeUsesPath(pe.child, pe.p.name)
+				used = used || constrained(pe.p) || belowUsesPath(pe.child, pe.p.name)
 			}
 			if used {
-				g.wf("%s := %s[:i]", seg, cur)
+				g.wf("%s = %s[:%s]", g.fixedVar(seg, typString), cur, iv)
 			}
 			// candidates each followed by one distinct terminal literal: switch
 			// on the literal and run only that candidate's validator, instead
 			// of parsing the segment once per candidate before looking past it
 			if lits := terminalLits(descParams); lits != nil {
-				g.wf("switch %s {", sliceExpr(cur, "i+1", ""))
+				g.wf("switch %s {", sliceExpr(cur, iv+"+1", ""))
 				for k, pe := range descParams {
 					g.wf("case %q:", lits[k])
 					g.depth++
@@ -1621,14 +1735,14 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 				b := binding{pe.p.name, seg, false}
 				wrapped := constrained(pe.p) // i > 0 already guarantees a non-empty segment
 				if wrapped {
-					b = g.openParamCheck(pe, seg, subtreeUsesPath(pe.child, pe.p.name), depth)
+					b = g.openParamCheck(pe, seg, belowUsesPath(pe.child, pe.p.name), depth)
 				}
 				rest := cur
 				if k < len(descParams)-1 || n.wild != nil {
 					rest = pvar(depth + 1)
 				}
 				if readsRest(pe.child) {
-					g.advance(rest, cur, "[i+1:]")
+					g.advance(rest, cur, "["+iv+"+1:]")
 				}
 				g.emitNode(pe.child, rest, withBinding(binds, b), depth+1)
 				if wrapped {
@@ -1654,10 +1768,10 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 		fixedDesc()
 	case hasTerm && hasDesc:
 		g.useStrings = true
-		g.openf("if i := strings.IndexByte(%s, '/'); i < 0 {", cur)
+		g.openf("if %s = strings.IndexByte(%s, '/'); %s < 0 {", g.fixedVar(iv, "int"), cur, iv)
 		emitTerm()
 		g.depth--
-		g.wf("} else if i > 0 {")
+		g.wf("} else if %s > 0 {", iv)
 		g.depth++
 		emitDesc()
 		g.close()
@@ -1672,7 +1786,7 @@ func (g *emitter) emitNode(n *tnode, cur string, binds []binding, depth int) boo
 		fixedDesc()
 	case hasDesc:
 		g.useStrings = true
-		g.openf("if i := strings.IndexByte(%s, '/'); i > 0 {", cur)
+		g.openf("if %s = strings.IndexByte(%s, '/'); %s > 0 {", g.fixedVar(iv, "int"), cur, iv)
 		emitDesc()
 		g.close()
 	}
@@ -1865,7 +1979,7 @@ func (g *emitter) hoistMethod(n *tnode) bool {
 func (g *emitter) emitGuard(mw middleware, recv string, rt *route) {
 	call := fmt.Sprintf("%s(%s)", mw.ref.expr(recv), g.buildArgs(mw.args, nil, recv))
 	if mw.retErr {
-		g.openf("if err := %s; err != nil {", call)
+		g.openf("if %s = %s; err != nil {", g.errSlot(), call)
 		switch {
 		case rt != nil:
 			g.emitOnErr(*rt)
@@ -1889,8 +2003,9 @@ func (g *emitter) buildArgs(specs []argSpec, args map[string]string, recv string
 	qv := ""
 	query := func() string {
 		if qv == "" {
-			qv = g.newVar()
-			g.wf("%s := r.URL.Query()", qv)
+			qv = g.tmp("values", "url.Values")
+			g.useURL = true
+			g.wf("%s = r.URL.Query()", qv)
 		}
 		return qv
 	}
@@ -1942,7 +2057,7 @@ func (g *emitter) emitCallBare(rt route, args map[string]string, recv string) {
 	case retNone:
 		g.wf("%s", call)
 	case retErr:
-		g.openf("if err := %s; err != nil {", call)
+		g.openf("if %s = %s; err != nil {", g.errSlot(), call)
 		g.emitOnErr(rt)
 		g.close()
 	case retVal:
@@ -1991,7 +2106,7 @@ func (g *emitter) emitFastEncode(rt route, v string) {
 	if rt.enc != ggAny {
 		g.wf(`w.Header()["Content-Type"] = __jsonCT`)
 	}
-	g.openf("if err := %s; err != nil {", call)
+	g.openf("if %s = %s; err != nil {", g.errSlot(), call)
 	if h, recv, ok := g.routeErrH(rt); ok {
 		g.emitEHandler(h, recv, errName)
 	} else {
@@ -2037,11 +2152,8 @@ func (g *emitter) emitParser(spec argSpec, input, recv string) string {
 	if !spec.transform {
 		return fn + "(" + input + ")"
 	}
-	v := spec.name
-	if !safeVarName(v) {
-		v = g.newVar()
-	}
-	g.wf("%s, err := %s(%s)", v, fn, input)
+	v := g.tmp(hintName(spec.name), spec.typ)
+	g.wf("%s, %s = %s(%s)", v, g.errSlot(), fn, input)
 	g.openf("if err != nil {")
 	g.badRequest(true)
 	g.close()
@@ -2059,10 +2171,11 @@ func (g *emitter) emitQueryBind(spec argSpec, q string) string {
 		if spec.mapAny {
 			vt = "any"
 		}
-		v := g.newVar()
-		g.wf("%s := make(map[string]%s, len(%s))", v, vt, q)
-		g.openf("for k, vs := range %s {", q)
-		g.wf("%s[k] = vs[0]", v)
+		v := g.tmp(hintName(spec.name), "map[string]"+vt)
+		k, vs := g.tmp("k", typString), g.tmp("vs", "[]string")
+		g.wf("%s = make(map[string]%s, len(%s))", v, vt, q)
+		g.openf("for %s, %s = range %s {", k, vs, q)
+		g.wf("%s[%s] = %s[0]", v, k, vs)
 		g.close()
 		return v
 	default: // bindStruct
@@ -2074,11 +2187,10 @@ func (g *emitter) emitQueryBind(spec argSpec, q string) string {
 // call prefix (e.g. "p1.Get" for query, "r.Header.Get" for headers), so the
 // field reads become getter("key").
 func (g *emitter) emitStructBind(spec argSpec, getter string) string {
-	v := spec.name
-	if !safeVarName(v) {
-		v = g.newVar()
-	}
-	g.wf("var %s %s", v, spec.typ)
+	// absent fields keep the zero value: a temp shared with an earlier bind in
+	// the same request (a central guard's) must not hand its fields over
+	v := g.tmp(hintName(spec.name), spec.typ)
+	g.wf("%s = %s{}", v, spec.typ)
 	for _, fd := range spec.fields {
 		switch fd.kind {
 		case fString:
@@ -2088,10 +2200,9 @@ func (g *emitter) emitStructBind(spec argSpec, getter string) string {
 			if fd.kind == fBool {
 				fn = "strconv.ParseBool"
 			}
-			rv := g.newVar()
-			g.openf(`if %s := %s(%q); %s != "" {`, rv, getter, fd.key, rv)
-			g.wf("var err error")
-			g.openf("if %s.%s, err = %s(%s); err != nil {", v, fd.name, fn, rv)
+			rv := g.tmp("raw", typString)
+			g.openf(`if %s = %s(%q); %s != "" {`, rv, getter, fd.key, rv)
+			g.openf("if %s.%s, %s = %s(%s); err != nil {", v, fd.name, g.errSlot(), fn, rv)
 			g.badRequest(true)
 			g.close()
 			g.close()
@@ -2129,7 +2240,7 @@ func (g *emitter) badRequest(hasErr bool) {
 func (g *emitter) emitBodyDecode(spec argSpec) string {
 	switch spec.bodyKind {
 	case bodyMultipart:
-		g.openf("if err := r.ParseMultipartForm(32 << 20); err != nil {")
+		g.openf("if %s = r.ParseMultipartForm(32 << 20); err != nil {", g.errSlot())
 		g.badRequest(true)
 		g.close()
 		if spec.ptr {
@@ -2137,19 +2248,23 @@ func (g *emitter) emitBodyDecode(spec argSpec) string {
 		}
 		return "*r.MultipartForm"
 	case bodyForm:
-		g.openf("if err := r.ParseForm(); err != nil {")
+		g.openf("if %s = r.ParseForm(); err != nil {", g.errSlot())
 		g.badRequest(true)
 		g.close()
 		return "r.PostForm"
 	}
-	v := spec.name
-	if !safeVarName(v) {
-		v = g.newVar()
-	}
 	switch spec.fast {
 	case ggOne:
 		g.useReadOne = true
-		v = g.slot(spec.typ)
+		if spec.ptr && spec.keeps {
+			p := g.bodyPtr(spec.typ)
+			g.wf("%s, %s = readJSON[%s](r)", "*"+p, g.errSlot(), spec.typ)
+			g.openf("if err != nil {")
+			g.badRequest(true)
+			g.close()
+			return p
+		}
+		v := g.bodySlot(spec.typ)
 		g.wf("%s, %s = readJSON[%s](r)", v, g.errSlot(), spec.typ)
 		g.openf("if err != nil {")
 		g.badRequest(true)
@@ -2160,7 +2275,7 @@ func (g *emitter) emitBodyDecode(spec argSpec) string {
 		return v
 	case ggSlice:
 		g.useReadSlice = true
-		v = g.slot("[]" + spec.elem)
+		v := g.bodySlot("[]" + spec.elem)
 		g.wf("%s, %s = readJSONSlice[%s](r)", v, g.errSlot(), spec.elem)
 		g.openf("if err != nil {")
 		g.badRequest(true)
@@ -2171,16 +2286,16 @@ func (g *emitter) emitBodyDecode(spec argSpec) string {
 		g.useReadSeq = true
 		return fmt.Sprintf("readJSONSeq[%s](r)", spec.elem)
 	}
-	if spec.ptr {
-		g.wf("%s := new(%s)", v, spec.typ)
-		g.openf("if err := json.NewDecoder(r.Body).Decode(%s); err != nil {", v)
-	} else {
-		v = g.slot(spec.typ)
-		g.openf("if err := json.NewDecoder(r.Body).Decode(&%s); err != nil {", v)
-	}
+	// Decode takes an interface, so its target always escapes: decode into a
+	// fresh value allocated by this route alone, held by a top-scope pointer
+	p := g.bodyPtr(spec.typ)
+	g.openf("if %s = json.NewDecoder(r.Body).Decode(%s); err != nil {", g.errSlot(), p)
 	g.badRequest(true)
 	g.close()
-	return v
+	if spec.ptr {
+		return p
+	}
+	return "*" + p
 }
 
 // emitExtract turns a raw query/header expression into the handler argument:
@@ -2195,19 +2310,20 @@ func (g *emitter) emitExtract(spec argSpec, raw, recv string) string {
 		if spec.regex {
 			fn += ".MatchString"
 		}
-		v := g.newVar()
-		g.wf("%s := %s", v, raw)
+		v := g.tmp("raw", typString)
+		g.wf("%s = %s", v, raw)
 		g.openf("if !%s(%s) {", fn, v)
 		g.badRequest(false)
 		g.close()
 		return v
 	}
-	v := g.newVar()
-	g.wf("var %s %s", v, spec.typ)
-	rv := g.newVar()
-	g.openf("if %s := %s; %s != \"\" {", rv, raw, rv)
-	g.wf("var err error")
-	g.openf("if %s, err = %s(%s); err != nil {", v, fn, rv)
+	// an absent value stays the zero value, also when an earlier extract in
+	// the same request (a central guard's) assigned this temp
+	v := g.tmp(hintName(spec.name), spec.typ)
+	g.wf("%s = *new(%s)", v, spec.typ)
+	rv := g.tmp("raw", typString)
+	g.openf("if %s = %s; %s != \"\" {", rv, raw, rv)
+	g.openf("if %s, %s = %s(%s); err != nil {", v, g.errSlot(), fn, rv)
 	g.badRequest(true)
 	g.close()
 	g.close()

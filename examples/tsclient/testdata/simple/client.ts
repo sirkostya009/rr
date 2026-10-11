@@ -114,6 +114,10 @@ export function createClient(options: ClientOptions = {}) {
       createPost(body: PostInput, init?: RequestInit): Promise<Post> {
         return json<Post>(send("POST", `/api/posts`, { body, json: true, init }));
       },
+      /** POST /api/drafts */
+      queueDraft(body: PostInput, init?: RequestInit): Promise<Post> {
+        return json<Post>(send("POST", `/api/drafts`, { body, json: true, init }));
+      },
       /** GET /api/posts/{id} */
       getPost(id: number, init?: RequestInit): Promise<Post> {
         return json<Post>(send("GET", `/api/posts/${seg(id)}`, { init }));

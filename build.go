@@ -207,6 +207,7 @@ func (b *builder) arg(ga *gen.Arg) argSpec {
 		spec.regex = ga.Check.Kind == gen.RefRegexp
 		if ga.Shape == gen.BindParser {
 			spec.transform = ga.Check.Err // a bare-T parser needs no error branch
+			spec.typ = ga.Type.Expr
 		} else {
 			spec.transform = ga.Check.Transform
 			if spec.transform {
@@ -296,6 +297,11 @@ func (b *builder) route(gr *gen.Route, a *apiType) route {
 		errH:    a.errHandler, // owner onerror; central covers it at emission
 		args:    b.args(gr.Args),
 	}
+	for i, ga := range gr.Args {
+		if spec := &rt.args[i]; spec.kind == argBody && spec.ptr {
+			spec.keeps = keepsPointer(gr.Decl, ga.Name, b.idx.Methods[bareType(spec.typeExpr)])
+		}
+	}
 	if gr.Method != "" {
 		rt.display = gr.Method + " " + gr.Path
 	}
@@ -367,6 +373,11 @@ func (b *builder) param(gp *gen.Param, memo map[*gen.Param]*param) *param {
 		p.ref = b.ref(*gp.Check)
 		p.transform = gp.Check.Transform
 		p.regex = gp.Check.Kind == gen.RefRegexp
+		// the transformer's own result type types its top-scope slot; the
+		// handlers below may bind it to any type it is assignable to
+		if d := gp.Check.Decl; p.transform && d != nil && d.Type.Results != nil && len(d.Type.Results.List) > 0 {
+			p.typ = renderType(b.fset, d.Type.Results.List[0].Type)
+		}
 	}
 	memo[gp] = p
 	return p
@@ -408,4 +419,94 @@ func (b *builder) derive(a *apiType, rt *route, pp *param, ga *gen.Arg) {
 		fatalf("%s.%s: cannot bind path param %q to type %s: structs, interfaces and any are not path param material; use string, int, float64, float32, bool, or {%s=@func}",
 			a.name, rt.handler, ga.Key, ga.Type.Expr, ga.Key)
 	}
+}
+
+// keepsPointer reports whether a handler may hold on to its *T param past
+// the call. Anything but reading or writing a field, dereferencing it or
+// comparing it to nil counts. A wrong "no" costs only an allocation, never
+// correctness: the compiler still moves an escaping variable to the heap.
+func keepsPointer(fd *ast.FuncDecl, name string, methods map[string]*ast.FuncDecl) bool {
+	switch {
+	case name == "_":
+		return false
+	case fd == nil || fd.Body == nil || name == "":
+		return true
+	}
+	keeps := false
+	var stack []ast.Node
+	ast.Inspect(fd.Body, func(n ast.Node) bool {
+		if n == nil {
+			stack = stack[:len(stack)-1]
+			return false
+		}
+		if keeps {
+			return false
+		}
+		if id, ok := n.(*ast.Ident); ok && id.Name == name && !harmlessUse(stack, id, methods) {
+			keeps = true
+			return false
+		}
+		stack = append(stack, n)
+		return true
+	})
+	return keeps
+}
+
+func harmlessUse(stack []ast.Node, id *ast.Ident, methods map[string]*ast.FuncDecl) bool {
+	for _, n := range stack {
+		if _, ok := n.(*ast.FuncLit); ok {
+			return false // a closure may outlive the call
+		}
+	}
+	parent := stack[len(stack)-1]
+	switch p := parent.(type) {
+	case *ast.SelectorExpr:
+		if p.Sel == id {
+			return true // a field or method of something else, not the param
+		}
+		if _, ok := methods[p.Sel.Name]; ok {
+			return false // p.Method passes the pointer on
+		}
+		return !leaksChain(stack, len(stack)-1)
+	case *ast.StarExpr:
+		return !leaksChain(stack, len(stack)-1)
+	case *ast.BinaryExpr:
+		other := p.X
+		if other == id {
+			other = p.Y
+		}
+		nilID, ok := other.(*ast.Ident)
+		return ok && nilID.Name == "nil" && (p.Op == token.EQL || p.Op == token.NEQ)
+	}
+	return false
+}
+
+// leaksChain reports whether the field/index chain ending at stack[i] has its
+// address taken, is sliced, or is called: each hands out memory of the param.
+func leaksChain(stack []ast.Node, i int) bool {
+	for ; i > 0; i-- {
+		switch p := stack[i-1].(type) {
+		case *ast.SelectorExpr, *ast.IndexExpr, *ast.ParenExpr:
+			continue
+		case *ast.UnaryExpr:
+			return p.Op == token.AND
+		case *ast.SliceExpr:
+			return p.X == stack[i]
+		case *ast.CallExpr:
+			return p.Fun == stack[i]
+		}
+		return false
+	}
+	return false
+}
+
+// bareType is the in-package type name of t (T or *T), "" for anything else.
+func bareType(t ast.Expr) string {
+	if st, ok := t.(*ast.StarExpr); ok {
+		t = st.X
+	}
+	if id, ok := t.(*ast.Ident); ok {
+		return id.Name
+	}
+	return ""
 }

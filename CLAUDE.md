@@ -43,8 +43,19 @@ stdlib (+ ggen when present). Think NestJS annotations, compiled to a switch.
     (literal-first switch) and a `{id int}`/`{slug}` pair sharing `edit`
     (ordered chain). `api_test.go` hits every route, checks impostors that
     share a hash slot get 404, checks candidate order, and FAILS if
-    `api_gen.go` stops containing 4 hashed switches or 1 literal-first switch
-    (so a threshold or planner change can't silently drop coverage)
+    `api_gen.go` stops containing 4 hashed switches or the catalog's
+    literal-first switch (so a threshold or planner change can't silently
+    drop coverage). `regressions.go` (+ `api/user`) holds one route group per
+    generator bug fixed so far, each pinned by `regressions_test.go`: fixed
+    width beside a terminal param, a body typed like a path param, a stdlib
+    body costing unrelated routes allocs, slot names vs a `user` package and
+    the receiver, an unnamed catch-all beside a param. `nopv/` is generated
+    with `-nopathvalue` for the shapes only that flag reaches. `pre/` has a
+    central `//rr:pre` guard binding what its routes bind (a guard's parsed
+    header must not show through a route's absent one) and one `@fn`
+    transformer bound as `any` and as `*Foo`. The ggen-only
+    case (a kept `*T` body overwritten by its own result) lives in
+    `examples/simple` (`QueueDraft`, `TestKeptBodyNotOverwritten`)
   - `tsclient/` (module `tsclient`) — the consumer-library example: a script
     generating BOTH a TypeScript fetch client (from `rr/gen` routes) and the
     TypeScript types it sends and receives (from `ggen/gen` shapes), with
@@ -175,7 +186,10 @@ belong in an outer wrapper like `example/api/server.go`.
   default) drops every SetPathValue call: the lazily allocated PathValue map
   plus its GC is ~90% of a dynamic hit (189 → 13 ns). `r.Pattern` is still
   stamped. Rest/segment vars whose only reader was SetPathValue are not
-  declared (`readsRest`, the `used` check on segment vars).
+  declared (`readsRest`, the `used` check on segment vars). Both count only
+  what emitNode(n) emits: n's own terminal routes are emitted by the PARENT
+  against the parent's variable (`belowUsesPath` vs `subtreeUsesPath`) —
+  counting them left `s0`/`p1` declared and unused.
 - Error chains: handler AND encode errors → owner api onerror → central
   onerror → bare 500 (route-level errorhandler was removed; owner/central
   onerror is the only override, e.g. a controller mapping its errors →404).
@@ -193,17 +207,21 @@ belong in an outer wrapper like `example/api/server.go`.
   sibling packages). Helper doc comments live on the consts in main.go, not
   in the emitted string.
 - Literal prefix tests are emitted as plain compares (`hasPrefix`/`openCut`:
-  `len(p) >= n && p[:n] == "lit"`), NEVER `strings.CutPrefix`/`HasPrefix`. Go's
-  inliner drops its budget from 80 to 20 inside functions over 5,000 nodes (no
-  directive, flag or PGO overrides it), which a ~100+ route `ServeHTTP` is, so
-  those calls stop inlining; the plain compare is expanded by the compiler at
-  any size. `strings.IndexByte` has no such form and stays a call in big
+  `len(p) >= n && p[:n] == "lit"`), NEVER `strings.CutPrefix`. Go's inliner
+  drops its budget from 80 to 20 inside functions over 5,000 nodes
+  (`inline/inl.go` inlineBigFunctionMaxCost; `-l=4` and PGO don't override it,
+  PGO says "hot-big check disallows inlining"), which a ~100+ route
+  `ServeHTTP` is: CutPrefix (cost 42) and TrimPrefix (25) stop inlining.
+  HasPrefix (18) still inlines, so the plain compare is just the uniform form,
+  expanded by the compiler at any size. `strings.IndexByte` has no such form and stays a call in big
   dispatchers. `strings` is imported only when IndexByte is emitted
   (the emitter's `useStrings`) — a static-only dispatcher doesn't need it.
   IndexByte is emitted only where a segment scan is unavoidable: sibling
-  descLits of ONE width with no param/wildcard siblings check the slash at a
-  constant offset and slice fixed (`if len(p) > k && p[k] == '/' { switch
-  p[:k]`), and terminal literals need no "no slash" guard at all (a whole
+  descLits of ONE width with no param/wildcard siblings and NO TERMINAL PARAM
+  check the slash at a constant offset and slice fixed (`if len(p) > k &&
+  p[k] == '/' { switch p[:k]`). A terminal param forces the scan, and the
+  literal arms must then slice by its `i`: slicing by the width anyway routed
+  `/abcXd/q` to `/abc/{y}/q` and panicked on `/a/`. Terminal literals need no "no slash" guard at all (a whole
   compare fails on a slash anyway) — only a terminal PARAM keeps
   `IndexByte(p, '/') < 0`. Measured on 2000 routes: -7% friendly, -12%
   uniform/Zipf. For that terminal scan the call is the fastest form: an
@@ -212,12 +230,12 @@ belong in an outer wrapper like `example/api/server.go`.
 - Rest-of-path advances IN PLACE (`path = path[i+1:]`, `emitter.advance`) wherever
   the node reads it no more afterwards: lone literal chains always, a literal
   descent when the node has no param edges or catch-all, the LAST param descent
-  when there's no catch-all. Otherwise a fresh `pN` is declared, because a
+  when there's no catch-all. Otherwise a fresh `pN` is assigned, because a
   failed branch falls through to siblings that read the old value. A child owns
   the variable it's handed, so the rule is purely local. Why: Go spills a named
   variable to its own stack slot and never shares slots across switch cases —
   a fresh var per route made a 2000-route frame 32KB (now 80 bytes) and cost
-  5-13% on big dispatchers. Segment vars (`sN`) are still one per param node.
+  5-13% on big dispatchers.
 - Same rule for anything stack-allocated per route: the encoding/json write
   path is the generated `writeJSON(w, v)` helper, NOT inline
   `json.NewEncoder(w).Encode(v)` — NewEncoder inlines, its Encoder doesn't
@@ -231,20 +249,52 @@ belong in an outer wrapper like `example/api/server.go`.
   is canonical already and net/http never appends to the value slice in place.
   Emitted once (`helperJSONCT`) whenever any JSON write path is in use.
   Measured on 780 routes: ggen reply -45% and 0 allocs, encoding/json -18%.
-- `(T, error)` results and decoded JSON bodies assign into ONE variable per
-  type, declared at the top of ServeHTTP (`emitter.slot`, named after the type: `post`, `newUsers`, ... plus a
-  shared `var err error`, spliced in by `spliceDecls` after the body is
-  emitted). A `v1, err :=` per route gave every 64B `Post` result its own
-  slot. Only one route runs per request, so sharing is safe. Derived path
-  param matchers assign the same way (`if intVal, err = strconv.Atoi(s1)`),
-  keyed by type AND trie position (`emitter.slotAt`: a route has one param per
-  position, so `intVal`, `intVal1`), and a same-typed handler result reuses
-  the first such slot (`emitter.slot` -> `emitter.byType`; args are passed before the
-  result lands). Predeclared names get `Val` (`int` is not a keyword; `var int
-  int` compiles and then breaks every later `int`). Measured: scalars were
-  already register-resident with disjoint scopes, so this is uniformity, not
-  frame — the frame wins are the address-taken values above. `new(T)` bodies
-  (heap) and custom `@fn` transformers (return type unknown) are not hoisted.
+- EVERY variable ServeHTTP uses is declared once at its top and only ever
+  assigned (`x = ...`, never `x :=`): Go gives each declaration its own stack
+  slot and never shares slots across switch cases, so per-route declarations
+  grow the frame with the route count. Only one route runs per request, so
+  routes share them. `path := r.URL.Path` is the one `:=`. Measured on the
+  295-route root bench fixture: frame 768B -> 216B.
+  - Trie variables are declared under their own names, per trie DEPTH
+    (`emitter.fixedVar`): segment `sN`, rest-of-path `pN`, slash index `iN`
+    (every node used to shadow its own `i`), mount `mpN`/`miN`. Depth only
+    grows along a path, so one name is never live in two places; siblings at
+    a depth assign it before reading it.
+  - Typed values go through `declSlot`: params `slotAt` keyed by type AND
+    depth (`if intVal, err = strconv.Atoi(s1)`, `intVal1`; custom `@fn`
+    transformers take their own declared result type, or for an external
+    `pkg.Fn` the type all handlers bind it as, else stay scoped), results `slot`
+    reusing a param slot of the type (args are evaluated before the result
+    is assigned), temporaries `tmp` keyed by role, type and ordinal within
+    the route (query `url.Values`, raw strings, struct binds, parser results,
+    map binds and their range vars). One shared `var err error`. A temp is
+    shared by EVERY binding of the request, a central guard's included (the
+    ordinal restarts per route), so the two that relied on a fresh zero
+    value are zeroed before their conditional assignment: a transformed
+    query/header value (`n = *new(int)`; else a guard's X-A=5 showed through
+    a route's absent X-B) and a struct bind (`q = Filter{}`). Every other
+    temp is always assigned before it is read.
+  - Bodies have their OWN namespace (`bodySlot`, `bodyPtr`), never shared: a
+    body sharing a param slot overwrote the param (`/items/7` + body 99 ->
+    id=99); sharing a result slot made `post, err = s.Create(&post)` write
+    the result over the `*T` the handler kept (a race under a queue).
+  - An ADDRESS-TAKEN top-scope var is heap-allocated at function ENTRY, i.e.
+    on every request: hoisting `var item Item` + `Decode(&item)` cost every
+    unrelated route 1 alloc per body type (50 types = 50 allocs/3.2KB on
+    GET /ping). So a body that escapes anyway is a top-scope `*T` the route
+    points at `new(T)` (`postBodyPtr = new(Post)`): stdlib bodies (Decode
+    takes an interface) and `*T` bodies the handler may keep. A `*T` body the
+    handler provably doesn't keep (`keepsPointer` in build.go: every use is
+    a field access, a dereference or a nil compare, no method, no `&`, no
+    closure) decodes into the top-scope value and passes `&postBody`, which
+    stays on the stack. A wrong "doesn't keep" only costs an allocation.
+  - Names: `declSlot` hands out placeholders, `spliceDecls` names them once
+    the body is emitted: the hint (`postBody`, a handler param name) or the
+    type (`post`, `newUsers`, `Val` suffix for predeclared names like
+    `int`), skipping every identifier the body or the slot types refer to
+    and the receiver — `var user user.User` shadowed the package, `var a A`
+    redeclared receiver `a`. Package qualifiers in the declared types are
+    imported (`emitter.quals`); the old `:=` never named them.
   Remainder in examples/simple (~1.3KB) is inlined HANDLER bodies (ListPosts'
   make+range, Search's map literal) — the handler author's, not rr's.
 - Literal sibling sets of `-hashmin` (default 256; 0 = every set the planner
@@ -268,9 +318,9 @@ belong in an outer wrapper like `example/api/server.go`.
   (`path[:12] == "static/page-"` then `path[12:] == "038"`). A head under 2
   bytes is NOT hoisted and the arms then MUST keep the whole key — stripping
   it anyway 404'd every hashed set sharing one leading byte (`r000`..`r299`);
-  `examples/large`'s `versions/vNNN` set pins that. 6-12% less
-  ServeHTTP code, -23% on the 2000-route friendly cycle, -5% on a
-  literal-then-param hit, ~neutral elsewhere. The plain switch (below the
+  `examples/large`'s `versions/vNNN` set pins that. -23% on the 2000-route
+  friendly cycle, -5% on a literal-then-param hit; code size is a wash
+  (`examples/large` amd64 -0.3%). The plain switch (below the
   threshold) hoists the same head once it has 4+ arms. It does NOT replace the
   hash: measured on 2000 routes the hoisted switch is still 81 ns on uniform
   traffic vs 46 ns hashed — the binary search's mispredictions are the cost,
@@ -278,10 +328,19 @@ belong in an outer wrapper like `example/api/server.go`.
   prefix at that trie level, true common suffixes are rare in route tables.
   Measured and rejected: a perfect hash (the displacement load delays the jump,
   slower) and a shared table-driven body (1 miss even on repeating traffic).
-  The trade: one mispredicted jump ALWAYS, so it loses when the binary search
-  predicts well — skewed traffic under ~256 keys (hence the threshold), and
-  traffic walking the keys in sorted order (+52% on the 1000-static fixture).
-  At 2000 routes: uniform -44%, Zipf -19%, fixed 64-route cycle +5%.
+  The trade: one indirect jump the predictor misses under random traffic, so
+  it loses where the binary search predicts perfectly: a fixed repeating
+  cycle (+46% at 500 routes; at 2000 within the ~8% layout noise of that
+  shape) and keys walked in sorted order (+60%; the same 1000 static routes
+  shuffled are -42%). Random orders at 2000 routes (`-nopathvalue`, amd64):
+  uniform -41%, Zipf with permuted ranks -19%, 64 hot routes in random order
+  -17%; branch misses ~1.0/request vs 1.6-4.2. With path values on the same
+  wins are -8..-15% of a bigger total.
+  JUMP TABLES EXIST ONLY ON amd64, arm64, loong64 (`sys.Arch.CanJumpTable`)
+  and not under `-gcflags=-spectre=ret`. Elsewhere (386, arm, riscv64,
+  ppc64le, s390x, wasm) the integer switch is a binary search again, so the
+  hash is a small strict loss (+1..5% on 386, +2..27% with retpoline) and
+  +5..7% code. The jump tables are also ~28KB of rodata on `examples/large`.
 - ggen integration: types with generated `DecodeFromStream`/`AppendJSON` use
   pooled fast paths. Foreign `pkg.T` / `[]pkg.T` count too: `foreignGgen`
   scans that package's sources (`scanPkg`, stdlib skipped) for the method OR a

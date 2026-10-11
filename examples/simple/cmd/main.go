@@ -1,10 +1,10 @@
 package main
 
 import (
-	"simple/api"
-	"simple/config"
 	"log"
 	"net/http"
+	"simple/api"
+	"simple/config"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -24,7 +24,7 @@ func main() {
 	defer sentry.Flush(2 * time.Second)
 
 	a := api.Api{
-		UsersApi: api.UsersApi{Foo: cfg.Foo},
+		Foo:      cfg.Foo,
 		PostsApi: api.PostsApi{},
 	}
 

@@ -66,6 +66,16 @@ func fromJSON[T any](t *testing.T, rec *httptest.ResponseRecorder) T {
 	return v
 }
 
+func TestKeptBodyNotOverwritten(t *testing.T) {
+	got := fromJSON[Post](t, do(t, &Api{}, "POST", "/api/drafts", `{"slug":"my-draft","title":"Draft"}`))
+	if got.Slug != "queued" {
+		t.Fatalf("response %+v", got)
+	}
+	if d := drafts[len(drafts)-1]; d.Slug != "my-draft" || d.ID != 0 {
+		t.Fatalf("queued body = %+v, want the decoded body", *d)
+	}
+}
+
 func TestUsers(t *testing.T) {
 	a := &Api{}
 

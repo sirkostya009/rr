@@ -4,6 +4,7 @@ package api
 
 import (
 	"encoding/json"
+	"large/api/user"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,2892 +19,3004 @@ func writeJSON(w http.ResponseWriter, v any) {
 
 func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
+	var i0 int
+	var i1 int
+	var s1 string
+	var p2 string
+	var i2 int
+	var s2 string
+	var jobBodyPtr *Job
+	var job Job
+	var itemBodyPtr *Item
+	var loginBodyPtr *user.Login
+	var login user.Login
+	var user1 user.User
+	var a1 A
 	var intVal int
 	var boolVal bool
+	var intValBodyPtr *int
 	path := r.URL.Path
 	if len(path) < 7 || path[:7] != "/large/" {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	path = path[7:]
-	if len(path) == 15 {
-		if path[:12] == "static/page-" {
-			switch ((uint32(path[12]) | uint32(path[13])<<8 | uint32(path[14])<<16) * 0xd3a2646d) >> 22 {
-			case 1:
-				if path[12:] == "038" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-038"
-					writeJSON(w, a.Static038())
-					return
-				}
-			case 5:
-				if path[12:] == "201" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-201"
-					writeJSON(w, a.Static201())
-					return
-				}
-			case 11:
-				if path[12:] == "172" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-172"
-					writeJSON(w, a.Static172())
-					return
-				}
-			case 13:
-				if path[12:] == "022" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-022"
-					writeJSON(w, a.Static022())
-					return
-				}
-			case 17:
-				if path[12:] == "125" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-125"
-					writeJSON(w, a.Static125())
-					return
-				}
-			case 20:
-				if path[12:] == "228" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-228"
-					writeJSON(w, a.Static228())
-					return
-				}
-			case 23:
-				if path[12:] == "096" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-096"
-					writeJSON(w, a.Static096())
-					return
-				}
-			case 26:
-				if path[12:] == "199" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-199"
-					writeJSON(w, a.Static199())
-					return
-				}
-			case 28:
-				if path[12:] == "049" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-049"
-					writeJSON(w, a.Static049())
-					return
-				}
-			case 32:
-				if path[12:] == "212" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-212"
-					writeJSON(w, a.Static212())
-					return
-				}
-			case 35:
-				if path[12:] == "080" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-080"
-					writeJSON(w, a.Static080())
-					return
-				}
-			case 39:
-				if path[12:] == "183" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-183"
-					writeJSON(w, a.Static183())
-					return
-				}
-			case 40:
-				if path[12:] == "033" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-033"
-					writeJSON(w, a.Static033())
-					return
-				}
-			case 44:
-				if path[12:] == "136" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-136"
-					writeJSON(w, a.Static136())
-					return
-				}
-			case 47:
-				if path[12:] == "239" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-239"
-					writeJSON(w, a.Static239())
-					return
-				}
-			case 56:
-				if path[12:] == "120" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-120"
-					writeJSON(w, a.Static120())
-					return
-				}
-			case 60:
-				if path[12:] == "223" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-223"
-					writeJSON(w, a.Static223())
-					return
-				}
-			case 62:
-				if path[12:] == "091" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-091"
-					writeJSON(w, a.Static091())
-					return
-				}
-			case 66:
-				if path[12:] == "194" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-194"
-					writeJSON(w, a.Static194())
-					return
-				}
-			case 67:
-				if path[12:] == "044" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-044"
-					writeJSON(w, a.Static044())
-					return
-				}
-			case 71:
-				if path[12:] == "147" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-147"
-					writeJSON(w, a.Static147())
-					return
-				}
-			case 83:
-				if path[12:] == "131" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-131"
-					writeJSON(w, a.Static131())
-					return
-				}
-			case 87:
-				if path[12:] == "234" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-234"
-					writeJSON(w, a.Static234())
-					return
-				}
-			case 95:
-				if path[12:] == "055" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-055"
-					writeJSON(w, a.Static055())
-					return
-				}
-			case 98:
-				if path[12:] == "158" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-158"
-					writeJSON(w, a.Static158())
-					return
-				}
-			case 100:
-				if path[12:] == "008" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-008"
-					writeJSON(w, a.Static008())
-					return
-				}
-			case 111:
-				if path[12:] == "142" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-142"
-					writeJSON(w, a.Static142())
-					return
-				}
-			case 114:
-				if path[12:] == "245" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-245"
-					writeJSON(w, a.Static245())
-					return
-				}
-			case 122:
-				if path[12:] == "066" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-066"
-					writeJSON(w, a.Static066())
-					return
-				}
-			case 126:
-				if path[12:] == "169" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-169"
-					writeJSON(w, a.Static169())
-					return
-				}
-			case 127:
-				if path[12:] == "019" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-019"
-					writeJSON(w, a.Static019())
-					return
-				}
-			case 134:
-				if path[12:] == "050" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-050"
-					writeJSON(w, a.Static050())
-					return
-				}
-			case 138:
-				if path[12:] == "153" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-153"
-					writeJSON(w, a.Static153())
-					return
-				}
-			case 139:
-				if path[12:] == "003" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-003"
-					writeJSON(w, a.Static003())
-					return
-				}
-			case 142:
-				if path[12:] == "256" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-256"
-					writeJSON(w, a.Static256())
-					return
-				}
-			case 143:
-				if path[12:] == "106" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-106"
-					writeJSON(w, a.Static106())
-					return
-				}
-			case 147:
-				if path[12:] == "209" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-209"
-					writeJSON(w, a.Static209())
-					return
-				}
-			case 149:
-				if path[12:] == "077" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-077"
-					writeJSON(w, a.Static077())
-					return
-				}
-			case 154:
-				if path[12:] == "240" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-240"
-					writeJSON(w, a.Static240())
-					return
-				}
-			case 161:
-				if path[12:] == "061" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-061"
-					writeJSON(w, a.Static061())
-					return
-				}
-			case 165:
-				if path[12:] == "164" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-164"
-					writeJSON(w, a.Static164())
-					return
-				}
-			case 167:
-				if path[12:] == "014" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-014"
-					writeJSON(w, a.Static014())
-					return
-				}
-			case 170:
-				if path[12:] == "117" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-117"
-					writeJSON(w, a.Static117())
-					return
-				}
-			case 177:
-				if path[12:] == "088" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-088"
-					writeJSON(w, a.Static088())
-					return
-				}
-			case 181:
-				if path[12:] == "251" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-251"
-					writeJSON(w, a.Static251())
-					return
-				}
-			case 183:
-				if path[12:] == "101" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-101"
-					writeJSON(w, a.Static101())
-					return
-				}
-			case 186:
-				if path[12:] == "204" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-204"
-					writeJSON(w, a.Static204())
-					return
-				}
-			case 189:
-				if path[12:] == "072" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-072"
-					writeJSON(w, a.Static072())
-					return
-				}
-			case 192:
-				if path[12:] == "175" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-175"
-					writeJSON(w, a.Static175())
-					return
-				}
-			case 194:
-				if path[12:] == "025" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-025"
-					writeJSON(w, a.Static025())
-					return
-				}
-			case 198:
-				if path[12:] == "128" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-128"
-					writeJSON(w, a.Static128())
-					return
-				}
-			case 204:
-				if path[12:] == "099" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-099"
-					writeJSON(w, a.Static099())
-					return
-				}
-			case 210:
-				if path[12:] == "112" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-112"
-					writeJSON(w, a.Static112())
-					return
-				}
-			case 214:
-				if path[12:] == "215" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-215"
-					writeJSON(w, a.Static215())
-					return
-				}
-			case 216:
-				if path[12:] == "083" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-083"
-					writeJSON(w, a.Static083())
-					return
-				}
-			case 220:
-				if path[12:] == "186" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-186"
-					writeJSON(w, a.Static186())
-					return
-				}
-			case 221:
-				if path[12:] == "036" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-036"
-					writeJSON(w, a.Static036())
-					return
-				}
-			case 225:
-				if path[12:] == "139" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-139"
-					writeJSON(w, a.Static139())
-					return
-				}
-			case 232:
-				if path[12:] == "170" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-170"
-					writeJSON(w, a.Static170())
-					return
-				}
-			case 234:
-				if path[12:] == "020" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-020"
-					writeJSON(w, a.Static020())
-					return
-				}
-			case 237:
-				if path[12:] == "123" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-123"
-					writeJSON(w, a.Static123())
-					return
-				}
-			case 241:
-				if path[12:] == "226" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-226"
-					writeJSON(w, a.Static226())
-					return
-				}
-			case 243:
-				if path[12:] == "094" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-094"
-					writeJSON(w, a.Static094())
-					return
-				}
-			case 247:
-				if path[12:] == "197" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-197"
-					writeJSON(w, a.Static197())
-					return
-				}
-			case 249:
-				if path[12:] == "047" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-047"
-					writeJSON(w, a.Static047())
-					return
-				}
-			case 253:
-				if path[12:] == "210" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-210"
-					writeJSON(w, a.Static210())
-					return
-				}
-			case 259:
-				if path[12:] == "181" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-181"
-					writeJSON(w, a.Static181())
-					return
-				}
-			case 261:
-				if path[12:] == "031" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-031"
-					writeJSON(w, a.Static031())
-					return
-				}
-			case 264:
-				if path[12:] == "134" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-134"
-					writeJSON(w, a.Static134())
-					return
-				}
-			case 268:
-				if path[12:] == "237" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-237"
-					writeJSON(w, a.Static237())
-					return
-				}
-			case 276:
-				if path[12:] == "058" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-058"
-					writeJSON(w, a.Static058())
-					return
-				}
-			case 280:
-				if path[12:] == "221" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-221"
-					writeJSON(w, a.Static221())
-					return
-				}
-			case 286:
-				if path[12:] == "192" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-192"
-					writeJSON(w, a.Static192())
-					return
-				}
-			case 288:
-				if path[12:] == "042" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-042"
-					writeJSON(w, a.Static042())
-					return
-				}
-			case 292:
-				if path[12:] == "145" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-145"
-					writeJSON(w, a.Static145())
-					return
-				}
-			case 295:
-				if path[12:] == "248" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-248"
-					writeJSON(w, a.Static248())
-					return
-				}
-			case 303:
-				if path[12:] == "069" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-069"
-					writeJSON(w, a.Static069())
-					return
-				}
-			case 308:
-				if path[12:] == "232" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-232"
-					writeJSON(w, a.Static232())
-					return
-				}
-			case 315:
-				if path[12:] == "053" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-053"
-					writeJSON(w, a.Static053())
-					return
-				}
-			case 319:
-				if path[12:] == "156" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-156"
-					writeJSON(w, a.Static156())
-					return
-				}
-			case 321:
-				if path[12:] == "006" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-006"
-					writeJSON(w, a.Static006())
-					return
-				}
-			case 323:
-				if path[12:] == "259" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-259"
-					writeJSON(w, a.Static259())
-					return
-				}
-			case 324:
-				if path[12:] == "109" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-109"
-					writeJSON(w, a.Static109())
-					return
-				}
-			case 331:
-				if path[12:] == "140" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-140"
-					writeJSON(w, a.Static140())
-					return
-				}
-			case 335:
-				if path[12:] == "243" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-243"
-					writeJSON(w, a.Static243())
-					return
-				}
-			case 343:
-				if path[12:] == "064" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-064"
-					writeJSON(w, a.Static064())
-					return
-				}
-			case 346:
-				if path[12:] == "167" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-167"
-					writeJSON(w, a.Static167())
-					return
-				}
-			case 348:
-				if path[12:] == "017" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-017"
-					writeJSON(w, a.Static017())
-					return
-				}
-			case 358:
-				if path[12:] == "151" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-151"
-					writeJSON(w, a.Static151())
-					return
-				}
-			case 360:
-				if path[12:] == "001" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-001"
-					writeJSON(w, a.Static001())
-					return
-				}
-			case 362:
-				if path[12:] == "254" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-254"
-					writeJSON(w, a.Static254())
-					return
-				}
-			case 364:
-				if path[12:] == "104" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-104"
-					writeJSON(w, a.Static104())
-					return
-				}
-			case 367:
-				if path[12:] == "207" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-207"
-					writeJSON(w, a.Static207())
-					return
-				}
-			case 370:
-				if path[12:] == "075" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-075"
-					writeJSON(w, a.Static075())
-					return
-				}
-			case 374:
-				if path[12:] == "178" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-178"
-					writeJSON(w, a.Static178())
-					return
-				}
-			case 375:
-				if path[12:] == "028" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-028"
-					writeJSON(w, a.Static028())
-					return
-				}
-			case 386:
-				if path[12:] == "162" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-162"
-					writeJSON(w, a.Static162())
-					return
-				}
-			case 387:
-				if path[12:] == "012" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-012"
-					writeJSON(w, a.Static012())
-					return
-				}
-			case 391:
-				if path[12:] == "115" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-115"
-					writeJSON(w, a.Static115())
-					return
-				}
-			case 395:
-				if path[12:] == "218" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-218"
-					writeJSON(w, a.Static218())
-					return
-				}
-			case 397:
-				if path[12:] == "086" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-086"
-					writeJSON(w, a.Static086())
-					return
-				}
-			case 401:
-				if path[12:] == "189" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-189"
-					writeJSON(w, a.Static189())
-					return
-				}
-			case 402:
-				if path[12:] == "039" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-039"
-					writeJSON(w, a.Static039())
-					return
-				}
-			case 407:
-				if path[12:] == "202" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-202"
-					writeJSON(w, a.Static202())
-					return
-				}
-			case 409:
-				if path[12:] == "070" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-070"
-					writeJSON(w, a.Static070())
-					return
-				}
-			case 413:
-				if path[12:] == "173" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-173"
-					writeJSON(w, a.Static173())
-					return
-				}
-			case 415:
-				if path[12:] == "023" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-023"
-					writeJSON(w, a.Static023())
-					return
-				}
-			case 418:
-				if path[12:] == "126" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-126"
-					writeJSON(w, a.Static126())
-					return
-				}
-			case 422:
-				if path[12:] == "229" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-229"
-					writeJSON(w, a.Static229())
-					return
-				}
-			case 424:
-				if path[12:] == "097" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-097"
-					writeJSON(w, a.Static097())
-					return
-				}
-			case 430:
-				if path[12:] == "110" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-110"
-					writeJSON(w, a.Static110())
-					return
-				}
-			case 434:
-				if path[12:] == "213" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-213"
-					writeJSON(w, a.Static213())
-					return
-				}
-			case 437:
-				if path[12:] == "081" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-081"
-					writeJSON(w, a.Static081())
-					return
-				}
-			case 440:
-				if path[12:] == "184" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-184"
-					writeJSON(w, a.Static184())
-					return
-				}
-			case 442:
-				if path[12:] == "034" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-034"
-					writeJSON(w, a.Static034())
-					return
-				}
-			case 446:
-				if path[12:] == "137" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-137"
-					writeJSON(w, a.Static137())
-					return
-				}
-			case 458:
-				if path[12:] == "121" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-121"
-					writeJSON(w, a.Static121())
-					return
-				}
-			case 461:
-				if path[12:] == "224" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-224"
-					writeJSON(w, a.Static224())
-					return
-				}
-			case 464:
-				if path[12:] == "092" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-092"
-					writeJSON(w, a.Static092())
-					return
-				}
-			case 468:
-				if path[12:] == "195" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-195"
-					writeJSON(w, a.Static195())
-					return
-				}
-			case 469:
-				if path[12:] == "045" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-045"
-					writeJSON(w, a.Static045())
-					return
-				}
-			case 473:
-				if path[12:] == "148" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-148"
-					writeJSON(w, a.Static148())
-					return
-				}
-			case 485:
-				if path[12:] == "132" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-132"
-					writeJSON(w, a.Static132())
-					return
-				}
-			case 489:
-				if path[12:] == "235" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-235"
-					writeJSON(w, a.Static235())
-					return
-				}
-			case 496:
-				if path[12:] == "056" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-056"
-					writeJSON(w, a.Static056())
-					return
-				}
-			case 500:
-				if path[12:] == "159" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-159"
-					writeJSON(w, a.Static159())
-					return
-				}
-			case 502:
-				if path[12:] == "009" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-009"
-					writeJSON(w, a.Static009())
-					return
-				}
-			case 507:
-				if path[12:] == "190" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-190"
-					writeJSON(w, a.Static190())
-					return
-				}
-			case 509:
-				if path[12:] == "040" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-040"
-					writeJSON(w, a.Static040())
-					return
-				}
-			case 512:
-				if path[12:] == "143" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-143"
-					writeJSON(w, a.Static143())
-					return
-				}
-			case 516:
-				if path[12:] == "246" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-246"
-					writeJSON(w, a.Static246())
-					return
-				}
-			case 524:
-				if path[12:] == "067" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-067"
-					writeJSON(w, a.Static067())
-					return
-				}
-			case 528:
-				if path[12:] == "230" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-230"
-					writeJSON(w, a.Static230())
-					return
-				}
-			case 536:
-				if path[12:] == "051" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-051"
-					writeJSON(w, a.Static051())
-					return
-				}
-			case 540:
-				if path[12:] == "154" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-154"
-					writeJSON(w, a.Static154())
-					return
-				}
-			case 541:
-				if path[12:] == "004" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-004"
-					writeJSON(w, a.Static004())
-					return
-				}
-			case 543:
-				if path[12:] == "257" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-257"
-					writeJSON(w, a.Static257())
-					return
-				}
-			case 545:
-				if path[12:] == "107" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-107"
-					writeJSON(w, a.Static107())
-					return
-				}
-			case 551:
-				if path[12:] == "078" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-078"
-					writeJSON(w, a.Static078())
-					return
-				}
-			case 555:
-				if path[12:] == "241" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-241"
-					writeJSON(w, a.Static241())
-					return
-				}
-			case 563:
-				if path[12:] == "062" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-062"
-					writeJSON(w, a.Static062())
-					return
-				}
-			case 567:
-				if path[12:] == "165" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-165"
-					writeJSON(w, a.Static165())
-					return
-				}
-			case 568:
-				if path[12:] == "015" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-015"
-					writeJSON(w, a.Static015())
-					return
-				}
-			case 572:
-				if path[12:] == "118" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-118"
-					writeJSON(w, a.Static118())
-					return
-				}
-			case 578:
-				if path[12:] == "089" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-089"
-					writeJSON(w, a.Static089())
-					return
-				}
-			case 583:
-				if path[12:] == "252" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-252"
-					writeJSON(w, a.Static252())
-					return
-				}
-			case 584:
-				if path[12:] == "102" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-102"
-					writeJSON(w, a.Static102())
-					return
-				}
-			case 588:
-				if path[12:] == "205" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-205"
-					writeJSON(w, a.Static205())
-					return
-				}
-			case 590:
-				if path[12:] == "073" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-073"
-					writeJSON(w, a.Static073())
-					return
-				}
-			case 594:
-				if path[12:] == "176" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-176"
-					writeJSON(w, a.Static176())
-					return
-				}
-			case 596:
-				if path[12:] == "026" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-026"
-					writeJSON(w, a.Static026())
-					return
-				}
-			case 599:
-				if path[12:] == "129" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-129"
-					writeJSON(w, a.Static129())
-					return
-				}
-			case 606:
-				if path[12:] == "160" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-160"
-					writeJSON(w, a.Static160())
-					return
-				}
-			case 608:
-				if path[12:] == "010" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-010"
-					writeJSON(w, a.Static010())
-					return
-				}
-			case 612:
-				if path[12:] == "113" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-113"
-					writeJSON(w, a.Static113())
-					return
-				}
-			case 615:
-				if path[12:] == "216" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-216"
-					writeJSON(w, a.Static216())
-					return
-				}
-			case 618:
-				if path[12:] == "084" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-084"
-					writeJSON(w, a.Static084())
-					return
-				}
-			case 621:
-				if path[12:] == "187" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-187"
-					writeJSON(w, a.Static187())
-					return
-				}
-			case 623:
-				if path[12:] == "037" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-037"
-					writeJSON(w, a.Static037())
-					return
-				}
-			case 627:
-				if path[12:] == "200" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-200"
-					writeJSON(w, a.Static200())
-					return
-				}
-			case 634:
-				if path[12:] == "171" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-171"
-					writeJSON(w, a.Static171())
-					return
-				}
-			case 635:
-				if path[12:] == "021" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-021"
-					writeJSON(w, a.Static021())
-					return
-				}
-			case 639:
-				if path[12:] == "124" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-124"
-					writeJSON(w, a.Static124())
-					return
-				}
-			case 642:
-				if path[12:] == "227" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-227"
-					writeJSON(w, a.Static227())
-					return
-				}
-			case 645:
-				if path[12:] == "095" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-095"
-					writeJSON(w, a.Static095())
-					return
-				}
-			case 649:
-				if path[12:] == "198" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-198"
-					writeJSON(w, a.Static198())
-					return
-				}
-			case 650:
-				if path[12:] == "048" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-048"
-					writeJSON(w, a.Static048())
-					return
-				}
-			case 655:
-				if path[12:] == "211" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-211"
-					writeJSON(w, a.Static211())
-					return
-				}
-			case 661:
-				if path[12:] == "182" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-182"
-					writeJSON(w, a.Static182())
-					return
-				}
-			case 662:
-				if path[12:] == "032" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-032"
-					writeJSON(w, a.Static032())
-					return
-				}
-			case 666:
-				if path[12:] == "135" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-135"
-					writeJSON(w, a.Static135())
-					return
-				}
-			case 670:
-				if path[12:] == "238" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-238"
-					writeJSON(w, a.Static238())
-					return
-				}
-			case 678:
-				if path[12:] == "059" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-059"
-					writeJSON(w, a.Static059())
-					return
-				}
-			case 682:
-				if path[12:] == "222" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-222"
-					writeJSON(w, a.Static222())
-					return
-				}
-			case 684:
-				if path[12:] == "090" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-090"
-					writeJSON(w, a.Static090())
-					return
-				}
-			case 688:
-				if path[12:] == "193" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-193"
-					writeJSON(w, a.Static193())
-					return
-				}
-			case 690:
-				if path[12:] == "043" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-043"
-					writeJSON(w, a.Static043())
-					return
-				}
-			case 693:
-				if path[12:] == "146" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-146"
-					writeJSON(w, a.Static146())
-					return
-				}
-			case 697:
-				if path[12:] == "249" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-249"
-					writeJSON(w, a.Static249())
-					return
-				}
-			case 706:
-				if path[12:] == "130" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-130"
-					writeJSON(w, a.Static130())
-					return
-				}
-			case 709:
-				if path[12:] == "233" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-233"
-					writeJSON(w, a.Static233())
-					return
-				}
-			case 717:
-				if path[12:] == "054" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-054"
-					writeJSON(w, a.Static054())
-					return
-				}
-			case 721:
-				if path[12:] == "157" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-157"
-					writeJSON(w, a.Static157())
-					return
-				}
-			case 722:
-				if path[12:] == "007" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-007"
-					writeJSON(w, a.Static007())
-					return
-				}
-			case 733:
-				if path[12:] == "141" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-141"
-					writeJSON(w, a.Static141())
-					return
-				}
-			case 737:
-				if path[12:] == "244" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-244"
-					writeJSON(w, a.Static244())
-					return
-				}
-			case 744:
-				if path[12:] == "065" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-065"
-					writeJSON(w, a.Static065())
-					return
-				}
-			case 748:
-				if path[12:] == "168" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-168"
-					writeJSON(w, a.Static168())
-					return
-				}
-			case 750:
-				if path[12:] == "018" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-018"
-					writeJSON(w, a.Static018())
-					return
-				}
-			case 760:
-				if path[12:] == "152" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-152"
-					writeJSON(w, a.Static152())
-					return
-				}
-			case 762:
-				if path[12:] == "002" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-002"
-					writeJSON(w, a.Static002())
-					return
-				}
-			case 764:
-				if path[12:] == "255" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-255"
-					writeJSON(w, a.Static255())
-					return
-				}
-			case 765:
-				if path[12:] == "105" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-105"
-					writeJSON(w, a.Static105())
-					return
-				}
-			case 769:
-				if path[12:] == "208" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-208"
-					writeJSON(w, a.Static208())
-					return
-				}
-			case 772:
-				if path[12:] == "076" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-076"
-					writeJSON(w, a.Static076())
-					return
-				}
-			case 775:
-				if path[12:] == "179" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-179"
-					writeJSON(w, a.Static179())
-					return
-				}
-			case 777:
-				if path[12:] == "029" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-029"
-					writeJSON(w, a.Static029())
-					return
-				}
-			case 784:
-				if path[12:] == "060" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-060"
-					writeJSON(w, a.Static060())
-					return
-				}
-			case 787:
-				if path[12:] == "163" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-163"
-					writeJSON(w, a.Static163())
-					return
-				}
-			case 789:
-				if path[12:] == "013" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-013"
-					writeJSON(w, a.Static013())
-					return
-				}
-			case 793:
-				if path[12:] == "116" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-116"
-					writeJSON(w, a.Static116())
-					return
-				}
-			case 796:
-				if path[12:] == "219" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-219"
-					writeJSON(w, a.Static219())
-					return
-				}
-			case 799:
-				if path[12:] == "087" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-087"
-					writeJSON(w, a.Static087())
-					return
-				}
-			case 803:
-				if path[12:] == "250" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-250"
-					writeJSON(w, a.Static250())
-					return
-				}
-			case 805:
-				if path[12:] == "100" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-100"
-					writeJSON(w, a.Static100())
-					return
-				}
-			case 809:
-				if path[12:] == "203" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-203"
-					writeJSON(w, a.Static203())
-					return
-				}
-			case 811:
-				if path[12:] == "071" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-071"
-					writeJSON(w, a.Static071())
-					return
-				}
-			case 815:
-				if path[12:] == "174" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-174"
-					writeJSON(w, a.Static174())
-					return
-				}
-			case 816:
-				if path[12:] == "024" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-024"
-					writeJSON(w, a.Static024())
-					return
-				}
-			case 820:
-				if path[12:] == "127" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-127"
-					writeJSON(w, a.Static127())
-					return
-				}
-			case 826:
-				if path[12:] == "098" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-098"
-					writeJSON(w, a.Static098())
-					return
-				}
-			case 832:
-				if path[12:] == "111" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-111"
-					writeJSON(w, a.Static111())
-					return
-				}
-			case 836:
-				if path[12:] == "214" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-214"
-					writeJSON(w, a.Static214())
-					return
-				}
-			case 838:
-				if path[12:] == "082" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-082"
-					writeJSON(w, a.Static082())
-					return
-				}
-			case 842:
-				if path[12:] == "185" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-185"
-					writeJSON(w, a.Static185())
-					return
-				}
-			case 844:
-				if path[12:] == "035" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-035"
-					writeJSON(w, a.Static035())
-					return
-				}
-			case 847:
-				if path[12:] == "138" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-138"
-					writeJSON(w, a.Static138())
-					return
-				}
-			case 859:
-				if path[12:] == "122" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-122"
-					writeJSON(w, a.Static122())
-					return
-				}
-			case 863:
-				if path[12:] == "225" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-225"
-					writeJSON(w, a.Static225())
-					return
-				}
-			case 866:
-				if path[12:] == "093" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-093"
-					writeJSON(w, a.Static093())
-					return
-				}
-			case 869:
-				if path[12:] == "196" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-196"
-					writeJSON(w, a.Static196())
-					return
-				}
-			case 871:
-				if path[12:] == "046" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-046"
-					writeJSON(w, a.Static046())
-					return
-				}
-			case 875:
-				if path[12:] == "149" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-149"
-					writeJSON(w, a.Static149())
-					return
-				}
-			case 881:
-				if path[12:] == "180" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-180"
-					writeJSON(w, a.Static180())
-					return
-				}
-			case 883:
-				if path[12:] == "030" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-030"
-					writeJSON(w, a.Static030())
-					return
-				}
-			case 887:
-				if path[12:] == "133" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-133"
-					writeJSON(w, a.Static133())
-					return
-				}
-			case 890:
-				if path[12:] == "236" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-236"
-					writeJSON(w, a.Static236())
-					return
-				}
-			case 898:
-				if path[12:] == "057" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-057"
-					writeJSON(w, a.Static057())
-					return
-				}
-			case 903:
-				if path[12:] == "220" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-220"
-					writeJSON(w, a.Static220())
-					return
-				}
-			case 909:
-				if path[12:] == "191" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-191"
-					writeJSON(w, a.Static191())
-					return
-				}
-			case 910:
-				if path[12:] == "041" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-041"
-					writeJSON(w, a.Static041())
-					return
-				}
-			case 914:
-				if path[12:] == "144" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-144"
-					writeJSON(w, a.Static144())
-					return
-				}
-			case 918:
-				if path[12:] == "247" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-247"
-					writeJSON(w, a.Static247())
-					return
-				}
-			case 925:
-				if path[12:] == "068" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-068"
-					writeJSON(w, a.Static068())
-					return
-				}
-			case 930:
-				if path[12:] == "231" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-231"
-					writeJSON(w, a.Static231())
-					return
-				}
-			case 938:
-				if path[12:] == "052" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-052"
-					writeJSON(w, a.Static052())
-					return
-				}
-			case 941:
-				if path[12:] == "155" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-155"
-					writeJSON(w, a.Static155())
-					return
-				}
-			case 943:
-				if path[12:] == "005" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-005"
-					writeJSON(w, a.Static005())
-					return
-				}
-			case 945:
-				if path[12:] == "258" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-258"
-					writeJSON(w, a.Static258())
-					return
-				}
-			case 947:
-				if path[12:] == "108" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-108"
-					writeJSON(w, a.Static108())
-					return
-				}
-			case 953:
-				if path[12:] == "079" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-079"
-					writeJSON(w, a.Static079())
-					return
-				}
-			case 957:
-				if path[12:] == "242" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-242"
-					writeJSON(w, a.Static242())
-					return
-				}
-			case 965:
-				if path[12:] == "063" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-063"
-					writeJSON(w, a.Static063())
-					return
-				}
-			case 969:
-				if path[12:] == "166" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-166"
-					writeJSON(w, a.Static166())
-					return
-				}
-			case 970:
-				if path[12:] == "016" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-016"
-					writeJSON(w, a.Static016())
-					return
-				}
-			case 974:
-				if path[12:] == "119" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-119"
-					writeJSON(w, a.Static119())
-					return
-				}
-			case 981:
-				if path[12:] == "150" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-150"
-					writeJSON(w, a.Static150())
-					return
-				}
-			case 982:
-				if path[12:] == "000" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-000"
-					writeJSON(w, a.Static000())
-					return
-				}
-			case 984:
-				if path[12:] == "253" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-253"
-					writeJSON(w, a.Static253())
-					return
-				}
-			case 986:
-				if path[12:] == "103" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-103"
-					writeJSON(w, a.Static103())
-					return
-				}
-			case 990:
-				if path[12:] == "206" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-206"
-					writeJSON(w, a.Static206())
-					return
-				}
-			case 992:
-				if path[12:] == "074" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-074"
-					writeJSON(w, a.Static074())
-					return
-				}
-			case 996:
-				if path[12:] == "177" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-177"
-					writeJSON(w, a.Static177())
-					return
-				}
-			case 997:
-				if path[12:] == "027" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-027"
-					writeJSON(w, a.Static027())
-					return
-				}
-			case 1008:
-				if path[12:] == "161" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-161"
-					writeJSON(w, a.Static161())
-					return
-				}
-			case 1010:
-				if path[12:] == "011" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-011"
-					writeJSON(w, a.Static011())
-					return
-				}
-			case 1013:
-				if path[12:] == "114" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-114"
-					writeJSON(w, a.Static114())
-					return
-				}
-			case 1017:
-				if path[12:] == "217" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-217"
-					writeJSON(w, a.Static217())
-					return
-				}
-			case 1019:
-				if path[12:] == "085" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-085"
-					writeJSON(w, a.Static085())
-					return
-				}
-			case 1023:
-				if path[12:] == "188" {
-					if r.Method != "GET" {
-						w.Header().Set("Allow", "GET")
-						w.WriteHeader(http.StatusMethodNotAllowed)
-						return
-					}
-					r.Pattern = "GET /large/static/page-188"
-					writeJSON(w, a.Static188())
-					return
-				}
+	if len(path) >= 4 {
+		switch (((uint32(path[len(path)-3]) | uint32(path[len(path)-2])<<8 | uint32(path[len(path)-1])<<16) + uint32(len(path))*0x27d4eb2f) * 0xfd7046c5) >> 22 {
+		case 1:
+			if path == "static/page-236" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-236"
+				writeJSON(w, a.Static236())
+				return
+			}
+		case 2:
+			if path == "static/page-148" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-148"
+				writeJSON(w, a.Static148())
+				return
+			}
+		case 10:
+			if path == "static/page-224" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-224"
+				writeJSON(w, a.Static224())
+				return
+			}
+		case 11:
+			if path == "static/page-136" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-136"
+				writeJSON(w, a.Static136())
+				return
+			}
+		case 13:
+			if path == "static/page-048" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-048"
+				writeJSON(w, a.Static048())
+				return
+			}
+		case 18:
+			if path == "static/page-212" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-212"
+				writeJSON(w, a.Static212())
+				return
+			}
+		case 20:
+			if path == "static/page-124" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-124"
+				writeJSON(w, a.Static124())
+				return
+			}
+		case 21:
+			if path == "static/page-036" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-036"
+				writeJSON(w, a.Static036())
+				return
+			}
+		case 27:
+			if path == "static/page-200" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-200"
+				writeJSON(w, a.Static200())
+				return
+			}
+		case 29:
+			if path == "static/page-112" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-112"
+				writeJSON(w, a.Static112())
+				return
+			}
+		case 30:
+			if path == "static/page-024" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-024"
+				writeJSON(w, a.Static024())
+				return
+			}
+		case 34:
+			if path == "static/page-189" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-189"
+				writeJSON(w, a.Static189())
+				return
+			}
+		case 37:
+			if path == "static/page-100" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-100"
+				writeJSON(w, a.Static100())
+				return
+			}
+		case 39:
+			if path == "static/page-012" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-012"
+				writeJSON(w, a.Static012())
+				return
+			}
+		case 43:
+			if path == "static/page-177" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-177"
+				writeJSON(w, a.Static177())
+				return
+			}
+		case 44:
+			if path == "static/page-089" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-089"
+				writeJSON(w, a.Static089())
+				return
+			}
+		case 48:
+			if path == "static/page-000" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-000"
+				writeJSON(w, a.Static000())
+				return
+			}
+		case 50:
+			if path == "static/page-253" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-253"
+				writeJSON(w, a.Static253())
+				return
+			}
+		case 51:
+			if path == "static/page-165" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-165"
+				writeJSON(w, a.Static165())
+				return
+			}
+		case 53:
+			if path == "static/page-077" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-077"
+				writeJSON(w, a.Static077())
+				return
+			}
+		case 59:
+			if path == "static/page-241" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-241"
+				writeJSON(w, a.Static241())
+				return
+			}
+		case 60:
+			if path == "static/page-153" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-153"
+				writeJSON(w, a.Static153())
+				return
+			}
+		case 62:
+			if path == "static/page-065" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-065"
+				writeJSON(w, a.Static065())
+				return
+			}
+		case 69:
+			if path == "static/page-141" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-141"
+				writeJSON(w, a.Static141())
+				return
+			}
+		case 70:
+			if path == "static/page-053" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-053"
+				writeJSON(w, a.Static053())
+				return
+			}
+		case 79:
+			if path == "static/page-041" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-041"
+				writeJSON(w, a.Static041())
+				return
+			}
+		case 92:
+			if path == "static/page-194" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-194"
+				writeJSON(w, a.Static194())
+				return
+			}
+		case 100:
+			if path == "static/page-182" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-182"
+				writeJSON(w, a.Static182())
+				return
+			}
+		case 102:
+			if path == "static/page-094" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-094"
+				writeJSON(w, a.Static094())
+				return
+			}
+		case 109:
+			if path == "static/page-170" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-170"
+				writeJSON(w, a.Static170())
+				return
+			}
+		case 111:
+			if path == "static/page-082" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-082"
+				writeJSON(w, a.Static082())
+				return
+			}
+		case 118:
+			if path == "static/page-228" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-228"
+				writeJSON(w, a.Static228())
+				return
+			}
+		case 119:
+			if path == "static/page-070" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-070"
+				writeJSON(w, a.Static070())
+				return
+			}
+		case 127:
+			if path == "static/page-216" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-216"
+				writeJSON(w, a.Static216())
+				return
+			}
+		case 128:
+			if path == "static/page-128" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-128"
+				writeJSON(w, a.Static128())
+				return
+			}
+		case 135:
+			if path == "static/page-204" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-204"
+				writeJSON(w, a.Static204())
+				return
+			}
+		case 137:
+			if path == "static/page-116" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-116"
+				writeJSON(w, a.Static116())
+				return
+			}
+		case 138:
+			if path == "static/page-028" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-028"
+				writeJSON(w, a.Static028())
+				return
+			}
+		case 146:
+			if path == "static/page-104" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-104"
+				writeJSON(w, a.Static104())
+				return
+			}
+		case 147:
+			if path == "static/page-016" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-016"
+				writeJSON(w, a.Static016())
+				return
+			}
+		case 156:
+			if path == "static/page-004" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-004"
+				writeJSON(w, a.Static004())
+				return
+			}
+		case 158:
+			if path == "static/page-257" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-257"
+				writeJSON(w, a.Static257())
+				return
+			}
+		case 160:
+			if path == "static/page-169" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-169"
+				writeJSON(w, a.Static169())
+				return
+			}
+		case 167:
+			if path == "static/page-245" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-245"
+				writeJSON(w, a.Static245())
+				return
+			}
+		case 168:
+			if path == "static/page-157" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-157"
+				writeJSON(w, a.Static157())
+				return
+			}
+		case 170:
+			if path == "static/page-069" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-069"
+				writeJSON(w, a.Static069())
+				return
+			}
+		case 176:
+			if path == "static/page-233" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-233"
+				writeJSON(w, a.Static233())
+				return
+			}
+		case 177:
+			if path == "static/page-145" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-145"
+				writeJSON(w, a.Static145())
+				return
+			}
+		case 179:
+			if path == "static/page-057" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-057"
+				writeJSON(w, a.Static057())
+				return
+			}
+		case 184:
+			if path == "static/page-221" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-221"
+				writeJSON(w, a.Static221())
+				return
+			}
+		case 186:
+			if path == "static/page-133" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-133"
+				writeJSON(w, a.Static133())
+				return
+			}
+		case 187:
+			if path == "static/page-045" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-045"
+				writeJSON(w, a.Static045())
+				return
+			}
+		case 195:
+			if path == "static/page-121" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-121"
+				writeJSON(w, a.Static121())
+				return
+			}
+		case 196:
+			if path == "static/page-033" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-033"
+				writeJSON(w, a.Static033())
+				return
+			}
+		case 200:
+			if path == "static/page-198" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-198"
+				writeJSON(w, a.Static198())
+				return
+			}
+		case 205:
+			if path == "static/page-021" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-021"
+				writeJSON(w, a.Static021())
+				return
+			}
+		case 209:
+			if path == "static/page-186" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-186"
+				writeJSON(w, a.Static186())
+				return
+			}
+		case 210:
+			if path == "static/page-098" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-098"
+				writeJSON(w, a.Static098())
+				return
+			}
+		case 217:
+			if path == "static/page-174" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-174"
+				writeJSON(w, a.Static174())
+				return
+			}
+		case 219:
+			if path == "static/page-086" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-086"
+				writeJSON(w, a.Static086())
+				return
+			}
+		case 225:
+			if path == "static/page-250" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-250"
+				writeJSON(w, a.Static250())
+				return
+			}
+		case 226:
+			if path == "static/page-162" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-162"
+				writeJSON(w, a.Static162())
+				return
+			}
+		case 228:
+			if path == "static/page-074" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-074"
+				writeJSON(w, a.Static074())
+				return
+			}
+		case 235:
+			if path == "static/page-150" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-150"
+				writeJSON(w, a.Static150())
+				return
+			}
+		case 236:
+			if path == "static/page-062" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-062"
+				writeJSON(w, a.Static062())
+				return
+			}
+		case 244:
+			if path == "static/page-208" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-208"
+				writeJSON(w, a.Static208())
+				return
+			}
+		case 245:
+			if path == "static/page-050" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-050"
+				writeJSON(w, a.Static050())
+				return
+			}
+		case 254:
+			if path == "static/page-108" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-108"
+				writeJSON(w, a.Static108())
+				return
+			}
+		case 264:
+			if path == "static/page-008" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-008"
+				writeJSON(w, a.Static008())
+				return
+			}
+		case 266:
+			if path == "static/page-191" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-191"
+				writeJSON(w, a.Static191())
+				return
+			}
+		case 275:
+			if path == "static/page-249" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-249"
+				writeJSON(w, a.Static249())
+				return
+			}
+		case 277:
+			if path == "static/page-091" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-091"
+				writeJSON(w, a.Static091())
+				return
+			}
+		case 284:
+			if path == "static/page-237" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-237"
+				writeJSON(w, a.Static237())
+				return
+			}
+		case 286:
+			if path == "static/page-149" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-149"
+				writeJSON(w, a.Static149())
+				return
+			}
+		case 293:
+			if path == "static/page-225" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-225"
+				writeJSON(w, a.Static225())
+				return
+			}
+		case 294:
+			if path == "static/page-137" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-137"
+				writeJSON(w, a.Static137())
+				return
+			}
+		case 296:
+			if path == "static/page-049" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-049"
+				writeJSON(w, a.Static049())
+				return
+			}
+		case 301:
+			if path == "static/page-213" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-213"
+				writeJSON(w, a.Static213())
+				return
+			}
+		case 303:
+			if path == "static/page-125" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-125"
+				writeJSON(w, a.Static125())
+				return
+			}
+		case 304:
+			if path == "static/page-037" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-037"
+				writeJSON(w, a.Static037())
+				return
+			}
+		case 310:
+			if path == "static/page-201" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-201"
+				writeJSON(w, a.Static201())
+				return
+			}
+		case 312:
+			if path == "static/page-113" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-113"
+				writeJSON(w, a.Static113())
+				return
+			}
+		case 313:
+			if path == "static/page-025" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-025"
+				writeJSON(w, a.Static025())
+				return
+			}
+		case 320:
+			if path == "static/page-101" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-101"
+				writeJSON(w, a.Static101())
+				return
+			}
+		case 322:
+			if path == "static/page-013" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-013"
+				writeJSON(w, a.Static013())
+				return
+			}
+		case 326:
+			if path == "static/page-178" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-178"
+				writeJSON(w, a.Static178())
+				return
+			}
+		case 331:
+			if path == "static/page-001" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-001"
+				writeJSON(w, a.Static001())
+				return
+			}
+		case 333:
+			if path == "static/page-254" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-254"
+				writeJSON(w, a.Static254())
+				return
+			}
+		case 334:
+			if path == "static/page-166" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-166"
+				writeJSON(w, a.Static166())
+				return
+			}
+		case 336:
+			if path == "static/page-078" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-078"
+				writeJSON(w, a.Static078())
+				return
+			}
+		case 342:
+			if path == "static/page-242" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-242"
+				writeJSON(w, a.Static242())
+				return
+			}
+		case 343:
+			if path == "static/page-154" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-154"
+				writeJSON(w, a.Static154())
+				return
+			}
+		case 345:
+			if path == "static/page-066" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-066"
+				writeJSON(w, a.Static066())
+				return
+			}
+		case 350:
+			if path == "static/page-230" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-230"
+				writeJSON(w, a.Static230())
+				return
+			}
+		case 352:
+			if path == "static/page-142" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-142"
+				writeJSON(w, a.Static142())
+				return
+			}
+		case 353:
+			if path == "static/page-054" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-054"
+				writeJSON(w, a.Static054())
+				return
+			}
+		case 361:
+			if path == "static/page-130" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-130"
+				writeJSON(w, a.Static130())
+				return
+			}
+		case 362:
+			if path == "static/page-042" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-042"
+				writeJSON(w, a.Static042())
+				return
+			}
+		case 371:
+			if path == "static/page-030" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-030"
+				writeJSON(w, a.Static030())
+				return
+			}
+		case 375:
+			if path == "static/page-195" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-195"
+				writeJSON(w, a.Static195())
+				return
+			}
+		case 383:
+			if path == "static/page-183" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-183"
+				writeJSON(w, a.Static183())
+				return
+			}
+		case 385:
+			if path == "static/page-095" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-095"
+				writeJSON(w, a.Static095())
+				return
+			}
+		case 392:
+			if path == "static/page-171" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-171"
+				writeJSON(w, a.Static171())
+				return
+			}
+		case 394:
+			if path == "static/page-083" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-083"
+				writeJSON(w, a.Static083())
+				return
+			}
+		case 401:
+			if path == "static/page-229" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-229"
+				writeJSON(w, a.Static229())
+				return
+			}
+		case 402:
+			if path == "static/page-071" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-071"
+				writeJSON(w, a.Static071())
+				return
+			}
+		case 410:
+			if path == "static/page-217" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-217"
+				writeJSON(w, a.Static217())
+				return
+			}
+		case 411:
+			if path == "static/page-129" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-129"
+				writeJSON(w, a.Static129())
+				return
+			}
+		case 419:
+			if path == "static/page-205" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-205"
+				writeJSON(w, a.Static205())
+				return
+			}
+		case 420:
+			if path == "static/page-117" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-117"
+				writeJSON(w, a.Static117())
+				return
+			}
+		case 422:
+			if path == "static/page-029" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-029"
+				writeJSON(w, a.Static029())
+				return
+			}
+		case 429:
+			if path == "static/page-105" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-105"
+				writeJSON(w, a.Static105())
+				return
+			}
+		case 430:
+			if path == "static/page-017" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-017"
+				writeJSON(w, a.Static017())
+				return
+			}
+		case 439:
+			if path == "static/page-005" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-005"
+				writeJSON(w, a.Static005())
+				return
+			}
+		case 441:
+			if path == "static/page-258" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-258"
+				writeJSON(w, a.Static258())
+				return
+			}
+		case 450:
+			if path == "static/page-246" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-246"
+				writeJSON(w, a.Static246())
+				return
+			}
+		case 452:
+			if path == "static/page-158" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-158"
+				writeJSON(w, a.Static158())
+				return
+			}
+		case 459:
+			if path == "static/page-234" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-234"
+				writeJSON(w, a.Static234())
+				return
+			}
+		case 460:
+			if path == "static/page-146" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-146"
+				writeJSON(w, a.Static146())
+				return
+			}
+		case 462:
+			if path == "static/page-058" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-058"
+				writeJSON(w, a.Static058())
+				return
+			}
+		case 467:
+			if path == "static/page-222" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-222"
+				writeJSON(w, a.Static222())
+				return
+			}
+		case 469:
+			if path == "static/page-134" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-134"
+				writeJSON(w, a.Static134())
+				return
+			}
+		case 471:
+			if path == "static/page-046" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-046"
+				writeJSON(w, a.Static046())
+				return
+			}
+		case 476:
+			if path == "static/page-210" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-210"
+				writeJSON(w, a.Static210())
+				return
+			}
+		case 478:
+			if path == "static/page-122" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-122"
+				writeJSON(w, a.Static122())
+				return
+			}
+		case 479:
+			if path == "static/page-034" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-034"
+				writeJSON(w, a.Static034())
+				return
+			}
+		case 483:
+			if path == "static/page-199" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-199"
+				writeJSON(w, a.Static199())
+				return
+			}
+		case 486:
+			if path == "static/page-110" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-110"
+				writeJSON(w, a.Static110())
+				return
+			}
+		case 488:
+			if path == "static/page-022" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-022"
+				writeJSON(w, a.Static022())
+				return
+			}
+		case 492:
+			if path == "static/page-187" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-187"
+				writeJSON(w, a.Static187())
+				return
+			}
+		case 493:
+			if path == "static/page-099" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-099"
+				writeJSON(w, a.Static099())
+				return
+			}
+		case 497:
+			if path == "static/page-010" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-010"
+				writeJSON(w, a.Static010())
+				return
+			}
+		case 501:
+			if path == "static/page-175" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-175"
+				writeJSON(w, a.Static175())
+				return
+			}
+		case 502:
+			if path == "static/page-087" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-087"
+				writeJSON(w, a.Static087())
+				return
+			}
+		case 508:
+			if path == "static/page-251" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-251"
+				writeJSON(w, a.Static251())
+				return
+			}
+		case 509:
+			if path == "static/page-163" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-163"
+				writeJSON(w, a.Static163())
+				return
+			}
+		case 511:
+			if path == "static/page-075" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-075"
+				writeJSON(w, a.Static075())
+				return
+			}
+		case 518:
+			if path == "static/page-151" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-151"
+				writeJSON(w, a.Static151())
+				return
+			}
+		case 519:
+			if path == "static/page-063" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-063"
+				writeJSON(w, a.Static063())
+				return
+			}
+		case 527:
+			if path == "static/page-209" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-209"
+				writeJSON(w, a.Static209())
+				return
+			}
+		case 528:
+			if path == "jobs" {
+				if r.Method != "POST" {
+					w.Header().Set("Allow", "POST")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "POST /large/jobs"
+				jobBodyPtr = new(Job)
+				if err = json.NewDecoder(r.Body).Decode(jobBodyPtr); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				job, err = a.Enqueue(jobBodyPtr)
+				if err != nil {
+					failed(w, err)
+					return
+				}
+				writeJSON(w, job)
+				return
+			} else if path == "static/page-051" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-051"
+				writeJSON(w, a.Static051())
+				return
+			}
+		case 534:
+			if path == "ping" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/ping"
+				a.Ping()
+				return
+			}
+		case 537:
+			if path == "static/page-109" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-109"
+				writeJSON(w, a.Static109())
+				return
+			}
+		case 547:
+			if path == "static/page-009" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-009"
+				writeJSON(w, a.Static009())
+				return
+			}
+		case 549:
+			if path == "static/page-192" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-192"
+				writeJSON(w, a.Static192())
+				return
+			}
+		case 558:
+			if path == "static/page-180" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-180"
+				writeJSON(w, a.Static180())
+				return
+			}
+		case 560:
+			if path == "static/page-092" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-092"
+				writeJSON(w, a.Static092())
+				return
+			}
+		case 567:
+			if path == "static/page-238" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-238"
+				writeJSON(w, a.Static238())
+				return
+			}
+		case 568:
+			if path == "static/page-080" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-080"
+				writeJSON(w, a.Static080())
+				return
+			}
+		case 576:
+			if path == "static/page-226" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-226"
+				writeJSON(w, a.Static226())
+				return
+			}
+		case 577:
+			if path == "static/page-138" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-138"
+				writeJSON(w, a.Static138())
+				return
+			}
+		case 585:
+			if path == "static/page-214" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-214"
+				writeJSON(w, a.Static214())
+				return
+			}
+		case 586:
+			if path == "static/page-126" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-126"
+				writeJSON(w, a.Static126())
+				return
+			}
+		case 588:
+			if path == "static/page-038" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-038"
+				writeJSON(w, a.Static038())
+				return
+			}
+		case 593:
+			if path == "static/page-202" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-202"
+				writeJSON(w, a.Static202())
+				return
+			}
+		case 595:
+			if path == "static/page-114" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-114"
+				writeJSON(w, a.Static114())
+				return
+			}
+		case 596:
+			if path == "static/page-026" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-026"
+				writeJSON(w, a.Static026())
+				return
+			}
+		case 604:
+			if path == "static/page-102" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-102"
+				writeJSON(w, a.Static102())
+				return
+			}
+		case 605:
+			if path == "static/page-014" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-014"
+				writeJSON(w, a.Static014())
+				return
+			}
+		case 609:
+			if path == "static/page-179" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-179"
+				writeJSON(w, a.Static179())
+				return
+			}
+		case 614:
+			if path == "static/page-002" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-002"
+				writeJSON(w, a.Static002())
+				return
+			}
+		case 616:
+			if path == "static/page-255" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-255"
+				writeJSON(w, a.Static255())
+				return
+			}
+		case 618:
+			if path == "static/page-167" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-167"
+				writeJSON(w, a.Static167())
+				return
+			}
+		case 619:
+			if path == "static/page-079" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-079"
+				writeJSON(w, a.Static079())
+				return
+			}
+		case 625:
+			if path == "static/page-243" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-243"
+				writeJSON(w, a.Static243())
+				return
+			}
+		case 626:
+			if path == "static/page-155" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-155"
+				writeJSON(w, a.Static155())
+				return
+			}
+		case 628:
+			if path == "static/page-067" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-067"
+				writeJSON(w, a.Static067())
+				return
+			}
+		case 634:
+			if path == "static/page-231" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-231"
+				writeJSON(w, a.Static231())
+				return
+			}
+		case 635:
+			if path == "static/page-143" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-143"
+				writeJSON(w, a.Static143())
+				return
+			}
+		case 637:
+			if path == "static/page-055" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-055"
+				writeJSON(w, a.Static055())
+				return
+			}
+		case 644:
+			if path == "static/page-131" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-131"
+				writeJSON(w, a.Static131())
+				return
+			}
+		case 645:
+			if path == "static/page-043" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-043"
+				writeJSON(w, a.Static043())
+				return
+			}
+		case 654:
+			if path == "static/page-031" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-031"
+				writeJSON(w, a.Static031())
+				return
+			}
+		case 658:
+			if path == "static/page-196" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-196"
+				writeJSON(w, a.Static196())
+				return
+			}
+		case 667:
+			if path == "static/page-184" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-184"
+				writeJSON(w, a.Static184())
+				return
+			}
+		case 668:
+			if path == "static/page-096" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-096"
+				writeJSON(w, a.Static096())
+				return
+			}
+		case 670:
+			if path == "items" {
+				if r.Method != "POST" {
+					w.Header().Set("Allow", "POST")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "POST /large/items"
+				itemBodyPtr = new(Item)
+				if err = json.NewDecoder(r.Body).Decode(itemBodyPtr); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				writeJSON(w, a.AddItem(*itemBodyPtr))
+				return
+			}
+		case 675:
+			if path == "static/page-172" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-172"
+				writeJSON(w, a.Static172())
+				return
+			}
+		case 677:
+			if path == "static/page-084" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-084"
+				writeJSON(w, a.Static084())
+				return
+			}
+		case 684:
+			if path == "static/page-160" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-160"
+				writeJSON(w, a.Static160())
+				return
+			}
+		case 686:
+			if path == "static/page-072" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-072"
+				writeJSON(w, a.Static072())
+				return
+			}
+		case 693:
+			if path == "static/page-218" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-218"
+				writeJSON(w, a.Static218())
+				return
+			}
+		case 694:
+			if path == "static/page-060" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-060"
+				writeJSON(w, a.Static060())
+				return
+			}
+		case 702:
+			if path == "static/page-206" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-206"
+				writeJSON(w, a.Static206())
+				return
+			}
+		case 703:
+			if path == "static/page-118" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-118"
+				writeJSON(w, a.Static118())
+				return
+			}
+		case 712:
+			if path == "static/page-106" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-106"
+				writeJSON(w, a.Static106())
+				return
+			}
+		case 713:
+			if path == "static/page-018" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-018"
+				writeJSON(w, a.Static018())
+				return
+			}
+		case 722:
+			if path == "static/page-006" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-006"
+				writeJSON(w, a.Static006())
+				return
+			}
+		case 724:
+			if path == "static/page-259" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-259"
+				writeJSON(w, a.Static259())
+				return
+			}
+		case 733:
+			if path == "static/page-247" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-247"
+				writeJSON(w, a.Static247())
+				return
+			}
+		case 735:
+			if path == "static/page-159" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-159"
+				writeJSON(w, a.Static159())
+				return
+			}
+		case 742:
+			if path == "static/page-235" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-235"
+				writeJSON(w, a.Static235())
+				return
+			}
+		case 743:
+			if path == "static/page-147" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-147"
+				writeJSON(w, a.Static147())
+				return
+			}
+		case 745:
+			if path == "static/page-059" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-059"
+				writeJSON(w, a.Static059())
+				return
+			}
+		case 751:
+			if path == "static/page-223" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-223"
+				writeJSON(w, a.Static223())
+				return
+			}
+		case 752:
+			if path == "static/page-135" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-135"
+				writeJSON(w, a.Static135())
+				return
+			}
+		case 754:
+			if path == "static/page-047" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-047"
+				writeJSON(w, a.Static047())
+				return
+			}
+		case 759:
+			if path == "static/page-211" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-211"
+				writeJSON(w, a.Static211())
+				return
+			}
+		case 761:
+			if path == "static/page-123" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-123"
+				writeJSON(w, a.Static123())
+				return
+			}
+		case 762:
+			if path == "static/page-035" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-035"
+				writeJSON(w, a.Static035())
+				return
+			}
+		case 770:
+			if path == "static/page-111" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-111"
+				writeJSON(w, a.Static111())
+				return
+			}
+		case 771:
+			if path == "static/page-023" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-023"
+				writeJSON(w, a.Static023())
+				return
+			}
+		case 775:
+			if path == "static/page-188" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-188"
+				writeJSON(w, a.Static188())
+				return
+			}
+		case 780:
+			if path == "static/page-011" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-011"
+				writeJSON(w, a.Static011())
+				return
+			}
+		case 784:
+			if path == "static/page-176" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-176"
+				writeJSON(w, a.Static176())
+				return
+			}
+		case 785:
+			if path == "static/page-088" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-088"
+				writeJSON(w, a.Static088())
+				return
+			}
+		case 791:
+			if path == "static/page-252" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-252"
+				writeJSON(w, a.Static252())
+				return
+			}
+		case 792:
+			if path == "static/page-164" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-164"
+				writeJSON(w, a.Static164())
+				return
+			}
+		case 794:
+			if path == "static/page-076" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-076"
+				writeJSON(w, a.Static076())
+				return
+			}
+		case 798:
+			if path == "users/login" {
+				if r.Method != "POST" {
+					w.Header().Set("Allow", "POST")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "POST /large/users/login"
+				loginBodyPtr = new(user.Login)
+				if err = json.NewDecoder(r.Body).Decode(loginBodyPtr); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				login, err = a.SetLogin(loginBodyPtr)
+				if err != nil {
+					failed(w, err)
+					return
+				}
+				writeJSON(w, login)
+				return
+			}
+		case 800:
+			if path == "static/page-240" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-240"
+				writeJSON(w, a.Static240())
+				return
+			}
+		case 801:
+			if path == "static/page-152" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-152"
+				writeJSON(w, a.Static152())
+				return
+			}
+		case 803:
+			if path == "static/page-064" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-064"
+				writeJSON(w, a.Static064())
+				return
+			}
+		case 810:
+			if path == "static/page-140" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-140"
+				writeJSON(w, a.Static140())
+				return
+			}
+		case 811:
+			if path == "static/page-052" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-052"
+				writeJSON(w, a.Static052())
+				return
+			}
+		case 820:
+			if path == "static/page-040" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-040"
+				writeJSON(w, a.Static040())
+				return
+			}
+		case 833:
+			if path == "static/page-193" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-193"
+				writeJSON(w, a.Static193())
+				return
+			}
+		case 841:
+			if path == "static/page-181" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-181"
+				writeJSON(w, a.Static181())
+				return
+			}
+		case 843:
+			if path == "static/page-093" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-093"
+				writeJSON(w, a.Static093())
+				return
+			}
+		case 850:
+			if path == "static/page-239" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-239"
+				writeJSON(w, a.Static239())
+				return
+			}
+		case 852:
+			if path == "static/page-081" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-081"
+				writeJSON(w, a.Static081())
+				return
+			}
+		case 859:
+			if path == "static/page-227" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-227"
+				writeJSON(w, a.Static227())
+				return
+			}
+		case 860:
+			if path == "static/page-139" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-139"
+				writeJSON(w, a.Static139())
+				return
+			}
+		case 868:
+			if path == "static/page-215" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-215"
+				writeJSON(w, a.Static215())
+				return
+			}
+		case 869:
+			if path == "static/page-127" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-127"
+				writeJSON(w, a.Static127())
+				return
+			}
+		case 871:
+			if path == "static/page-039" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-039"
+				writeJSON(w, a.Static039())
+				return
+			}
+		case 876:
+			if path == "static/page-203" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-203"
+				writeJSON(w, a.Static203())
+				return
+			}
+		case 878:
+			if path == "static/page-115" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-115"
+				writeJSON(w, a.Static115())
+				return
+			}
+		case 879:
+			if path == "static/page-027" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-027"
+				writeJSON(w, a.Static027())
+				return
+			}
+		case 887:
+			if path == "static/page-103" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-103"
+				writeJSON(w, a.Static103())
+				return
+			}
+		case 888:
+			if path == "static/page-015" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-015"
+				writeJSON(w, a.Static015())
+				return
+			}
+		case 897:
+			if path == "static/page-003" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-003"
+				writeJSON(w, a.Static003())
+				return
+			}
+		case 899:
+			if path == "static/page-256" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-256"
+				writeJSON(w, a.Static256())
+				return
+			}
+		case 901:
+			if path == "static/page-168" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-168"
+				writeJSON(w, a.Static168())
+				return
+			}
+		case 908:
+			if path == "static/page-244" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-244"
+				writeJSON(w, a.Static244())
+				return
+			}
+		case 909:
+			if path == "static/page-156" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-156"
+				writeJSON(w, a.Static156())
+				return
+			}
+		case 911:
+			if path == "static/page-068" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-068"
+				writeJSON(w, a.Static068())
+				return
+			}
+		case 917:
+			if path == "static/page-232" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-232"
+				writeJSON(w, a.Static232())
+				return
+			}
+		case 918:
+			if path == "static/page-144" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-144"
+				writeJSON(w, a.Static144())
+				return
+			}
+		case 920:
+			if path == "static/page-056" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-056"
+				writeJSON(w, a.Static056())
+				return
+			}
+		case 925:
+			if path == "static/page-220" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-220"
+				writeJSON(w, a.Static220())
+				return
+			}
+		case 927:
+			if path == "static/page-132" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-132"
+				writeJSON(w, a.Static132())
+				return
+			}
+		case 928:
+			if path == "static/page-044" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-044"
+				writeJSON(w, a.Static044())
+				return
+			}
+		case 936:
+			if path == "static/page-120" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-120"
+				writeJSON(w, a.Static120())
+				return
+			}
+		case 937:
+			if path == "static/page-032" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-032"
+				writeJSON(w, a.Static032())
+				return
+			}
+		case 941:
+			if path == "static/page-197" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-197"
+				writeJSON(w, a.Static197())
+				return
+			}
+		case 946:
+			if path == "static/page-020" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-020"
+				writeJSON(w, a.Static020())
+				return
+			}
+		case 950:
+			if path == "static/page-185" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-185"
+				writeJSON(w, a.Static185())
+				return
+			}
+		case 951:
+			if path == "static/page-097" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-097"
+				writeJSON(w, a.Static097())
+				return
+			}
+		case 958:
+			if path == "static/page-173" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-173"
+				writeJSON(w, a.Static173())
+				return
+			}
+		case 960:
+			if path == "static/page-085" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-085"
+				writeJSON(w, a.Static085())
+				return
+			}
+		case 967:
+			if path == "static/page-161" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-161"
+				writeJSON(w, a.Static161())
+				return
+			}
+		case 969:
+			if path == "static/page-073" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-073"
+				writeJSON(w, a.Static073())
+				return
+			}
+		case 976:
+			if path == "static/page-219" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-219"
+				writeJSON(w, a.Static219())
+				return
+			}
+		case 977:
+			if path == "static/page-061" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-061"
+				writeJSON(w, a.Static061())
+				return
+			}
+		case 985:
+			if path == "static/page-207" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-207"
+				writeJSON(w, a.Static207())
+				return
+			}
+		case 986:
+			if path == "static/page-119" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-119"
+				writeJSON(w, a.Static119())
+				return
+			}
+		case 988:
+			if path == "users/me" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/users/me"
+				user1, err = a.Me()
+				if err != nil {
+					failed(w, err)
+					return
+				}
+				writeJSON(w, user1)
+				return
+			}
+		case 995:
+			if path == "static/page-107" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-107"
+				writeJSON(w, a.Static107())
+				return
+			}
+		case 996:
+			if path == "static/page-019" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-019"
+				writeJSON(w, a.Static019())
+				return
+			}
+		case 1005:
+			if path == "static/page-007" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-007"
+				writeJSON(w, a.Static007())
+				return
+			}
+		case 1007:
+			if path == "static/page-190" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-190"
+				writeJSON(w, a.Static190())
+				return
+			}
+		case 1016:
+			if path == "static/page-248" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-248"
+				writeJSON(w, a.Static248())
+				return
+			}
+		case 1018:
+			if path == "static/page-090" {
+				if r.Method != "GET" {
+					w.Header().Set("Allow", "GET")
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+				r.Pattern = "GET /large/static/page-090"
+				writeJSON(w, a.Static090())
+				return
 			}
 		}
+	} else {
+		switch path {
+		case "a":
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			r.Pattern = "GET /large/a"
+			a1, err = a.GetA()
+			if err != nil {
+				failed(w, err)
+				return
+			}
+			writeJSON(w, a1)
+			return
+		}
 	}
-	if r.Method != "GET" {
-		w.Header().Set("Allow", "GET")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	if i := strings.IndexByte(path, '/'); i > 0 {
-		switch path[:i] {
+	if i0 = strings.IndexByte(path, '/'); i0 > 0 {
+		switch path[:i0] {
 		case "catalog":
-			path = path[i+1:]
-			if i := strings.IndexByte(path, '/'); i > 0 {
-				s1 := path[:i]
-				switch path[i+1:] {
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
+			if i1 = strings.IndexByte(path, '/'); i1 > 0 {
+				s1 = path[:i1]
+				switch path[i1+1:] {
 				case "number":
 					if intVal, err = strconv.Atoi(s1); err == nil {
 						r.Pattern = "GET /large/catalog/{n}/number"
@@ -2931,18 +3044,23 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case "docs":
-			path = path[i+1:]
-			if i := strings.IndexByte(path, '/'); i > 0 {
-				s1 := path[:i]
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
+			if i1 = strings.IndexByte(path, '/'); i1 > 0 {
+				s1 = path[:i1]
 				if intVal, err = strconv.Atoi(s1); err == nil {
-					p2 := path[i+1:]
+					p2 = path[i1+1:]
 					if p2 == "edit" {
 						r.Pattern = "GET /large/docs/{id}/edit"
 						writeJSON(w, a.DocEditByID(intVal))
 						return
 					}
 				}
-				path = path[i+1:]
+				path = path[i1+1:]
 				if path == "edit" {
 					r.Pattern = "GET /large/docs/{slug}/edit"
 					r.SetPathValue("slug", s1)
@@ -2950,8 +3068,109 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+		case "fw":
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
+			if i1 = strings.IndexByte(path, '/'); i1 < 0 {
+				if path != "" {
+					r.Pattern = "GET /large/fw/{x}"
+					r.SetPathValue("x", path)
+					writeJSON(w, a.FwAny(path))
+					return
+				}
+			} else if i1 > 0 {
+				switch path[:i1] {
+				case "abc":
+					path = path[i1+1:]
+					if i2 = strings.IndexByte(path, '/'); i2 > 0 {
+						s2 = path[:i2]
+						switch path[i2+1:] {
+						case "q":
+							r.Pattern = "GET /large/fw/abc/{y}/q"
+							r.SetPathValue("y", s2)
+							writeJSON(w, a.FwABC(s2))
+							return
+						}
+					}
+				case "cde":
+					path = path[i1+1:]
+					if i2 = strings.IndexByte(path, '/'); i2 > 0 {
+						s2 = path[:i2]
+						switch path[i2+1:] {
+						case "q":
+							r.Pattern = "GET /large/fw/cde/{y}/q"
+							r.SetPathValue("y", s2)
+							writeJSON(w, a.FwCDE(s2))
+							return
+						}
+					}
+				}
+			}
+		case "counters":
+			if r.Method != "POST" {
+				w.Header().Set("Allow", "POST")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
+			if strings.IndexByte(path, '/') < 0 {
+				if intVal, err = strconv.Atoi(path); err == nil {
+					r.Pattern = "POST /large/counters/{id}"
+					intValBodyPtr = new(int)
+					if err = json.NewDecoder(r.Body).Decode(intValBodyPtr); err != nil {
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
+					writeJSON(w, a.SetCounter(intVal, *intValBodyPtr))
+					return
+				}
+			}
+		case "star":
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
+			if i1 = strings.IndexByte(path, '/'); i1 > 0 {
+				s1 = path[:i1]
+				path = path[i1+1:]
+				if i2 = strings.IndexByte(path, '/'); i2 < 0 {
+					if path == "a" {
+						r.Pattern = "GET /large/star/{p}/a"
+						r.SetPathValue("p", s1)
+						writeJSON(w, a.StarA(s1))
+						return
+					}
+				} else if i2 > 0 {
+					if path[:i2] == "a" {
+						r.Pattern = "GET /large/star/{p}/a/*"
+						r.SetPathValue("p", s1)
+						writeJSON(w, a.StarAny(s1))
+						return
+					}
+					s2 = path[:i2]
+					switch path[i2+1:] {
+					case "b":
+						r.Pattern = "GET /large/star/{p}/{q}/b"
+						r.SetPathValue("p", s1)
+						r.SetPathValue("q", s2)
+						writeJSON(w, a.StarB(s1, s2))
+						return
+					}
+				}
+			}
 		case "tenants":
-			path = path[i+1:]
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
 			if len(path) > 10 && path[10] == '/' {
 				if path[:7] == "tenant-" {
 					switch ((uint32(path[7]) | uint32(path[8])<<8 | uint32(path[9])<<16) * 0xd3a2646d) >> 22 {
@@ -6859,7 +7078,12 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case "versions":
-			path = path[i+1:]
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
 			if len(path) > 4 && path[4] == '/' {
 				switch ((uint32(path[1]) | uint32(path[2])<<8 | uint32(path[3])<<16) * 0xd3a2646d) >> 22 {
 				case 1:
@@ -9985,13 +10209,18 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case "words":
-			path = path[i+1:]
-			if i := strings.IndexByte(path, '/'); i > 0 {
-				if i >= 3 {
-					switch (((uint32(path[i-3]) | uint32(path[i-2])<<8 | uint32(path[0])<<16 | uint32(path[2])<<24) + uint32(i)*0x27d4eb2f) * 0xfd7046c5) >> 23 {
+			if r.Method != "GET" {
+				w.Header().Set("Allow", "GET")
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			path = path[i0+1:]
+			if i1 = strings.IndexByte(path, '/'); i1 > 0 {
+				if i1 >= 3 {
+					switch (((uint32(path[i1-3]) | uint32(path[i1-2])<<8 | uint32(path[0])<<16 | uint32(path[2])<<24) + uint32(i1)*0x27d4eb2f) * 0xfd7046c5) >> 23 {
 					case 0:
-						if path[:i] == "olo" {
-							path = path[i+1:]
+						if path[:i1] == "olo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/olo/{id}"
@@ -10002,8 +10231,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 3:
-						if path[:i] == "zilo" {
-							path = path[i+1:]
+						if path[:i1] == "zilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zilo/{id}"
@@ -10012,8 +10241,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "rentu" {
-							path = path[i+1:]
+						} else if path[:i1] == "rentu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/rentu/{id}"
@@ -10024,8 +10253,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 5:
-						if path[:i] == "anbello" {
-							path = path[i+1:]
+						if path[:i1] == "anbello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anbello/{id}"
@@ -10036,8 +10265,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 6:
-						if path[:i] == "belmilo" {
-							path = path[i+1:]
+						if path[:i1] == "belmilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belmilo/{id}"
@@ -10046,8 +10275,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "belzilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "belzilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belzilo/{id}"
@@ -10058,8 +10287,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 9:
-						if path[:i] == "turen" {
-							path = path[i+1:]
+						if path[:i1] == "turen" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/turen/{id}"
@@ -10068,8 +10297,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "quorquorlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "quorquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorquorlo/{id}"
@@ -10080,8 +10309,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 11:
-						if path[:i] == "vashtulo" {
-							path = path[i+1:]
+						if path[:i1] == "vashtulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashtulo/{id}"
@@ -10092,8 +10321,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 12:
-						if path[:i] == "miquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "miquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/miquorlo/{id}"
@@ -10104,8 +10333,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 23:
-						if path[:i] == "anlo" {
-							path = path[i+1:]
+						if path[:i1] == "anlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anlo/{id}"
@@ -10114,8 +10343,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "desttulo" {
-							path = path[i+1:]
+						} else if path[:i1] == "desttulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/desttulo/{id}"
@@ -10126,8 +10355,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 25:
-						if path[:i] == "loanlo" {
-							path = path[i+1:]
+						if path[:i1] == "loanlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/loanlo/{id}"
@@ -10138,8 +10367,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 26:
-						if path[:i] == "lobello" {
-							path = path[i+1:]
+						if path[:i1] == "lobello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lobello/{id}"
@@ -10150,8 +10379,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 28:
-						if path[:i] == "renkalo" {
-							path = path[i+1:]
+						if path[:i1] == "renkalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renkalo/{id}"
@@ -10162,8 +10391,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 29:
-						if path[:i] == "kamilo" {
-							path = path[i+1:]
+						if path[:i1] == "kamilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kamilo/{id}"
@@ -10174,8 +10403,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 31:
-						if path[:i] == "kazilo" {
-							path = path[i+1:]
+						if path[:i1] == "kazilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kazilo/{id}"
@@ -10186,8 +10415,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 32:
-						if path[:i] == "beltu" {
-							path = path[i+1:]
+						if path[:i1] == "beltu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/beltu/{id}"
@@ -10198,8 +10427,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 34:
-						if path[:i] == "destmi" {
-							path = path[i+1:]
+						if path[:i1] == "destmi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destmi/{id}"
@@ -10208,8 +10437,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "karenlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "karenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/karenlo/{id}"
@@ -10220,8 +10449,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 39:
-						if path[:i] == "lolo" {
-							path = path[i+1:]
+						if path[:i1] == "lolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lolo/{id}"
@@ -10230,8 +10459,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "mitu" {
-							path = path[i+1:]
+						} else if path[:i1] == "mitu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mitu/{id}"
@@ -10242,8 +10471,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 42:
-						if path[:i] == "miren" {
-							path = path[i+1:]
+						if path[:i1] == "miren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/miren/{id}"
@@ -10252,8 +10481,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "vashlolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "vashlolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashlolo/{id}"
@@ -10264,8 +10493,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 43:
-						if path[:i] == "rendest" {
-							path = path[i+1:]
+						if path[:i1] == "rendest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/rendest/{id}"
@@ -10274,8 +10503,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "tukalo" {
-							path = path[i+1:]
+						} else if path[:i1] == "tukalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tukalo/{id}"
@@ -10286,8 +10515,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 47:
-						if path[:i] == "belkalo" {
-							path = path[i+1:]
+						if path[:i1] == "belkalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belkalo/{id}"
@@ -10296,8 +10525,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "vashanlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "vashanlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashanlo/{id}"
@@ -10308,8 +10537,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 54:
-						if path[:i] == "destlolo" {
-							path = path[i+1:]
+						if path[:i1] == "destlolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destlolo/{id}"
@@ -10320,8 +10549,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 56:
-						if path[:i] == "kao" {
-							path = path[i+1:]
+						if path[:i1] == "kao" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kao/{id}"
@@ -10332,8 +10561,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 61:
-						if path[:i] == "quorvashlo" {
-							path = path[i+1:]
+						if path[:i1] == "quorvashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorvashlo/{id}"
@@ -10344,8 +10573,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 63:
-						if path[:i] == "mian" {
-							path = path[i+1:]
+						if path[:i1] == "mian" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mian/{id}"
@@ -10354,8 +10583,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "beldest" {
-							path = path[i+1:]
+						} else if path[:i1] == "beldest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/beldest/{id}"
@@ -10366,8 +10595,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 64:
-						if path[:i] == "otu" {
-							path = path[i+1:]
+						if path[:i1] == "otu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/otu/{id}"
@@ -10376,8 +10605,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "renvash" {
-							path = path[i+1:]
+						} else if path[:i1] == "renvash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renvash/{id}"
@@ -10388,8 +10617,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 67:
-						if path[:i] == "kavash" {
-							path = path[i+1:]
+						if path[:i1] == "kavash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kavash/{id}"
@@ -10400,8 +10629,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 70:
-						if path[:i] == "desttu" {
-							path = path[i+1:]
+						if path[:i1] == "desttu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/desttu/{id}"
@@ -10412,8 +10641,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 71:
-						if path[:i] == "renrenlo" {
-							path = path[i+1:]
+						if path[:i1] == "renrenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renrenlo/{id}"
@@ -10424,8 +10653,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 72:
-						if path[:i] == "tuzi" {
-							path = path[i+1:]
+						if path[:i1] == "tuzi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuzi/{id}"
@@ -10434,8 +10663,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "vashmilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "vashmilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashmilo/{id}"
@@ -10444,8 +10673,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "vashzilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "vashzilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashzilo/{id}"
@@ -10456,8 +10685,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 75:
-						if path[:i] == "kami" {
-							path = path[i+1:]
+						if path[:i1] == "kami" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kami/{id}"
@@ -10466,8 +10695,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "ano" {
-							path = path[i+1:]
+						} else if path[:i1] == "ano" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ano/{id}"
@@ -10478,8 +10707,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 77:
-						if path[:i] == "mio" {
-							path = path[i+1:]
+						if path[:i1] == "mio" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mio/{id}"
@@ -10488,8 +10717,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "mikalo" {
-							path = path[i+1:]
+						} else if path[:i1] == "mikalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mikalo/{id}"
@@ -10498,8 +10727,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "ovashlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "ovashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ovashlo/{id}"
@@ -10510,8 +10739,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 81:
-						if path[:i] == "renbello" {
-							path = path[i+1:]
+						if path[:i1] == "renbello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renbello/{id}"
@@ -10522,8 +10751,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 83:
-						if path[:i] == "vashmi" {
-							path = path[i+1:]
+						if path[:i1] == "vashmi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashmi/{id}"
@@ -10532,8 +10761,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "belvash" {
-							path = path[i+1:]
+						} else if path[:i1] == "belvash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belvash/{id}"
@@ -10544,8 +10773,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 84:
-						if path[:i] == "quorlo" {
-							path = path[i+1:]
+						if path[:i1] == "quorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorlo/{id}"
@@ -10556,8 +10785,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 85:
-						if path[:i] == "destmilo" {
-							path = path[i+1:]
+						if path[:i1] == "destmilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destmilo/{id}"
@@ -10566,8 +10795,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "destzilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "destzilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destzilo/{id}"
@@ -10578,8 +10807,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 87:
-						if path[:i] == "renquor" {
-							path = path[i+1:]
+						if path[:i1] == "renquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renquor/{id}"
@@ -10590,8 +10819,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 90:
-						if path[:i] == "belrenlo" {
-							path = path[i+1:]
+						if path[:i1] == "belrenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belrenlo/{id}"
@@ -10602,8 +10831,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 100:
-						if path[:i] == "belbello" {
-							path = path[i+1:]
+						if path[:i1] == "belbello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belbello/{id}"
@@ -10614,8 +10843,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 104:
-						if path[:i] == "zimilo" {
-							path = path[i+1:]
+						if path[:i1] == "zimilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zimilo/{id}"
@@ -10626,8 +10855,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 106:
-						if path[:i] == "belquor" {
-							path = path[i+1:]
+						if path[:i1] == "belquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belquor/{id}"
@@ -10636,8 +10865,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "zizilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "zizilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zizilo/{id}"
@@ -10648,8 +10877,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 109:
-						if path[:i] == "zimi" {
-							path = path[i+1:]
+						if path[:i1] == "zimi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zimi/{id}"
@@ -10660,8 +10889,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 110:
-						if path[:i] == "zirenlo" {
-							path = path[i+1:]
+						if path[:i1] == "zirenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zirenlo/{id}"
@@ -10672,8 +10901,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 113:
-						if path[:i] == "vashkalo" {
-							path = path[i+1:]
+						if path[:i1] == "vashkalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashkalo/{id}"
@@ -10684,8 +10913,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 116:
-						if path[:i] == "tulo" {
-							path = path[i+1:]
+						if path[:i1] == "tulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tulo/{id}"
@@ -10694,8 +10923,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "kalolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "kalolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kalolo/{id}"
@@ -10706,8 +10935,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 119:
-						if path[:i] == "vashtu" {
-							path = path[i+1:]
+						if path[:i1] == "vashtu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashtu/{id}"
@@ -10718,8 +10947,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 123:
-						if path[:i] == "kadest" {
-							path = path[i+1:]
+						if path[:i1] == "kadest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kadest/{id}"
@@ -10730,8 +10959,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 126:
-						if path[:i] == "destkalo" {
-							path = path[i+1:]
+						if path[:i1] == "destkalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destkalo/{id}"
@@ -10742,8 +10971,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 128:
-						if path[:i] == "reno" {
-							path = path[i+1:]
+						if path[:i1] == "reno" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/reno/{id}"
@@ -10754,8 +10983,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 129:
-						if path[:i] == "anmi" {
-							path = path[i+1:]
+						if path[:i1] == "anmi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anmi/{id}"
@@ -10764,8 +10993,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "vashdest" {
-							path = path[i+1:]
+						} else if path[:i1] == "vashdest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashdest/{id}"
@@ -10776,8 +11005,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 133:
-						if path[:i] == "tuanlo" {
-							path = path[i+1:]
+						if path[:i1] == "tuanlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuanlo/{id}"
@@ -10788,8 +11017,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 135:
-						if path[:i] == "tubello" {
-							path = path[i+1:]
+						if path[:i1] == "tubello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tubello/{id}"
@@ -10800,8 +11029,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 141:
-						if path[:i] == "destdest" {
-							path = path[i+1:]
+						if path[:i1] == "destdest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destdest/{id}"
@@ -10812,8 +11041,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 143:
-						if path[:i] == "zivash" {
-							path = path[i+1:]
+						if path[:i1] == "zivash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zivash/{id}"
@@ -10822,8 +11051,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "tuo" {
-							path = path[i+1:]
+						} else if path[:i1] == "tuo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuo/{id}"
@@ -10834,8 +11063,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 145:
-						if path[:i] == "lomi" {
-							path = path[i+1:]
+						if path[:i1] == "lomi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lomi/{id}"
@@ -10846,8 +11075,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 149:
-						if path[:i] == "vashvash" {
-							path = path[i+1:]
+						if path[:i1] == "vashvash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashvash/{id}"
@@ -10856,8 +11085,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "anmilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "anmilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anmilo/{id}"
@@ -10868,8 +11097,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 151:
-						if path[:i] == "anzilo" {
-							path = path[i+1:]
+						if path[:i1] == "anzilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anzilo/{id}"
@@ -10880,8 +11109,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 154:
-						if path[:i] == "oquor" {
-							path = path[i+1:]
+						if path[:i1] == "oquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/oquor/{id}"
@@ -10892,8 +11121,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 155:
-						if path[:i] == "quorzi" {
-							path = path[i+1:]
+						if path[:i1] == "quorzi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorzi/{id}"
@@ -10902,8 +11131,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "anrenlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "anrenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anrenlo/{id}"
@@ -10914,8 +11143,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 156:
-						if path[:i] == "vashrenlo" {
-							path = path[i+1:]
+						if path[:i1] == "vashrenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashrenlo/{id}"
@@ -10926,8 +11155,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 157:
-						if path[:i] == "quorren" {
-							path = path[i+1:]
+						if path[:i1] == "quorren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorren/{id}"
@@ -10938,8 +11167,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 160:
-						if path[:i] == "renquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "renquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renquorlo/{id}"
@@ -10950,8 +11179,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 162:
-						if path[:i] == "destvash" {
-							path = path[i+1:]
+						if path[:i1] == "destvash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destvash/{id}"
@@ -10962,8 +11191,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 164:
-						if path[:i] == "kaolo" {
-							path = path[i+1:]
+						if path[:i1] == "kaolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kaolo/{id}"
@@ -10974,8 +11203,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 165:
-						if path[:i] == "katulo" {
-							path = path[i+1:]
+						if path[:i1] == "katulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/katulo/{id}"
@@ -10986,8 +11215,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 166:
-						if path[:i] == "vashbello" {
-							path = path[i+1:]
+						if path[:i1] == "vashbello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashbello/{id}"
@@ -10996,8 +11225,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "mianlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "mianlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mianlo/{id}"
@@ -11008,8 +11237,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 167:
-						if path[:i] == "mizi" {
-							path = path[i+1:]
+						if path[:i1] == "mizi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mizi/{id}"
@@ -11020,8 +11249,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 168:
-						if path[:i] == "mibello" {
-							path = path[i+1:]
+						if path[:i1] == "mibello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mibello/{id}"
@@ -11032,8 +11261,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 169:
-						if path[:i] == "kaquor" {
-							path = path[i+1:]
+						if path[:i1] == "kaquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kaquor/{id}"
@@ -11042,8 +11271,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "destrenlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "destrenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destrenlo/{id}"
@@ -11054,8 +11283,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 170:
-						if path[:i] == "lomilo" {
-							path = path[i+1:]
+						if path[:i1] == "lomilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lomilo/{id}"
@@ -11066,8 +11295,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 172:
-						if path[:i] == "lozilo" {
-							path = path[i+1:]
+						if path[:i1] == "lozilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lozilo/{id}"
@@ -11078,8 +11307,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 173:
-						if path[:i] == "vashquor" {
-							path = path[i+1:]
+						if path[:i1] == "vashquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashquor/{id}"
@@ -11090,8 +11319,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 174:
-						if path[:i] == "quoran" {
-							path = path[i+1:]
+						if path[:i1] == "quoran" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quoran/{id}"
@@ -11102,8 +11331,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 176:
-						if path[:i] == "lorenlo" {
-							path = path[i+1:]
+						if path[:i1] == "lorenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lorenlo/{id}"
@@ -11114,8 +11343,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 179:
-						if path[:i] == "destbello" {
-							path = path[i+1:]
+						if path[:i1] == "destbello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destbello/{id}"
@@ -11124,8 +11353,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "belquorlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "belquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belquorlo/{id}"
@@ -11136,8 +11365,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 185:
-						if path[:i] == "destquor" {
-							path = path[i+1:]
+						if path[:i1] == "destquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destquor/{id}"
@@ -11148,8 +11377,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 188:
-						if path[:i] == "anvash" {
-							path = path[i+1:]
+						if path[:i1] == "anvash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anvash/{id}"
@@ -11160,8 +11389,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 191:
-						if path[:i] == "zilolo" {
-							path = path[i+1:]
+						if path[:i1] == "zilolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zilolo/{id}"
@@ -11172,8 +11401,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 193:
-						if path[:i] == "kabel" {
-							path = path[i+1:]
+						if path[:i1] == "kabel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kabel/{id}"
@@ -11184,8 +11413,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 198:
-						if path[:i] == "zidest" {
-							path = path[i+1:]
+						if path[:i1] == "zidest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zidest/{id}"
@@ -11196,8 +11425,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 208:
-						if path[:i] == "oan" {
-							path = path[i+1:]
+						if path[:i1] == "oan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/oan/{id}"
@@ -11208,8 +11437,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 209:
-						if path[:i] == "lovash" {
-							path = path[i+1:]
+						if path[:i1] == "lovash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lovash/{id}"
@@ -11218,8 +11447,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "quorolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "quorolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorolo/{id}"
@@ -11230,8 +11459,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 210:
-						if path[:i] == "belo" {
-							path = path[i+1:]
+						if path[:i1] == "belo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belo/{id}"
@@ -11242,8 +11471,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 211:
-						if path[:i] == "milo" {
-							path = path[i+1:]
+						if path[:i1] == "milo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/milo/{id}"
@@ -11252,8 +11481,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "renvashlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "renvashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renvashlo/{id}"
@@ -11264,8 +11493,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 214:
-						if path[:i] == "oren" {
-							path = path[i+1:]
+						if path[:i1] == "oren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/oren/{id}"
@@ -11276,8 +11505,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 215:
-						if path[:i] == "kavashlo" {
-							path = path[i+1:]
+						if path[:i1] == "kavashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kavashlo/{id}"
@@ -11288,8 +11517,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 219:
-						if path[:i] == "ololo" {
-							path = path[i+1:]
+						if path[:i1] == "ololo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ololo/{id}"
@@ -11300,8 +11529,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 223:
-						if path[:i] == "tumi" {
-							path = path[i+1:]
+						if path[:i1] == "tumi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tumi/{id}"
@@ -11312,8 +11541,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 226:
-						if path[:i] == "oquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "oquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/oquorlo/{id}"
@@ -11324,8 +11553,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 230:
-						if path[:i] == "belvashlo" {
-							path = path[i+1:]
+						if path[:i1] == "belvashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belvashlo/{id}"
@@ -11336,8 +11565,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 236:
-						if path[:i] == "anlolo" {
-							path = path[i+1:]
+						if path[:i1] == "anlolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anlolo/{id}"
@@ -11348,8 +11577,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 239:
-						if path[:i] == "quorbel" {
-							path = path[i+1:]
+						if path[:i1] == "quorbel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorbel/{id}"
@@ -11360,8 +11589,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 240:
-						if path[:i] == "zitulo" {
-							path = path[i+1:]
+						if path[:i1] == "zitulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zitulo/{id}"
@@ -11370,8 +11599,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "ziolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "ziolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ziolo/{id}"
@@ -11382,8 +11611,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 241:
-						if path[:i] == "kaquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "kaquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kaquorlo/{id}"
@@ -11394,8 +11623,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 244:
-						if path[:i] == "ziquor" {
-							path = path[i+1:]
+						if path[:i1] == "ziquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ziquor/{id}"
@@ -11404,8 +11633,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "andest" {
-							path = path[i+1:]
+						} else if path[:i1] == "andest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/andest/{id}"
@@ -11416,8 +11645,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 245:
-						if path[:i] == "vashquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "vashquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashquorlo/{id}"
@@ -11428,8 +11657,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 254:
-						if path[:i] == "renlo" {
-							path = path[i+1:]
+						if path[:i1] == "renlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renlo/{id}"
@@ -11440,8 +11669,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 257:
-						if path[:i] == "lololo" {
-							path = path[i+1:]
+						if path[:i1] == "lololo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lololo/{id}"
@@ -11450,8 +11679,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "destquorlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "destquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destquorlo/{id}"
@@ -11462,8 +11691,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 264:
-						if path[:i] == "loo" {
-							path = path[i+1:]
+						if path[:i1] == "loo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/loo/{id}"
@@ -11474,8 +11703,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 265:
-						if path[:i] == "lodest" {
-							path = path[i+1:]
+						if path[:i1] == "lodest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lodest/{id}"
@@ -11486,8 +11715,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 267:
-						if path[:i] == "ozi" {
-							path = path[i+1:]
+						if path[:i1] == "ozi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ozi/{id}"
@@ -11498,8 +11727,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 268:
-						if path[:i] == "zibel" {
-							path = path[i+1:]
+						if path[:i1] == "zibel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zibel/{id}"
@@ -11510,8 +11739,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 271:
-						if path[:i] == "karen" {
-							path = path[i+1:]
+						if path[:i1] == "karen" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/karen/{id}"
@@ -11522,8 +11751,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 278:
-						if path[:i] == "tumilo" {
-							path = path[i+1:]
+						if path[:i1] == "tumilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tumilo/{id}"
@@ -11534,8 +11763,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 280:
-						if path[:i] == "tuzilo" {
-							path = path[i+1:]
+						if path[:i1] == "tuzilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuzilo/{id}"
@@ -11546,8 +11775,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 284:
-						if path[:i] == "bello" {
-							path = path[i+1:]
+						if path[:i1] == "bello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/bello/{id}"
@@ -11556,8 +11785,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "turenlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "turenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/turenlo/{id}"
@@ -11568,8 +11797,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 285:
-						if path[:i] == "anolo" {
-							path = path[i+1:]
+						if path[:i1] == "anolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anolo/{id}"
@@ -11580,8 +11809,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 286:
-						if path[:i] == "antulo" {
-							path = path[i+1:]
+						if path[:i1] == "antulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/antulo/{id}"
@@ -11592,8 +11821,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 287:
-						if path[:i] == "quortulo" {
-							path = path[i+1:]
+						if path[:i1] == "quortulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quortulo/{id}"
@@ -11604,8 +11833,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 289:
-						if path[:i] == "anquor" {
-							path = path[i+1:]
+						if path[:i1] == "anquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anquor/{id}"
@@ -11616,8 +11845,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 290:
-						if path[:i] == "zivashlo" {
-							path = path[i+1:]
+						if path[:i1] == "zivashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zivashlo/{id}"
@@ -11628,8 +11857,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 296:
-						if path[:i] == "obel" {
-							path = path[i+1:]
+						if path[:i1] == "obel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/obel/{id}"
@@ -11638,8 +11867,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "vashvashlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "vashvashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashvashlo/{id}"
@@ -11650,8 +11879,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 306:
-						if path[:i] == "kakalo" {
-							path = path[i+1:]
+						if path[:i1] == "kakalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kakalo/{id}"
@@ -11660,8 +11889,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "loolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "loolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/loolo/{id}"
@@ -11672,8 +11901,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 307:
-						if path[:i] == "renren" {
-							path = path[i+1:]
+						if path[:i1] == "renren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renren/{id}"
@@ -11682,8 +11911,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "lotulo" {
-							path = path[i+1:]
+						} else if path[:i1] == "lotulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lotulo/{id}"
@@ -11694,8 +11923,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 308:
-						if path[:i] == "quormi" {
-							path = path[i+1:]
+						if path[:i1] == "quormi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quormi/{id}"
@@ -11706,8 +11935,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 309:
-						if path[:i] == "katu" {
-							path = path[i+1:]
+						if path[:i1] == "katu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/katu/{id}"
@@ -11716,8 +11945,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "destvashlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "destvashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destvashlo/{id}"
@@ -11728,8 +11957,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 310:
-						if path[:i] == "loquor" {
-							path = path[i+1:]
+						if path[:i1] == "loquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/loquor/{id}"
@@ -11740,8 +11969,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 312:
-						if path[:i] == "mimilo" {
-							path = path[i+1:]
+						if path[:i1] == "mimilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mimilo/{id}"
@@ -11752,8 +11981,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 313:
-						if path[:i] == "quoro" {
-							path = path[i+1:]
+						if path[:i1] == "quoro" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quoro/{id}"
@@ -11764,8 +11993,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 314:
-						if path[:i] == "anbel" {
-							path = path[i+1:]
+						if path[:i1] == "anbel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anbel/{id}"
@@ -11774,8 +12003,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "mizilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "mizilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mizilo/{id}"
@@ -11786,8 +12015,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 315:
-						if path[:i] == "zio" {
-							path = path[i+1:]
+						if path[:i1] == "zio" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zio/{id}"
@@ -11798,8 +12027,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 316:
-						if path[:i] == "ziquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "ziquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ziquorlo/{id}"
@@ -11810,8 +12039,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 317:
-						if path[:i] == "mimi" {
-							path = path[i+1:]
+						if path[:i1] == "mimi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mimi/{id}"
@@ -11820,8 +12049,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "tuvash" {
-							path = path[i+1:]
+						} else if path[:i1] == "tuvash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuvash/{id}"
@@ -11832,8 +12061,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 318:
-						if path[:i] == "quorlolo" {
-							path = path[i+1:]
+						if path[:i1] == "quorlolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorlolo/{id}"
@@ -11842,8 +12071,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "mirenlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "mirenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mirenlo/{id}"
@@ -11854,8 +12083,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 321:
-						if path[:i] == "destlo" {
-							path = path[i+1:]
+						if path[:i1] == "destlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destlo/{id}"
@@ -11866,8 +12095,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 326:
-						if path[:i] == "renzi" {
-							path = path[i+1:]
+						if path[:i1] == "renzi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renzi/{id}"
@@ -11878,8 +12107,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 327:
-						if path[:i] == "belren" {
-							path = path[i+1:]
+						if path[:i1] == "belren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belren/{id}"
@@ -11890,8 +12119,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 331:
-						if path[:i] == "vasho" {
-							path = path[i+1:]
+						if path[:i1] == "vasho" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vasho/{id}"
@@ -11902,8 +12131,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 333:
-						if path[:i] == "kaan" {
-							path = path[i+1:]
+						if path[:i1] == "kaan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kaan/{id}"
@@ -11914,8 +12143,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 335:
-						if path[:i] == "lobel" {
-							path = path[i+1:]
+						if path[:i1] == "lobel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lobel/{id}"
@@ -11924,8 +12153,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "anvashlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "anvashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anvashlo/{id}"
@@ -11936,8 +12165,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 342:
-						if path[:i] == "oanlo" {
-							path = path[i+1:]
+						if path[:i1] == "oanlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/oanlo/{id}"
@@ -11948,8 +12177,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 343:
-						if path[:i] == "zitu" {
-							path = path[i+1:]
+						if path[:i1] == "zitu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zitu/{id}"
@@ -11960,8 +12189,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 344:
-						if path[:i] == "quortu" {
-							path = path[i+1:]
+						if path[:i1] == "quortu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quortu/{id}"
@@ -11970,8 +12199,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "renan" {
-							path = path[i+1:]
+						} else if path[:i1] == "renan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renan/{id}"
@@ -11982,8 +12211,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 346:
-						if path[:i] == "ziren" {
-							path = path[i+1:]
+						if path[:i1] == "ziren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ziren/{id}"
@@ -11994,8 +12223,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 349:
-						if path[:i] == "quormilo" {
-							path = path[i+1:]
+						if path[:i1] == "quormilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quormilo/{id}"
@@ -12004,8 +12233,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "quorzilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "quorzilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorzilo/{id}"
@@ -12016,8 +12245,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 351:
-						if path[:i] == "mivash" {
-							path = path[i+1:]
+						if path[:i1] == "mivash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mivash/{id}"
@@ -12028,8 +12257,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 356:
-						if path[:i] == "belzi" {
-							path = path[i+1:]
+						if path[:i1] == "belzi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belzi/{id}"
@@ -12038,8 +12267,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "lovashlo" {
-							path = path[i+1:]
+						} else if path[:i1] == "lovashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lovashlo/{id}"
@@ -12050,8 +12279,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 359:
-						if path[:i] == "renolo" {
-							path = path[i+1:]
+						if path[:i1] == "renolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renolo/{id}"
@@ -12062,8 +12291,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 362:
-						if path[:i] == "anquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "anquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anquorlo/{id}"
@@ -12074,8 +12303,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 363:
-						if path[:i] == "antu" {
-							path = path[i+1:]
+						if path[:i1] == "antu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/antu/{id}"
@@ -12086,8 +12315,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 366:
-						if path[:i] == "tulolo" {
-							path = path[i+1:]
+						if path[:i1] == "tulolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tulolo/{id}"
@@ -12098,8 +12327,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 367:
-						if path[:i] == "zian" {
-							path = path[i+1:]
+						if path[:i1] == "zian" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zian/{id}"
@@ -12110,8 +12339,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 371:
-						if path[:i] == "vashlo" {
-							path = path[i+1:]
+						if path[:i1] == "vashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashlo/{id}"
@@ -12122,8 +12351,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 373:
-						if path[:i] == "tudest" {
-							path = path[i+1:]
+						if path[:i1] == "tudest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tudest/{id}"
@@ -12134,8 +12363,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 374:
-						if path[:i] == "belan" {
-							path = path[i+1:]
+						if path[:i1] == "belan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belan/{id}"
@@ -12146,8 +12375,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 378:
-						if path[:i] == "belolo" {
-							path = path[i+1:]
+						if path[:i1] == "belolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belolo/{id}"
@@ -12158,8 +12387,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 379:
-						if path[:i] == "lotu" {
-							path = path[i+1:]
+						if path[:i1] == "lotu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lotu/{id}"
@@ -12170,8 +12399,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 381:
-						if path[:i] == "zikalo" {
-							path = path[i+1:]
+						if path[:i1] == "zikalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zikalo/{id}"
@@ -12182,8 +12411,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 383:
-						if path[:i] == "loquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "loquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/loquorlo/{id}"
@@ -12194,8 +12423,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 387:
-						if path[:i] == "anan" {
-							path = path[i+1:]
+						if path[:i1] == "anan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anan/{id}"
@@ -12206,8 +12435,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 389:
-						if path[:i] == "renbel" {
-							path = path[i+1:]
+						if path[:i1] == "renbel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renbel/{id}"
@@ -12218,8 +12447,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 390:
-						if path[:i] == "quorkalo" {
-							path = path[i+1:]
+						if path[:i1] == "quorkalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorkalo/{id}"
@@ -12230,8 +12459,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 392:
-						if path[:i] == "anren" {
-							path = path[i+1:]
+						if path[:i1] == "anren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anren/{id}"
@@ -12242,8 +12471,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 393:
-						if path[:i] == "vashren" {
-							path = path[i+1:]
+						if path[:i1] == "vashren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashren/{id}"
@@ -12252,8 +12481,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "destzi" {
-							path = path[i+1:]
+						} else if path[:i1] == "destzi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destzi/{id}"
@@ -12264,8 +12493,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 395:
-						if path[:i] == "kaanlo" {
-							path = path[i+1:]
+						if path[:i1] == "kaanlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kaanlo/{id}"
@@ -12276,8 +12505,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 397:
-						if path[:i] == "kabello" {
-							path = path[i+1:]
+						if path[:i1] == "kabello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kabello/{id}"
@@ -12288,8 +12517,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 399:
-						if path[:i] == "milolo" {
-							path = path[i+1:]
+						if path[:i1] == "milolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/milolo/{id}"
@@ -12300,8 +12529,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 402:
-						if path[:i] == "loan" {
-							path = path[i+1:]
+						if path[:i1] == "loan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/loan/{id}"
@@ -12312,8 +12541,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 405:
-						if path[:i] == "destren" {
-							path = path[i+1:]
+						if path[:i1] == "destren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destren/{id}"
@@ -12322,8 +12551,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "quordest" {
-							path = path[i+1:]
+						} else if path[:i1] == "quordest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quordest/{id}"
@@ -12334,8 +12563,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 406:
-						if path[:i] == "midest" {
-							path = path[i+1:]
+						if path[:i1] == "midest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/midest/{id}"
@@ -12344,8 +12573,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "okalo" {
-							path = path[i+1:]
+						} else if path[:i1] == "okalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/okalo/{id}"
@@ -12356,8 +12585,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 409:
-						if path[:i] == "belbel" {
-							path = path[i+1:]
+						if path[:i1] == "belbel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belbel/{id}"
@@ -12368,8 +12597,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 411:
-						if path[:i] == "destan" {
-							path = path[i+1:]
+						if path[:i1] == "destan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destan/{id}"
@@ -12380,8 +12609,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 413:
-						if path[:i] == "loren" {
-							path = path[i+1:]
+						if path[:i1] == "loren" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/loren/{id}"
@@ -12392,8 +12621,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 414:
-						if path[:i] == "tuolo" {
-							path = path[i+1:]
+						if path[:i1] == "tuolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuolo/{id}"
@@ -12404,8 +12633,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 415:
-						if path[:i] == "tutulo" {
-							path = path[i+1:]
+						if path[:i1] == "tutulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tutulo/{id}"
@@ -12416,8 +12645,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 419:
-						if path[:i] == "tuquor" {
-							path = path[i+1:]
+						if path[:i1] == "tuquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuquor/{id}"
@@ -12428,8 +12657,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 420:
-						if path[:i] == "omi" {
-							path = path[i+1:]
+						if path[:i1] == "omi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/omi/{id}"
@@ -12440,8 +12669,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 426:
-						if path[:i] == "quorvash" {
-							path = path[i+1:]
+						if path[:i1] == "quorvash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorvash/{id}"
@@ -12450,8 +12679,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "ankalo" {
-							path = path[i+1:]
+						} else if path[:i1] == "ankalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ankalo/{id}"
@@ -12462,8 +12691,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 433:
-						if path[:i] == "quorrenlo" {
-							path = path[i+1:]
+						if path[:i1] == "quorrenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorrenlo/{id}"
@@ -12474,8 +12703,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 436:
-						if path[:i] == "kazi" {
-							path = path[i+1:]
+						if path[:i1] == "kazi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kazi/{id}"
@@ -12486,8 +12715,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 437:
-						if path[:i] == "rentulo" {
-							path = path[i+1:]
+						if path[:i1] == "rentulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/rentulo/{id}"
@@ -12498,8 +12727,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 442:
-						if path[:i] == "ovash" {
-							path = path[i+1:]
+						if path[:i1] == "ovash" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ovash/{id}"
@@ -12508,8 +12737,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "vashzi" {
-							path = path[i+1:]
+						} else if path[:i1] == "vashzi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashzi/{id}"
@@ -12520,8 +12749,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 443:
-						if path[:i] == "tubel" {
-							path = path[i+1:]
+						if path[:i1] == "tubel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tubel/{id}"
@@ -12530,8 +12759,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "quorbello" {
-							path = path[i+1:]
+						} else if path[:i1] == "quorbello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorbello/{id}"
@@ -12542,8 +12771,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 444:
-						if path[:i] == "vasholo" {
-							path = path[i+1:]
+						if path[:i1] == "vasholo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vasholo/{id}"
@@ -12554,8 +12783,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 445:
-						if path[:i] == "omilo" {
-							path = path[i+1:]
+						if path[:i1] == "omilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/omilo/{id}"
@@ -12564,8 +12793,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "ozilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "ozilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/ozilo/{id}"
@@ -12576,8 +12805,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 447:
-						if path[:i] == "lokalo" {
-							path = path[i+1:]
+						if path[:i1] == "lokalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lokalo/{id}"
@@ -12588,8 +12817,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 448:
-						if path[:i] == "mitulo" {
-							path = path[i+1:]
+						if path[:i1] == "mitulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mitulo/{id}"
@@ -12598,8 +12827,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "miolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "miolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/miolo/{id}"
@@ -12610,8 +12839,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 449:
-						if path[:i] == "quorquor" {
-							path = path[i+1:]
+						if path[:i1] == "quorquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/quorquor/{id}"
@@ -12622,8 +12851,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 452:
-						if path[:i] == "miquor" {
-							path = path[i+1:]
+						if path[:i1] == "miquor" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/miquor/{id}"
@@ -12634,8 +12863,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 457:
-						if path[:i] == "tutu" {
-							path = path[i+1:]
+						if path[:i1] == "tutu" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tutu/{id}"
@@ -12644,8 +12873,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "beltulo" {
-							path = path[i+1:]
+						} else if path[:i1] == "beltulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/beltulo/{id}"
@@ -12654,8 +12883,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "destolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "destolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destolo/{id}"
@@ -12666,8 +12895,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 461:
-						if path[:i] == "vashan" {
-							path = path[i+1:]
+						if path[:i1] == "vashan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashan/{id}"
@@ -12678,8 +12907,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 462:
-						if path[:i] == "odest" {
-							path = path[i+1:]
+						if path[:i1] == "odest" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/odest/{id}"
@@ -12690,8 +12919,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 463:
-						if path[:i] == "oolo" {
-							path = path[i+1:]
+						if path[:i1] == "oolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/oolo/{id}"
@@ -12702,8 +12931,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 464:
-						if path[:i] == "tuvashlo" {
-							path = path[i+1:]
+						if path[:i1] == "tuvashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuvashlo/{id}"
@@ -12714,8 +12943,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 468:
-						if path[:i] == "renlolo" {
-							path = path[i+1:]
+						if path[:i1] == "renlolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renlolo/{id}"
@@ -12726,8 +12955,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 471:
-						if path[:i] == "zizi" {
-							path = path[i+1:]
+						if path[:i1] == "zizi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zizi/{id}"
@@ -12738,8 +12967,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 472:
-						if path[:i] == "zibello" {
-							path = path[i+1:]
+						if path[:i1] == "zibello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/zibello/{id}"
@@ -12750,8 +12979,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 473:
-						if path[:i] == "renanlo" {
-							path = path[i+1:]
+						if path[:i1] == "renanlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renanlo/{id}"
@@ -12762,8 +12991,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 475:
-						if path[:i] == "vashbel" {
-							path = path[i+1:]
+						if path[:i1] == "vashbel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/vashbel/{id}"
@@ -12774,8 +13003,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 476:
-						if path[:i] == "mibel" {
-							path = path[i+1:]
+						if path[:i1] == "mibel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mibel/{id}"
@@ -12786,8 +13015,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 478:
-						if path[:i] == "desto" {
-							path = path[i+1:]
+						if path[:i1] == "desto" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/desto/{id}"
@@ -12798,8 +13027,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 479:
-						if path[:i] == "renmi" {
-							path = path[i+1:]
+						if path[:i1] == "renmi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renmi/{id}"
@@ -12810,8 +13039,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 480:
-						if path[:i] == "tuan" {
-							path = path[i+1:]
+						if path[:i1] == "tuan" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuan/{id}"
@@ -12822,8 +13051,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 481:
-						if path[:i] == "kalo" {
-							path = path[i+1:]
+						if path[:i1] == "kalo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/kalo/{id}"
@@ -12834,8 +13063,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 487:
-						if path[:i] == "destbel" {
-							path = path[i+1:]
+						if path[:i1] == "destbel" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/destbel/{id}"
@@ -12844,8 +13073,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "bellolo" {
-							path = path[i+1:]
+						} else if path[:i1] == "bellolo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/bellolo/{id}"
@@ -12856,8 +13085,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 489:
-						if path[:i] == "orenlo" {
-							path = path[i+1:]
+						if path[:i1] == "orenlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/orenlo/{id}"
@@ -12868,8 +13097,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 490:
-						if path[:i] == "anzi" {
-							path = path[i+1:]
+						if path[:i1] == "anzi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/anzi/{id}"
@@ -12880,8 +13109,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 491:
-						if path[:i] == "tuquorlo" {
-							path = path[i+1:]
+						if path[:i1] == "tuquorlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/tuquorlo/{id}"
@@ -12892,8 +13121,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 493:
-						if path[:i] == "belanlo" {
-							path = path[i+1:]
+						if path[:i1] == "belanlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belanlo/{id}"
@@ -12904,8 +13133,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 498:
-						if path[:i] == "mivashlo" {
-							path = path[i+1:]
+						if path[:i1] == "mivashlo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/mivashlo/{id}"
@@ -12916,8 +13145,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 499:
-						if path[:i] == "renmilo" {
-							path = path[i+1:]
+						if path[:i1] == "renmilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renmilo/{id}"
@@ -12926,8 +13155,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "obello" {
-							path = path[i+1:]
+						} else if path[:i1] == "obello" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/obello/{id}"
@@ -12936,8 +13165,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									return
 								}
 							}
-						} else if path[:i] == "renzilo" {
-							path = path[i+1:]
+						} else if path[:i1] == "renzilo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/renzilo/{id}"
@@ -12948,8 +13177,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 504:
-						if path[:i] == "otulo" {
-							path = path[i+1:]
+						if path[:i1] == "otulo" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/otulo/{id}"
@@ -12960,8 +13189,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 506:
-						if path[:i] == "lozi" {
-							path = path[i+1:]
+						if path[:i1] == "lozi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/lozi/{id}"
@@ -12972,8 +13201,8 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case 509:
-						if path[:i] == "belmi" {
-							path = path[i+1:]
+						if path[:i1] == "belmi" {
+							path = path[i1+1:]
 							if strings.IndexByte(path, '/') < 0 {
 								if path != "" {
 									r.Pattern = "GET /large/words/belmi/{id}"
@@ -12985,9 +13214,9 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				} else {
-					switch path[:i] {
+					switch path[:i1] {
 					case "oo":
-						path = path[i+1:]
+						path = path[i1+1:]
 						if strings.IndexByte(path, '/') < 0 {
 							if path != "" {
 								r.Pattern = "GET /large/words/oo/{id}"

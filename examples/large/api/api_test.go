@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -92,8 +93,8 @@ func TestCandidateShapes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if n := strings.Count(string(src), "switch path[i+1:] {"); n != 1 {
-		t.Fatalf("%d literal-first candidate switches, want 1 (catalog)", n)
+	if !regexp.MustCompile(`switch path\[i\d+\+1:\] \{\s*case "number":`).Match(src) {
+		t.Fatal("catalog candidates no longer dispatch on their literal first")
 	}
 	// the docs pair shares "edit": ordered chain, int candidate tried first
 	i := strings.Index(string(src), `r.Pattern = "GET /large/docs/{id}/edit"`)

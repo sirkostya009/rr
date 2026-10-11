@@ -65,6 +65,16 @@ func (pa *PostsApi) CreatePost(body *Post) (Post, error) {
 	return *body, nil
 }
 
+// drafts keeps the bodies it is handed, as a handler passing work to a queue
+// would: the generator must not write the handler's result over them
+var drafts []*Post
+
+//rr:route POST /api/drafts
+func (pa *PostsApi) QueueDraft(body *Post) (Post, error) {
+	drafts = append(drafts, body)
+	return Post{ID: -1, Slug: "queued", Title: body.Title}, nil
+}
+
 // Two handlers share GET /api/posts/{...}: their param types don't overlap,
 // so they dispatch in declaration order — ints here, slugs below.
 //

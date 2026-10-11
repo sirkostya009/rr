@@ -6,6 +6,7 @@ import (
 	"github.com/sirkostya009/ggen"
 	"iter"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -67,9 +68,15 @@ func writeJSONAny(w http.ResponseWriter, v any) error {
 
 func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
+	var i1 int
+	var s1 string
+	var values url.Values
+	var query PostsQuery
+	var raw string
+	var postBody Post
 	var post Post
-	var newUser services.NewUser
-	var newUsers []services.NewUser
+	var newUserBody services.NewUser
+	var newUsersBody []services.NewUser
 	var user User
 	var users []User
 	path := r.URL.Path
@@ -97,7 +104,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header()["Content-Type"] = __jsonCT
-		if err := ggen.WriteTo(w, s.AdminApi.Stats()); err != nil {
+		if err = ggen.WriteTo(w, s.AdminApi.Stats()); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -106,35 +113,34 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			r.Pattern = "GET /api/v2/posts"
-			v1 := r.URL.Query()
-			var query PostsQuery
-			if v2 := v1.Get("page"); v2 != "" {
-				var err error
-				if query.Page, err = strconv.Atoi(v2); err != nil {
+			values = r.URL.Query()
+			query = PostsQuery{}
+			if raw = values.Get("page"); raw != "" {
+				if query.Page, err = strconv.Atoi(raw); err != nil {
 					badRequest(w, err)
 					return
 				}
 			}
-			query.Tag = v1.Get("tag")
+			query.Tag = values.Get("tag")
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
+			if err = ggen.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/v2/posts"
-			post, err = readJSON[Post](r)
+			postBody, err = readJSON[Post](r)
 			if err != nil {
 				badRequest(w, err)
 				return
 			}
-			post, err = s.PostsApi.CreatePost(&post)
+			post, err = s.PostsApi.CreatePost(&postBody)
 			if err != nil {
 				postNotFound(w, r, err)
 				return
 			}
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteTo(w, post); err != nil {
+			if err = ggen.WriteTo(w, post); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -148,19 +154,19 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			r.Pattern = "GET /api/v2/users"
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteSliceTo(w, s.UsersApi.GetUsers()); err != nil {
+			if err = ggen.WriteSliceTo(w, s.UsersApi.GetUsers()); err != nil {
 				handleError(w, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/v2/users"
-			newUser, err = readJSON[services.NewUser](r)
+			newUserBody, err = readJSON[services.NewUser](r)
 			if err != nil {
 				badRequest(w, err)
 				return
 			}
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteTo(w, s.UsersApi.PostUser(newUser)); err != nil {
+			if err = ggen.WriteTo(w, s.UsersApi.PostUser(newUserBody)); err != nil {
 				handleError(w, err)
 				return
 			}
@@ -176,13 +182,13 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "POST /api/v2/users/bulk"
-		newUsers, err = readJSONSlice[services.NewUser](r)
+		newUsersBody, err = readJSONSlice[services.NewUser](r)
 		if err != nil {
 			badRequest(w, err)
 			return
 		}
 		w.Header()["Content-Type"] = __jsonCT
-		if err := ggen.WriteSliceTo(w, s.UsersApi.PostUsers(newUsers)); err != nil {
+		if err = ggen.WriteSliceTo(w, s.UsersApi.PostUsers(newUsersBody)); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -200,7 +206,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header()["Content-Type"] = __jsonCT
-		if err := ggen.WriteTo(w, user); err != nil {
+		if err = ggen.WriteTo(w, user); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -218,7 +224,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header()["Content-Type"] = __jsonCT
-		if err := ggen.WriteSliceTo(w, users); err != nil {
+		if err = ggen.WriteSliceTo(w, users); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -240,14 +246,14 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							return
 						}
 						w.Header()["Content-Type"] = __jsonCT
-						if err := ggen.WriteTo(w, user); err != nil {
+						if err = ggen.WriteTo(w, user); err != nil {
 							handleError(w, err)
 							return
 						}
 					case "DELETE":
 						r.Pattern = "DELETE /api/v2/users/{id}"
 						r.SetPathValue("id", path)
-						if err := s.UsersApi.DeleteUser(path); err != nil {
+						if err = s.UsersApi.DeleteUser(path); err != nil {
 							handleError(w, err)
 						}
 					default:
@@ -264,7 +270,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			path = path[6:]
-			if i := strings.IndexByte(path, '/'); i < 0 {
+			if i1 = strings.IndexByte(path, '/'); i1 < 0 {
 				if isUUID(path) {
 					r.Pattern = "GET /api/v2/posts/{id}"
 					r.SetPathValue("id", path)
@@ -274,7 +280,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					w.Header()["Content-Type"] = __jsonCT
-					if err := ggen.WriteTo(w, post); err != nil {
+					if err = ggen.WriteTo(w, post); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
@@ -289,16 +295,16 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					w.Header()["Content-Type"] = __jsonCT
-					if err := ggen.WriteTo(w, post); err != nil {
+					if err = ggen.WriteTo(w, post); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					return
 				}
-			} else if i > 0 {
-				s1 := path[:i]
+			} else if i1 > 0 {
+				s1 = path[:i1]
 				if isUUID(s1) {
-					path = path[i+1:]
+					path = path[i1+1:]
 					if len(path) >= 9 && path[:9] == "comments/" {
 						path = path[9:]
 						if strings.IndexByte(path, '/') < 0 {
@@ -306,7 +312,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								r.Pattern = "GET /api/v2/posts/{pid}/comments/{cid}"
 								r.SetPathValue("pid", s1)
 								r.SetPathValue("cid", path)
-								if err := writeJSONAny(w, s.PostsApi.GetComment(s1, path)); err != nil {
+								if err = writeJSONAny(w, s.PostsApi.GetComment(s1, path)); err != nil {
 									postNotFound(w, r, err)
 									return
 								}

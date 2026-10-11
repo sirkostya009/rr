@@ -5,6 +5,7 @@ package v1
 import (
 	"github.com/sirkostya009/ggen"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,11 +43,23 @@ func writeJSONAny(w http.ResponseWriter, v any) error {
 
 func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
+	var i0 int
+	var i1 int
+	var s1 string
+	var values url.Values
+	var headers ReqMeta
+	var query PostsQuery
+	var raw string
+	var postBody Post
 	var post Post
+	var sq SearchQuery
 	var users []User
-	var user User
+	var userBody User
 	var intVal int
+	var raw1 string
+	var user User
 	var intVal1 int
+	var intVal2 int
 	var float64Val float64
 	var boolVal bool
 	path := r.URL.Path
@@ -73,7 +86,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !requireToken(w, r.Header.Get("Authorization")) {
 			return
 		}
-		if err := writeJSONAny(w, s.AdminApi.Stats()); err != nil {
+		if err = writeJSONAny(w, s.AdminApi.Stats()); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -85,8 +98,8 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "GET /api/v1/debug/query"
-		v1 := r.URL.Query()
-		if err := writeJSONAny(w, s.SearchApi.DebugQuery(v1)); err != nil {
+		values = r.URL.Query()
+		if err = writeJSONAny(w, s.SearchApi.DebugQuery(values)); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -98,11 +111,11 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "POST /api/v1/forms/login"
-		if err := r.ParseForm(); err != nil {
+		if err = r.ParseForm(); err != nil {
 			badRequest(w, r.Header.Get("X-Request-Id"), err)
 			return
 		}
-		if err := writeJSONAny(w, s.FormsApi.Login(r.PostForm)); err != nil {
+		if err = writeJSONAny(w, s.FormsApi.Login(r.PostForm)); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -114,11 +127,11 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "POST /api/v1/forms/upload"
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		if err = r.ParseMultipartForm(32 << 20); err != nil {
 			badRequest(w, r.Header.Get("X-Request-Id"), err)
 			return
 		}
-		if err := writeJSONAny(w, s.FormsApi.Upload(r.MultipartForm)); err != nil {
+		if err = writeJSONAny(w, s.FormsApi.Upload(r.MultipartForm)); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -130,10 +143,10 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "GET /api/v1/meta"
-		var headers ReqMeta
+		headers = ReqMeta{}
 		headers.RequestID = r.Header.Get("X-Request-Id")
 		headers.Trace = r.Header.Get("X-Trace")
-		if err := writeJSONAny(w, s.FormsApi.Meta(headers)); err != nil {
+		if err = writeJSONAny(w, s.FormsApi.Meta(headers)); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -142,35 +155,34 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			r.Pattern = "GET /api/v1/posts"
-			v1 := r.URL.Query()
-			var query PostsQuery
-			if v2 := v1.Get("page"); v2 != "" {
-				var err error
-				if query.Page, err = strconv.Atoi(v2); err != nil {
+			values = r.URL.Query()
+			query = PostsQuery{}
+			if raw = values.Get("page"); raw != "" {
+				if query.Page, err = strconv.Atoi(raw); err != nil {
 					badRequest(w, r.Header.Get("X-Request-Id"), err)
 					return
 				}
 			}
-			query.Tag = v1.Get("tag")
+			query.Tag = values.Get("tag")
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
+			if err = ggen.WriteSliceTo(w, s.PostsApi.ListPosts(query)); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/v1/posts"
-			post, err = readJSON[Post](r)
+			postBody, err = readJSON[Post](r)
 			if err != nil {
 				badRequest(w, r.Header.Get("X-Request-Id"), err)
 				return
 			}
-			post, err = s.PostsApi.CreatePost(&post)
+			post, err = s.PostsApi.CreatePost(&postBody)
 			if err != nil {
 				postNotFound(w, r, err)
 				return
 			}
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteTo(w, post); err != nil {
+			if err = ggen.WriteTo(w, post); err != nil {
 				postNotFound(w, r, err)
 				return
 			}
@@ -186,13 +198,13 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "GET /api/v1/search"
-		v1 := r.URL.Query()
-		sq, err := parseSearch(v1)
+		values = r.URL.Query()
+		sq, err = parseSearch(values)
 		if err != nil {
 			badRequest(w, r.Header.Get("X-Request-Id"), err)
 			return
 		}
-		if err := writeJSONAny(w, s.SearchApi.Search(sq, r.Header.Get("X-Request-Id"))); err != nil {
+		if err = writeJSONAny(w, s.SearchApi.Search(sq, r.Header.Get("X-Request-Id"))); err != nil {
 			handleError(w, err)
 			return
 		}
@@ -207,19 +219,19 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteSliceTo(w, users); err != nil {
+			if err = ggen.WriteSliceTo(w, users); err != nil {
 				handleError(w, err)
 				return
 			}
 		case "POST":
 			r.Pattern = "POST /api/v1/users"
-			user, err = readJSON[User](r)
+			userBody, err = readJSON[User](r)
 			if err != nil {
 				badRequest(w, r.Header.Get("X-Request-Id"), err)
 				return
 			}
 			w.Header()["Content-Type"] = __jsonCT
-			if err := ggen.WriteSliceTo(w, s.UsersApi.PostUser(user)); err != nil {
+			if err = ggen.WriteSliceTo(w, s.UsersApi.PostUser(userBody)); err != nil {
 				handleError(w, err)
 				return
 			}
@@ -235,48 +247,47 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		r.Pattern = "GET /api/v1/users/me"
-		var v1 int
-		if v2 := r.Header.Get("X-User-Index"); v2 != "" {
-			var err error
-			if v1, err = atoi(v2); err != nil {
+		intVal = *new(int)
+		if raw1 = r.Header.Get("X-User-Index"); raw1 != "" {
+			if intVal, err = atoi(raw1); err != nil {
 				badRequest(w, r.Header.Get("X-Request-Id"), err)
 				return
 			}
 		}
-		user, err = s.UsersApi.GetMe(v1)
+		user, err = s.UsersApi.GetMe(intVal)
 		if err != nil {
 			handleError(w, err)
 			return
 		}
 		w.Header()["Content-Type"] = __jsonCT
-		if err := ggen.WriteTo(w, user); err != nil {
+		if err = ggen.WriteTo(w, user); err != nil {
 			handleError(w, err)
 			return
 		}
 		return
 	}
-	if i := strings.IndexByte(path, '/'); i > 0 {
-		switch path[:i] {
+	if i0 = strings.IndexByte(path, '/'); i0 > 0 {
+		switch path[:i0] {
 		case "users":
-			path = path[i+1:]
+			path = path[i0+1:]
 			if strings.IndexByte(path, '/') < 0 {
-				if intVal, err = strconv.Atoi(path); err == nil {
+				if intVal1, err = strconv.Atoi(path); err == nil {
 					switch r.Method {
 					case "GET":
 						r.Pattern = "GET /api/v1/users/{i}"
-						user, err = s.UsersApi.GetUser(intVal)
+						user, err = s.UsersApi.GetUser(intVal1)
 						if err != nil {
 							handleError(w, err)
 							return
 						}
 						w.Header()["Content-Type"] = __jsonCT
-						if err := ggen.WriteTo(w, user); err != nil {
+						if err = ggen.WriteTo(w, user); err != nil {
 							handleError(w, err)
 							return
 						}
 					case "DELETE":
 						r.Pattern = "DELETE /api/v1/users/{i}"
-						if err := s.UsersApi.DeleteUser(intVal); err != nil {
+						if err = s.UsersApi.DeleteUser(intVal1); err != nil {
 							handleError(w, err)
 						}
 					default:
@@ -299,7 +310,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					w.Header()["Content-Type"] = __jsonCT
-					if err := ggen.WriteTo(w, user); err != nil {
+					if err = ggen.WriteTo(w, user); err != nil {
 						handleError(w, err)
 						return
 					}
@@ -312,17 +323,17 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				on405(w)
 				return
 			}
-			path = path[i+1:]
-			if i := strings.IndexByte(path, '/'); i < 0 {
-				if intVal, err = strconv.Atoi(path); err == nil {
+			path = path[i0+1:]
+			if i1 = strings.IndexByte(path, '/'); i1 < 0 {
+				if intVal1, err = strconv.Atoi(path); err == nil {
 					r.Pattern = "GET /api/v1/posts/{id}"
-					post, err = s.PostsApi.GetPost(intVal)
+					post, err = s.PostsApi.GetPost(intVal1)
 					if err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					w.Header()["Content-Type"] = __jsonCT
-					if err := ggen.WriteTo(w, post); err != nil {
+					if err = ggen.WriteTo(w, post); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
@@ -337,22 +348,22 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					w.Header()["Content-Type"] = __jsonCT
-					if err := ggen.WriteTo(w, post); err != nil {
+					if err = ggen.WriteTo(w, post); err != nil {
 						postNotFound(w, r, err)
 						return
 					}
 					return
 				}
-			} else if i > 0 {
-				s1 := path[:i]
-				if intVal, err = strconv.Atoi(s1); err == nil {
-					path = path[i+1:]
+			} else if i1 > 0 {
+				s1 = path[:i1]
+				if intVal1, err = strconv.Atoi(s1); err == nil {
+					path = path[i1+1:]
 					if len(path) >= 9 && path[:9] == "comments/" {
 						path = path[9:]
 						if strings.IndexByte(path, '/') < 0 {
-							if intVal1, err = strconv.Atoi(path); err == nil {
+							if intVal2, err = strconv.Atoi(path); err == nil {
 								r.Pattern = "GET /api/v1/posts/{pid}/comments/{cid}"
-								if err := writeJSONAny(w, s.PostsApi.GetComment(intVal, intVal1)); err != nil {
+								if err = writeJSONAny(w, s.PostsApi.GetComment(intVal1, intVal2)); err != nil {
 									postNotFound(w, r, err)
 									return
 								}
@@ -368,11 +379,11 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				on405(w)
 				return
 			}
-			path = path[i+1:]
+			path = path[i0+1:]
 			if strings.IndexByte(path, '/') < 0 {
 				if float64Val, err = strconv.ParseFloat(path, 64); err == nil {
 					r.Pattern = "GET /api/v1/echo/{f}"
-					if err := writeJSONAny(w, s.SearchApi.EchoFloat(float64Val)); err != nil {
+					if err = writeJSONAny(w, s.SearchApi.EchoFloat(float64Val)); err != nil {
 						handleError(w, err)
 						return
 					}
@@ -380,7 +391,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 				if boolVal, err = strconv.ParseBool(path); err == nil {
 					r.Pattern = "GET /api/v1/echo/{b}"
-					if err := writeJSONAny(w, s.SearchApi.EchoBool(boolVal)); err != nil {
+					if err = writeJSONAny(w, s.SearchApi.EchoBool(boolVal)); err != nil {
 						handleError(w, err)
 						return
 					}
@@ -389,7 +400,7 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if path != "" {
 					r.Pattern = "GET /api/v1/echo/{str}"
 					r.SetPathValue("str", path)
-					if err := writeJSONAny(w, s.SearchApi.EchoString(path)); err != nil {
+					if err = writeJSONAny(w, s.SearchApi.EchoString(path)); err != nil {
 						handleError(w, err)
 						return
 					}
@@ -402,10 +413,10 @@ func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				on405(w)
 				return
 			}
-			path = path[i+1:]
+			path = path[i0+1:]
 			r.Pattern = "GET /api/v1/files/{path...}"
 			r.SetPathValue("path", path)
-			if err := writeJSONAny(w, s.FilesApi.StatFile(r)); err != nil {
+			if err = writeJSONAny(w, s.FilesApi.StatFile(r)); err != nil {
 				handleError(w, err)
 				return
 			}

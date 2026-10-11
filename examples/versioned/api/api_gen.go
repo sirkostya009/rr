@@ -7,8 +7,9 @@ import (
 )
 
 func (s *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var mp0 string
 	if len(r.URL.Path) >= 5 && r.URL.Path[:5] == "/api/" {
-		mp0 := r.URL.Path[5:]
+		mp0 = r.URL.Path[5:]
 		if len(mp0) > 2 {
 			switch mp0[:3] {
 			case "v1/":

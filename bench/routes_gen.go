@@ -8,6 +8,24 @@ import (
 )
 
 func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var i2 int
+	var i3 int
+	var s3 string
+	var i4 int
+	var i5 int
+	var s5 string
+	var i7 int
+	var s7 string
+	var i8 int
+	var i9 int
+	var s9 string
+	var i11 int
+	var s11 string
+	var i12 int
+	var s4 string
+	var i6 int
+	var s6 string
+	var s8 string
 	path := r.URL.Path
 	if len(path) < 1 || path[:1] != "/" {
 		w.WriteHeader(http.StatusNotFound)
@@ -132,18 +150,18 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			switch path[:2] {
 			case "v1":
 				path = path[3:]
-				if i := strings.IndexByte(path, '/'); i > 0 {
-					switch path[:i] {
+				if i2 = strings.IndexByte(path, '/'); i2 > 0 {
+					switch path[:i2] {
 					case "organizations":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								switch path[:i] {
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								switch path[:i4] {
 								case "projects":
-									path = path[i+1:]
-									if i := strings.IndexByte(path, '/'); i < 0 {
+									path = path[i4+1:]
+									if i5 = strings.IndexByte(path, '/'); i5 < 0 {
 										if path != "" {
 											switch r.Method {
 											case "GET":
@@ -177,12 +195,12 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 											return
 										}
-									} else if i > 0 {
-										s5 := path[:i]
-										path = path[i+1:]
+									} else if i5 > 0 {
+										s5 = path[:i5]
+										path = path[i5+1:]
 										if len(path) >= 13 && path[:13] == "repositories/" {
 											path = path[13:]
-											if i := strings.IndexByte(path, '/'); i < 0 {
+											if i7 = strings.IndexByte(path, '/'); i7 < 0 {
 												if path != "" {
 													switch r.Method {
 													case "GET":
@@ -221,19 +239,19 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													}
 													return
 												}
-											} else if i > 0 {
-												s7 := path[:i]
-												path = path[i+1:]
-												if i := strings.IndexByte(path, '/'); i > 0 {
-													switch path[:i] {
+											} else if i7 > 0 {
+												s7 = path[:i7]
+												path = path[i7+1:]
+												if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+													switch path[:i8] {
 													case "branches":
-														path = path[i+1:]
-														if i := strings.IndexByte(path, '/'); i > 0 {
-															s9 := path[:i]
-															path = path[i+1:]
+														path = path[i8+1:]
+														if i9 = strings.IndexByte(path, '/'); i9 > 0 {
+															s9 = path[:i9]
+															path = path[i9+1:]
 															if len(path) >= 8 && path[:8] == "commits/" {
 																path = path[8:]
-																if i := strings.IndexByte(path, '/'); i < 0 {
+																if i11 = strings.IndexByte(path, '/'); i11 < 0 {
 																	if path != "" {
 																		switch r.Method {
 																		case "GET":
@@ -282,10 +300,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																		}
 																		return
 																	}
-																} else if i > 0 {
-																	s11 := path[:i]
-																	path = path[i+1:]
-																	if i := strings.IndexByte(path, '/'); i < 0 {
+																} else if i11 > 0 {
+																	s11 = path[:i11]
+																	path = path[i11+1:]
+																	if i12 = strings.IndexByte(path, '/'); i12 < 0 {
 																		if path == "diff" {
 																			switch r.Method {
 																			case "GET":
@@ -334,9 +352,9 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																			}
 																			return
 																		}
-																	} else if i > 0 {
-																		if path[:i] == "files" {
-																			path = path[i+1:]
+																	} else if i12 > 0 {
+																		if path[:i12] == "files" {
+																			path = path[i12+1:]
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v1/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
@@ -394,10 +412,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 															}
 														}
 													case "issues":
-														path = path[i+1:]
-														if i := strings.IndexByte(path, '/'); i > 0 {
-															s9 := path[:i]
-															path = path[i+1:]
+														path = path[i8+1:]
+														if i9 = strings.IndexByte(path, '/'); i9 > 0 {
+															s9 = path[:i9]
+															path = path[i9+1:]
 															if len(path) >= 9 && path[:9] == "comments/" {
 																path = path[9:]
 																if strings.IndexByte(path, '/') < 0 {
@@ -458,10 +476,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										}
 									}
 								case "teams":
-									path = path[i+1:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s5 := path[:i]
-										path = path[i+1:]
+									path = path[i4+1:]
+									if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+										s5 = path[:i5]
+										path = path[i5+1:]
 										if len(path) >= 8 && path[:8] == "members/" {
 											path = path[8:]
 											if strings.IndexByte(path, '/') < 0 {
@@ -510,24 +528,24 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "billing":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 9 && path[:9] == "accounts/" {
 							path = path[9:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									switch path[:i] {
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									switch path[:i5] {
 									case "subscriptions":
-										path = path[i+1:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										path = path[i5+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 9 && path[:9] == "invoices/" {
 												path = path[9:]
-												if i := strings.IndexByte(path, '/'); i > 0 {
-													s8 := path[:i]
-													path = path[i+1:]
+												if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+													s8 = path[:i8]
+													path = path[i8+1:]
 													if len(path) >= 11 && path[:11] == "line_items/" {
 														path = path[11:]
 														if strings.IndexByte(path, '/') < 0 {
@@ -580,10 +598,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 										}
 									case "payment_methods":
-										path = path[i+1:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										path = path[i5+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 13 && path[:13] == "transactions/" {
 												path = path[13:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -633,22 +651,22 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "marketplace":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 11 && path[:11] == "categories/" {
 							path = path[11:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
 								if len(path) >= 14 && path[:14] == "subcategories/" {
 									path = path[14:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s6 := path[:i]
-										path = path[i+1:]
+									if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+										s6 = path[:i6]
+										path = path[i6+1:]
 										if len(path) >= 6 && path[:6] == "items/" {
 											path = path[6:]
-											if i := strings.IndexByte(path, '/'); i > 0 {
-												s8 := path[:i]
-												path = path[i+1:]
+											if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+												s8 = path[:i8]
+												path = path[i8+1:]
 												if len(path) >= 9 && path[:9] == "variants/" {
 													path = path[9:]
 													if strings.IndexByte(path, '/') < 0 {
@@ -704,19 +722,19 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "observability":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							switch path[:i] {
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							switch path[:i3] {
 							case "dashboards":
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s4 := path[:i]
-									path = path[i+1:]
+								path = path[i3+1:]
+								if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+									s4 = path[:i4]
+									path = path[i4+1:]
 									if len(path) >= 7 && path[:7] == "panels/" {
 										path = path[7:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 8 && path[:8] == "queries/" {
 												path = path[8:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -764,15 +782,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									}
 								}
 							case "incidents":
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s4 := path[:i]
-									path = path[i+1:]
+								path = path[i3+1:]
+								if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+									s4 = path[:i4]
+									path = path[i4+1:]
 									if len(path) >= 9 && path[:9] == "timeline/" {
 										path = path[9:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 11 && path[:11] == "responders/" {
 												path = path[11:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -822,15 +840,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "datasets":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 7 && path[:7] == "tables/" {
 								path = path[7:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s5 := path[:i]
-									path = path[i+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									s5 = path[:i5]
+									path = path[i5+1:]
 									if len(path) >= 8 && path[:8] == "columns/" {
 										path = path[8:]
 										if strings.IndexByte(path, '/') < 0 {
@@ -878,22 +896,22 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "ml":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 7 && path[:7] == "models/" {
 							path = path[7:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
 								if len(path) >= 9 && path[:9] == "versions/" {
 									path = path[9:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s6 := path[:i]
-										path = path[i+1:]
+									if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+										s6 = path[:i6]
+										path = path[i6+1:]
 										if len(path) >= 12 && path[:12] == "deployments/" {
 											path = path[12:]
-											if i := strings.IndexByte(path, '/'); i > 0 {
-												s8 := path[:i]
-												path = path[i+1:]
+											if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+												s8 = path[:i8]
+												path = path[i8+1:]
 												if len(path) >= 12 && path[:12] == "predictions/" {
 													path = path[12:]
 													if strings.IndexByte(path, '/') < 0 {
@@ -949,10 +967,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "webhooks":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 11 && path[:11] == "deliveries/" {
 								path = path[11:]
 								if strings.IndexByte(path, '/') < 0 {
@@ -993,15 +1011,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "integrations":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 12 && path[:12] == "connections/" {
 								path = path[12:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s5 := path[:i]
-									path = path[i+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									s5 = path[:i5]
+									path = path[i5+1:]
 									if len(path) >= 6 && path[:6] == "syncs/" {
 										path = path[6:]
 										if strings.IndexByte(path, '/') < 0 {
@@ -1049,11 +1067,11 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "orders":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
 							if digits.MatchString(s3) {
-								path = path[i+1:]
+								path = path[i3+1:]
 								if len(path) >= 6 && path[:6] == "lines/" {
 									path = path[6:]
 									if strings.IndexByte(path, '/') < 0 {
@@ -1095,7 +1113,7 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "sessions":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if strings.IndexByte(path, '/') < 0 {
 							if path != "" {
 								switch r.Method {
@@ -1130,18 +1148,18 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			case "v2":
 				path = path[3:]
-				if i := strings.IndexByte(path, '/'); i > 0 {
-					switch path[:i] {
+				if i2 = strings.IndexByte(path, '/'); i2 > 0 {
+					switch path[:i2] {
 					case "organizations":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								switch path[:i] {
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								switch path[:i4] {
 								case "projects":
-									path = path[i+1:]
-									if i := strings.IndexByte(path, '/'); i < 0 {
+									path = path[i4+1:]
+									if i5 = strings.IndexByte(path, '/'); i5 < 0 {
 										if path != "" {
 											switch r.Method {
 											case "GET":
@@ -1175,12 +1193,12 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 											return
 										}
-									} else if i > 0 {
-										s5 := path[:i]
-										path = path[i+1:]
+									} else if i5 > 0 {
+										s5 = path[:i5]
+										path = path[i5+1:]
 										if len(path) >= 13 && path[:13] == "repositories/" {
 											path = path[13:]
-											if i := strings.IndexByte(path, '/'); i < 0 {
+											if i7 = strings.IndexByte(path, '/'); i7 < 0 {
 												if path != "" {
 													switch r.Method {
 													case "GET":
@@ -1219,19 +1237,19 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													}
 													return
 												}
-											} else if i > 0 {
-												s7 := path[:i]
-												path = path[i+1:]
-												if i := strings.IndexByte(path, '/'); i > 0 {
-													switch path[:i] {
+											} else if i7 > 0 {
+												s7 = path[:i7]
+												path = path[i7+1:]
+												if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+													switch path[:i8] {
 													case "branches":
-														path = path[i+1:]
-														if i := strings.IndexByte(path, '/'); i > 0 {
-															s9 := path[:i]
-															path = path[i+1:]
+														path = path[i8+1:]
+														if i9 = strings.IndexByte(path, '/'); i9 > 0 {
+															s9 = path[:i9]
+															path = path[i9+1:]
 															if len(path) >= 8 && path[:8] == "commits/" {
 																path = path[8:]
-																if i := strings.IndexByte(path, '/'); i < 0 {
+																if i11 = strings.IndexByte(path, '/'); i11 < 0 {
 																	if path != "" {
 																		switch r.Method {
 																		case "GET":
@@ -1280,10 +1298,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																		}
 																		return
 																	}
-																} else if i > 0 {
-																	s11 := path[:i]
-																	path = path[i+1:]
-																	if i := strings.IndexByte(path, '/'); i < 0 {
+																} else if i11 > 0 {
+																	s11 = path[:i11]
+																	path = path[i11+1:]
+																	if i12 = strings.IndexByte(path, '/'); i12 < 0 {
 																		if path == "diff" {
 																			switch r.Method {
 																			case "GET":
@@ -1332,9 +1350,9 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																			}
 																			return
 																		}
-																	} else if i > 0 {
-																		if path[:i] == "files" {
-																			path = path[i+1:]
+																	} else if i12 > 0 {
+																		if path[:i12] == "files" {
+																			path = path[i12+1:]
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v2/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
@@ -1392,10 +1410,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 															}
 														}
 													case "issues":
-														path = path[i+1:]
-														if i := strings.IndexByte(path, '/'); i > 0 {
-															s9 := path[:i]
-															path = path[i+1:]
+														path = path[i8+1:]
+														if i9 = strings.IndexByte(path, '/'); i9 > 0 {
+															s9 = path[:i9]
+															path = path[i9+1:]
 															if len(path) >= 9 && path[:9] == "comments/" {
 																path = path[9:]
 																if strings.IndexByte(path, '/') < 0 {
@@ -1456,10 +1474,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										}
 									}
 								case "teams":
-									path = path[i+1:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s5 := path[:i]
-										path = path[i+1:]
+									path = path[i4+1:]
+									if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+										s5 = path[:i5]
+										path = path[i5+1:]
 										if len(path) >= 8 && path[:8] == "members/" {
 											path = path[8:]
 											if strings.IndexByte(path, '/') < 0 {
@@ -1508,24 +1526,24 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "billing":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 9 && path[:9] == "accounts/" {
 							path = path[9:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									switch path[:i] {
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									switch path[:i5] {
 									case "subscriptions":
-										path = path[i+1:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										path = path[i5+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 9 && path[:9] == "invoices/" {
 												path = path[9:]
-												if i := strings.IndexByte(path, '/'); i > 0 {
-													s8 := path[:i]
-													path = path[i+1:]
+												if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+													s8 = path[:i8]
+													path = path[i8+1:]
 													if len(path) >= 11 && path[:11] == "line_items/" {
 														path = path[11:]
 														if strings.IndexByte(path, '/') < 0 {
@@ -1578,10 +1596,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 										}
 									case "payment_methods":
-										path = path[i+1:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										path = path[i5+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 13 && path[:13] == "transactions/" {
 												path = path[13:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -1631,22 +1649,22 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "marketplace":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 11 && path[:11] == "categories/" {
 							path = path[11:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
 								if len(path) >= 14 && path[:14] == "subcategories/" {
 									path = path[14:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s6 := path[:i]
-										path = path[i+1:]
+									if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+										s6 = path[:i6]
+										path = path[i6+1:]
 										if len(path) >= 6 && path[:6] == "items/" {
 											path = path[6:]
-											if i := strings.IndexByte(path, '/'); i > 0 {
-												s8 := path[:i]
-												path = path[i+1:]
+											if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+												s8 = path[:i8]
+												path = path[i8+1:]
 												if len(path) >= 9 && path[:9] == "variants/" {
 													path = path[9:]
 													if strings.IndexByte(path, '/') < 0 {
@@ -1702,19 +1720,19 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "observability":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							switch path[:i] {
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							switch path[:i3] {
 							case "dashboards":
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s4 := path[:i]
-									path = path[i+1:]
+								path = path[i3+1:]
+								if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+									s4 = path[:i4]
+									path = path[i4+1:]
 									if len(path) >= 7 && path[:7] == "panels/" {
 										path = path[7:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 8 && path[:8] == "queries/" {
 												path = path[8:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -1762,15 +1780,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									}
 								}
 							case "incidents":
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s4 := path[:i]
-									path = path[i+1:]
+								path = path[i3+1:]
+								if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+									s4 = path[:i4]
+									path = path[i4+1:]
 									if len(path) >= 9 && path[:9] == "timeline/" {
 										path = path[9:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 11 && path[:11] == "responders/" {
 												path = path[11:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -1820,15 +1838,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "datasets":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 7 && path[:7] == "tables/" {
 								path = path[7:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s5 := path[:i]
-									path = path[i+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									s5 = path[:i5]
+									path = path[i5+1:]
 									if len(path) >= 8 && path[:8] == "columns/" {
 										path = path[8:]
 										if strings.IndexByte(path, '/') < 0 {
@@ -1876,22 +1894,22 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "ml":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 7 && path[:7] == "models/" {
 							path = path[7:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
 								if len(path) >= 9 && path[:9] == "versions/" {
 									path = path[9:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s6 := path[:i]
-										path = path[i+1:]
+									if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+										s6 = path[:i6]
+										path = path[i6+1:]
 										if len(path) >= 12 && path[:12] == "deployments/" {
 											path = path[12:]
-											if i := strings.IndexByte(path, '/'); i > 0 {
-												s8 := path[:i]
-												path = path[i+1:]
+											if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+												s8 = path[:i8]
+												path = path[i8+1:]
 												if len(path) >= 12 && path[:12] == "predictions/" {
 													path = path[12:]
 													if strings.IndexByte(path, '/') < 0 {
@@ -1947,10 +1965,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "webhooks":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 11 && path[:11] == "deliveries/" {
 								path = path[11:]
 								if strings.IndexByte(path, '/') < 0 {
@@ -1991,15 +2009,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "integrations":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 12 && path[:12] == "connections/" {
 								path = path[12:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s5 := path[:i]
-									path = path[i+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									s5 = path[:i5]
+									path = path[i5+1:]
 									if len(path) >= 6 && path[:6] == "syncs/" {
 										path = path[6:]
 										if strings.IndexByte(path, '/') < 0 {
@@ -2047,11 +2065,11 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "orders":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
 							if digits.MatchString(s3) {
-								path = path[i+1:]
+								path = path[i3+1:]
 								if len(path) >= 6 && path[:6] == "lines/" {
 									path = path[6:]
 									if strings.IndexByte(path, '/') < 0 {
@@ -2093,7 +2111,7 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "sessions":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if strings.IndexByte(path, '/') < 0 {
 							if path != "" {
 								switch r.Method {
@@ -2128,18 +2146,18 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			case "v3":
 				path = path[3:]
-				if i := strings.IndexByte(path, '/'); i > 0 {
-					switch path[:i] {
+				if i2 = strings.IndexByte(path, '/'); i2 > 0 {
+					switch path[:i2] {
 					case "organizations":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								switch path[:i] {
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								switch path[:i4] {
 								case "projects":
-									path = path[i+1:]
-									if i := strings.IndexByte(path, '/'); i < 0 {
+									path = path[i4+1:]
+									if i5 = strings.IndexByte(path, '/'); i5 < 0 {
 										if path != "" {
 											switch r.Method {
 											case "GET":
@@ -2173,12 +2191,12 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 											return
 										}
-									} else if i > 0 {
-										s5 := path[:i]
-										path = path[i+1:]
+									} else if i5 > 0 {
+										s5 = path[:i5]
+										path = path[i5+1:]
 										if len(path) >= 13 && path[:13] == "repositories/" {
 											path = path[13:]
-											if i := strings.IndexByte(path, '/'); i < 0 {
+											if i7 = strings.IndexByte(path, '/'); i7 < 0 {
 												if path != "" {
 													switch r.Method {
 													case "GET":
@@ -2217,19 +2235,19 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 													}
 													return
 												}
-											} else if i > 0 {
-												s7 := path[:i]
-												path = path[i+1:]
-												if i := strings.IndexByte(path, '/'); i > 0 {
-													switch path[:i] {
+											} else if i7 > 0 {
+												s7 = path[:i7]
+												path = path[i7+1:]
+												if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+													switch path[:i8] {
 													case "branches":
-														path = path[i+1:]
-														if i := strings.IndexByte(path, '/'); i > 0 {
-															s9 := path[:i]
-															path = path[i+1:]
+														path = path[i8+1:]
+														if i9 = strings.IndexByte(path, '/'); i9 > 0 {
+															s9 = path[:i9]
+															path = path[i9+1:]
 															if len(path) >= 8 && path[:8] == "commits/" {
 																path = path[8:]
-																if i := strings.IndexByte(path, '/'); i < 0 {
+																if i11 = strings.IndexByte(path, '/'); i11 < 0 {
 																	if path != "" {
 																		switch r.Method {
 																		case "GET":
@@ -2278,10 +2296,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																		}
 																		return
 																	}
-																} else if i > 0 {
-																	s11 := path[:i]
-																	path = path[i+1:]
-																	if i := strings.IndexByte(path, '/'); i < 0 {
+																} else if i11 > 0 {
+																	s11 = path[:i11]
+																	path = path[i11+1:]
+																	if i12 = strings.IndexByte(path, '/'); i12 < 0 {
 																		if path == "diff" {
 																			switch r.Method {
 																			case "GET":
@@ -2330,9 +2348,9 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 																			}
 																			return
 																		}
-																	} else if i > 0 {
-																		if path[:i] == "files" {
-																			path = path[i+1:]
+																	} else if i12 > 0 {
+																		if path[:i12] == "files" {
+																			path = path[i12+1:]
 																			switch r.Method {
 																			case "GET":
 																				r.Pattern = "GET /api/v3/organizations/{orgId}/projects/{projectId}/repositories/{repoId}/branches/{branchName}/commits/{commitSha}/files/{filepath...}"
@@ -2390,10 +2408,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 															}
 														}
 													case "issues":
-														path = path[i+1:]
-														if i := strings.IndexByte(path, '/'); i > 0 {
-															s9 := path[:i]
-															path = path[i+1:]
+														path = path[i8+1:]
+														if i9 = strings.IndexByte(path, '/'); i9 > 0 {
+															s9 = path[:i9]
+															path = path[i9+1:]
 															if len(path) >= 9 && path[:9] == "comments/" {
 																path = path[9:]
 																if strings.IndexByte(path, '/') < 0 {
@@ -2454,10 +2472,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										}
 									}
 								case "teams":
-									path = path[i+1:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s5 := path[:i]
-										path = path[i+1:]
+									path = path[i4+1:]
+									if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+										s5 = path[:i5]
+										path = path[i5+1:]
 										if len(path) >= 8 && path[:8] == "members/" {
 											path = path[8:]
 											if strings.IndexByte(path, '/') < 0 {
@@ -2506,24 +2524,24 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "billing":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 9 && path[:9] == "accounts/" {
 							path = path[9:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									switch path[:i] {
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									switch path[:i5] {
 									case "subscriptions":
-										path = path[i+1:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										path = path[i5+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 9 && path[:9] == "invoices/" {
 												path = path[9:]
-												if i := strings.IndexByte(path, '/'); i > 0 {
-													s8 := path[:i]
-													path = path[i+1:]
+												if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+													s8 = path[:i8]
+													path = path[i8+1:]
 													if len(path) >= 11 && path[:11] == "line_items/" {
 														path = path[11:]
 														if strings.IndexByte(path, '/') < 0 {
@@ -2576,10 +2594,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 											}
 										}
 									case "payment_methods":
-										path = path[i+1:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										path = path[i5+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 13 && path[:13] == "transactions/" {
 												path = path[13:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -2629,22 +2647,22 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "marketplace":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 11 && path[:11] == "categories/" {
 							path = path[11:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
 								if len(path) >= 14 && path[:14] == "subcategories/" {
 									path = path[14:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s6 := path[:i]
-										path = path[i+1:]
+									if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+										s6 = path[:i6]
+										path = path[i6+1:]
 										if len(path) >= 6 && path[:6] == "items/" {
 											path = path[6:]
-											if i := strings.IndexByte(path, '/'); i > 0 {
-												s8 := path[:i]
-												path = path[i+1:]
+											if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+												s8 = path[:i8]
+												path = path[i8+1:]
 												if len(path) >= 9 && path[:9] == "variants/" {
 													path = path[9:]
 													if strings.IndexByte(path, '/') < 0 {
@@ -2700,19 +2718,19 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "observability":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							switch path[:i] {
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							switch path[:i3] {
 							case "dashboards":
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s4 := path[:i]
-									path = path[i+1:]
+								path = path[i3+1:]
+								if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+									s4 = path[:i4]
+									path = path[i4+1:]
 									if len(path) >= 7 && path[:7] == "panels/" {
 										path = path[7:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 8 && path[:8] == "queries/" {
 												path = path[8:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -2760,15 +2778,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									}
 								}
 							case "incidents":
-								path = path[i+1:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s4 := path[:i]
-									path = path[i+1:]
+								path = path[i3+1:]
+								if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+									s4 = path[:i4]
+									path = path[i4+1:]
 									if len(path) >= 9 && path[:9] == "timeline/" {
 										path = path[9:]
-										if i := strings.IndexByte(path, '/'); i > 0 {
-											s6 := path[:i]
-											path = path[i+1:]
+										if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+											s6 = path[:i6]
+											path = path[i6+1:]
 											if len(path) >= 11 && path[:11] == "responders/" {
 												path = path[11:]
 												if strings.IndexByte(path, '/') < 0 {
@@ -2818,15 +2836,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "datasets":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 7 && path[:7] == "tables/" {
 								path = path[7:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s5 := path[:i]
-									path = path[i+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									s5 = path[:i5]
+									path = path[i5+1:]
 									if len(path) >= 8 && path[:8] == "columns/" {
 										path = path[8:]
 										if strings.IndexByte(path, '/') < 0 {
@@ -2874,22 +2892,22 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "ml":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if len(path) >= 7 && path[:7] == "models/" {
 							path = path[7:]
-							if i := strings.IndexByte(path, '/'); i > 0 {
-								s4 := path[:i]
-								path = path[i+1:]
+							if i4 = strings.IndexByte(path, '/'); i4 > 0 {
+								s4 = path[:i4]
+								path = path[i4+1:]
 								if len(path) >= 9 && path[:9] == "versions/" {
 									path = path[9:]
-									if i := strings.IndexByte(path, '/'); i > 0 {
-										s6 := path[:i]
-										path = path[i+1:]
+									if i6 = strings.IndexByte(path, '/'); i6 > 0 {
+										s6 = path[:i6]
+										path = path[i6+1:]
 										if len(path) >= 12 && path[:12] == "deployments/" {
 											path = path[12:]
-											if i := strings.IndexByte(path, '/'); i > 0 {
-												s8 := path[:i]
-												path = path[i+1:]
+											if i8 = strings.IndexByte(path, '/'); i8 > 0 {
+												s8 = path[:i8]
+												path = path[i8+1:]
 												if len(path) >= 12 && path[:12] == "predictions/" {
 													path = path[12:]
 													if strings.IndexByte(path, '/') < 0 {
@@ -2945,10 +2963,10 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "webhooks":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 11 && path[:11] == "deliveries/" {
 								path = path[11:]
 								if strings.IndexByte(path, '/') < 0 {
@@ -2989,15 +3007,15 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "integrations":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
-							path = path[i+1:]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
+							path = path[i3+1:]
 							if len(path) >= 12 && path[:12] == "connections/" {
 								path = path[12:]
-								if i := strings.IndexByte(path, '/'); i > 0 {
-									s5 := path[:i]
-									path = path[i+1:]
+								if i5 = strings.IndexByte(path, '/'); i5 > 0 {
+									s5 = path[:i5]
+									path = path[i5+1:]
 									if len(path) >= 6 && path[:6] == "syncs/" {
 										path = path[6:]
 										if strings.IndexByte(path, '/') < 0 {
@@ -3045,11 +3063,11 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "orders":
-						path = path[i+1:]
-						if i := strings.IndexByte(path, '/'); i > 0 {
-							s3 := path[:i]
+						path = path[i2+1:]
+						if i3 = strings.IndexByte(path, '/'); i3 > 0 {
+							s3 = path[:i3]
 							if digits.MatchString(s3) {
-								path = path[i+1:]
+								path = path[i3+1:]
 								if len(path) >= 6 && path[:6] == "lines/" {
 									path = path[6:]
 									if strings.IndexByte(path, '/') < 0 {
@@ -3091,7 +3109,7 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case "sessions":
-						path = path[i+1:]
+						path = path[i2+1:]
 						if strings.IndexByte(path, '/') < 0 {
 							if path != "" {
 								switch r.Method {
